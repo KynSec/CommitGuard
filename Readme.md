@@ -94,13 +94,13 @@ Ground truth: isolated, fully-mapped Docker targets — OWASP Juice Shop and the
 
 ## Team
 
-| Name | Role |
-|---|---|
-| Mahmoud Elbasel | |
-| Amr Khaled Ahmed | |
-| Fares Abdulhamid | |
-| Youssef Shaker | |
-| Mohamed Ali Hassan | |
+| Name |
+|---|
+| Mahmoud Elbasel | 
+| Amr Khaled Ahmed | 
+| Fares Abdulhamid | 
+| Youssef Shaker | 
+| Mohamed Ali Hassan | 
 
 **Supervisor:** Dr. Mohammad El-Ramly
 
