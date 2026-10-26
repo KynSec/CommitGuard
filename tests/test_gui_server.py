@@ -174,6 +174,44 @@ class GuiServerTests(unittest.TestCase):
         names = {item["name"] for item in listing["files"]}
         self.assertIn("report.html", names)
 
+    def test_policy_gate_and_triage_routes(self):
+        status, data, _ = self._request(
+            "/api/scan", {"repo": str(self.root), "options": {"mode": "staged"}}
+        )
+        self.assertEqual(status, 200, data)
+        status, gate, _ = self._request(
+            "/api/policy/gate",
+            {"repo": str(self.root), "report": data["report"]},
+        )
+        self.assertEqual(status, 200, gate)
+        self.assertFalse(gate["gate"]["passed"])
+        status, triage, _ = self._request(
+            "/api/triage",
+            {
+                "repo": str(self.root),
+                "fingerprint": "fingerprint-1",
+                "state": "accepted",
+                "options": {
+                    "owner": "@team",
+                    "reason": "Accepted server fixture finding.",
+                    "expires": "2099-01-01",
+                },
+            },
+        )
+        self.assertEqual(status, 200, triage)
+        self.assertEqual(len(triage["entries"]), 1)
+        status, listed, _ = self._request(
+            "/api/triage?repo=" + urllib.parse.quote(str(self.root))
+        )
+        self.assertEqual(status, 200, listed)
+        self.assertEqual(listed["entries"][0]["state"], "accepted")
+        status, gate, _ = self._request(
+            "/api/policy/gate",
+            {"repo": str(self.root), "report": data["report"]},
+        )
+        self.assertEqual(status, 200, gate)
+        self.assertTrue(gate["gate"]["passed"])
+
     def test_report_download_and_traversal(self):
         self._request(
             "/api/scan", {"repo": str(self.root), "options": {"mode": "staged"}}

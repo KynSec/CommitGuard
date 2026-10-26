@@ -223,6 +223,9 @@ def _make_handler(state: AppState, token: str):
                 if path == "/api/reports":
                     self._send_json(actions.list_reports(query.get("repo") or state.repo or ""))
                     return
+                if path == "/api/triage":
+                    self._send_json(actions.triage_state(query.get("repo") or state.repo or ""))
+                    return
                 if path == "/api/reports/download":
                     self._serve_report(query.get("repo") or state.repo or "", query.get("name") or "")
                     return
@@ -339,6 +342,37 @@ def _make_handler(state: AppState, token: str):
                     result = actions.run_scan(repo, options, engine=state.engine, timeout=state.timeout)
                     state.remember(result["repo"], result["report"], options)
                     self._send_json(result)
+                finally:
+                    self._unlock()
+                return
+
+            if path == "/api/policy/gate":
+                report = payload.get("report") or state.report
+                if not isinstance(report, dict):
+                    raise actions.ActionError("Run a scan first.")
+                options = payload.get("options") or {}
+                if not isinstance(options, dict):
+                    raise actions.ActionError("Policy options must be an object.")
+                self._send_json(
+                    actions.policy_gate(self._repo(payload), report, options)
+                )
+                return
+
+            if path == "/api/triage":
+                options = payload.get("options") or {}
+                if not isinstance(options, dict):
+                    raise actions.ActionError("Triage options must be an object.")
+                if not self._lock():
+                    return
+                try:
+                    self._send_json(
+                        actions.triage_set(
+                            self._repo(payload),
+                            str(payload.get("fingerprint") or ""),
+                            str(payload.get("state") or ""),
+                            options,
+                        )
+                    )
                 finally:
                     self._unlock()
                 return

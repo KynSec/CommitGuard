@@ -59,7 +59,8 @@ except ImportError:  # pragma: no cover - core is always installed
 _RULE_FILE_SUFFIXES = (".toml", ".yaml", ".yml", ".conf")
 GITIGNORE_ENTRIES = (
     "# Commit Guard (local security scanner) — safe to delete anytime",
-    f"{_INSTALL_DIRNAME}/",
+    f"{_INSTALL_DIRNAME}/*",
+    f"!{_INSTALL_DIRNAME}/triage.yaml",
     "commit_guard_reports/",
     f"{_WRAPPER_SH_NAME}",
     f"{_WRAPPER_BAT_NAME}",
@@ -303,9 +304,9 @@ def _render_hook_script(install_dir: Path) -> str:
         "\n"
         + _shell_python_selector()
         + '\nif [ -n "${COMMIT_GUARD_THRESHOLD:-}" ]; then\n'
-        '    exec "$PY" "$GUARD_DIR/main.py" --repo "$REPO_DIR" --threshold "$COMMIT_GUARD_THRESHOLD"\n'
+        '    exec "$PY" "$GUARD_DIR/main.py" --repo "$REPO_DIR" --gate --threshold "$COMMIT_GUARD_THRESHOLD"\n'
         "fi\n"
-        'exec "$PY" "$GUARD_DIR/main.py" --repo "$REPO_DIR"\n'
+        'exec "$PY" "$GUARD_DIR/main.py" --repo "$REPO_DIR" --gate\n'
     )
 
 
@@ -421,9 +422,9 @@ def _render_pre_push_hook_script(install_dir: Path) -> str:
         "\n"
         + _shell_python_selector()
         + '\nif [ -n "${COMMIT_GUARD_THRESHOLD:-}" ]; then\n'
-        '    exec "$PY" "$GUARD_DIR/main.py" --repo "$REPO_DIR" --pre-push --threshold "$COMMIT_GUARD_THRESHOLD"\n'
+        '    exec "$PY" "$GUARD_DIR/main.py" --repo "$REPO_DIR" --pre-push --gate --threshold "$COMMIT_GUARD_THRESHOLD"\n'
         "fi\n"
-        'exec "$PY" "$GUARD_DIR/main.py" --repo "$REPO_DIR" --pre-push\n'
+        'exec "$PY" "$GUARD_DIR/main.py" --repo "$REPO_DIR" --pre-push --gate\n'
     )
 
 
@@ -491,6 +492,9 @@ def _write_profile_config(repo_root: Path, profile: str, force: bool = False) ->
         )
         return
     text = default_config_text()
+    text = text.replace(
+        'profile = "balanced"', f'profile = "{profile}"'
+    )
     text = text.replace(
         'threshold = "high"', f'threshold = "{values["threshold"]}"'
     )
@@ -952,14 +956,19 @@ def run_manual_scan(
     audit_suppressions: bool = False,
     strict: bool = False,
     no_placeholder_filter: bool = False,
+    use_policy: bool = False,
+    policy_path: Path | None = None,
+    policy_profile: str | None = None,
 ) -> int:
     repo_root = find_repo_root(target_path)
     main_py = get_install_dir(repo_root) / "main.py"
+    if not main_py.is_file():
+        main_py = _TOOLKIT_DIR / "main.py"
 
     if not main_py.is_file():
         print(
-            "[commit-guard] ERROR: Commit Guard isn't installed in this repo yet. "
-            "Run `install` first.",
+            "[commit-guard] ERROR: Commit Guard scan engine is missing. "
+            "Reinstall the package or run `install`.",
             file=sys.stderr,
         )
         return 2
@@ -977,6 +986,12 @@ def run_manual_scan(
         command.extend(["--diff", diff_revision])
     if not use_baseline:
         command.append("--no-baseline")
+    if use_policy:
+        command.append("--gate")
+    if policy_path:
+        command.extend(["--policy", str(policy_path)])
+    if policy_profile:
+        command.extend(["--policy-profile", policy_profile])
     if config_file:
         command.extend(["--config", str(config_file)])
     if report_path:
@@ -1177,6 +1192,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_scan = sub.add_parser("scan", help="Run a manual scan without committing.")
     p_scan.add_argument("repo", nargs="?", default=".")
+    p_scan.add_argument("--staged", action="store_true",
+                        help="Scan staged changes (the default).")
     p_scan.add_argument("--threshold", choices=("critical", "high", "medium", "low", "info"), default=None)
     p_scan.add_argument("--format", choices=("markdown", "json", "sarif", "both", "junit", "gitlab", "checkstyle", "html"), default=None)
     scan_modes = p_scan.add_mutually_exclusive_group()
@@ -1203,6 +1220,12 @@ def build_parser() -> argparse.ArgumentParser:
     p_scan.add_argument("--baseline-expiry", metavar="YYYY-MM-DD", default=None)
     p_scan.add_argument("--no-placeholder-filter", action="store_true",
                         help="Report obvious example/dummy values too.")
+    p_scan.add_argument("--gate", action="store_true", dest="use_policy",
+                        help="Evaluate policy v1 with threshold, budgets, and ratchet.")
+    p_scan.add_argument("--policy", type=Path, default=None,
+                        help="Policy TOML file (default: [gate] in .commit_guard.toml).")
+    p_scan.add_argument("--policy-profile", choices=("strict", "balanced", "audit"),
+                        default=None, help="Override the policy profile.")
 
     p_gui = sub.add_parser("gui", help="Launch the local web control center.")
     p_gui.add_argument("repo", nargs="?", default=".")
@@ -1237,6 +1260,107 @@ def build_parser() -> argparse.ArgumentParser:
     p_supp.add_argument("action", choices=("audit",))
     p_supp.add_argument("repo", nargs="?", default=".")
     p_supp.add_argument("--strict", action="store_true", help="Exit 1 when issues are found.")
+
+    p_gate = sub.add_parser("gate", help="Evaluate policy v1 against a report or staged scan.")
+    p_gate.add_argument("--repo", dest="repo_opt", default=".")
+    p_gate.add_argument("--report", type=Path, default=None,
+                        help="Evaluate an existing JSON/SARIF/native report.")
+    p_gate.add_argument("--policy", type=Path, default=None,
+                        help="Explicit policy TOML file (default: .commit_guard.toml).")
+    p_gate.add_argument("--profile", choices=("strict", "balanced", "audit"), default=None)
+    p_gate.add_argument("--threshold", choices=("critical", "high", "medium", "low", "info"),
+                        default=None, help="Override the policy threshold.")
+    p_gate.add_argument("--triage", type=Path, default=None,
+                        help="Triage YAML path (default: .commit_guard/triage.yaml).")
+    p_gate.add_argument("--format", choices=("text", "json"), default="text")
+    p_gate.add_argument("--output", type=Path, default=None)
+    p_gate.add_argument("--staged", action="store_true", help="Scan staged changes (default).")
+    p_gate.add_argument("--diff", metavar="REV", dest="diff_revision", default=None)
+    p_gate.add_argument("--all", action="store_true")
+    p_gate.add_argument("--history", type=int, default=None)
+
+    p_ingest = sub.add_parser("ingest", help="Normalize SARIF/native reports.")
+    p_ingest.add_argument("inputs", nargs="+", type=Path)
+    p_ingest.add_argument("--repo", dest="repo_opt", default=".")
+    p_ingest.add_argument("--tool", choices=("auto", "sarif", "semgrep", "codeql", "trivy", "checkov", "gitleaks", "bandit"), default="auto")
+    p_ingest.add_argument("--format", choices=("json", "sarif", "markdown"), default="json")
+    p_ingest.add_argument("--output", type=Path, default=None)
+
+    p_report = sub.add_parser("report", help="Merge and export reports.")
+    report_sub = p_report.add_subparsers(dest="report_command")
+    p_merge = report_sub.add_parser("merge", help="Merge CommitGuard JSON, SARIF, or native reports.")
+    p_merge.add_argument("inputs", nargs="+", type=Path)
+    p_merge.add_argument("--repo", dest="repo_opt", default=".")
+    p_merge.add_argument("--format", choices=("json", "sarif", "markdown"), default="json")
+    p_merge.add_argument("--output", type=Path, default=None)
+
+    p_policy = sub.add_parser("policy", help="Validate or explain policy v1.")
+    policy_sub = p_policy.add_subparsers(dest="policy_command")
+    p_policy_validate = policy_sub.add_parser("validate", help="Validate the policy file.")
+    p_policy_validate.add_argument("repo", nargs="?", default=".")
+    p_policy_validate.add_argument("--file", type=Path, default=None)
+    p_policy_validate.add_argument("--profile", choices=("strict", "balanced", "audit"), default=None)
+    p_policy_validate.add_argument("--format", choices=("text", "json"), default="text")
+    p_policy_validate.add_argument("--output", type=Path, default=None)
+    p_policy_explain = policy_sub.add_parser("explain", help="Explain a gate decision for one finding.")
+    p_policy_explain.add_argument("fingerprint")
+    p_policy_explain.add_argument("repo", nargs="?", default=".")
+    p_policy_explain.add_argument("--report", type=Path, required=True)
+    p_policy_explain.add_argument("--file", type=Path, default=None)
+    p_policy_explain.add_argument("--profile", choices=("strict", "balanced", "audit"), default=None)
+    p_policy_explain.add_argument("--triage", type=Path, default=None)
+    p_policy_explain.add_argument("--format", choices=("text", "json"), default="json")
+    p_policy_explain.add_argument("--output", type=Path, default=None)
+
+    p_triage = sub.add_parser("triage", help="Manage committed triage state.")
+    p_triage.add_argument("action", choices=(
+        "list", "set", "accept", "false-positive", "wont-fix", "fixed",
+        "prune", "audit",
+    ))
+    p_triage.add_argument("fingerprint", nargs="?", default=None)
+    p_triage.add_argument("--repo", dest="repo_opt", default=".")
+    p_triage.add_argument("--state", choices=("accepted", "false_positive", "wont_fix", "fixed"), default=None)
+    p_triage.add_argument("--owner", default="")
+    p_triage.add_argument("--reason", default="")
+    p_triage.add_argument("--ticket", default="")
+    p_triage.add_argument("--expires", default="")
+    p_triage.add_argument("--evidence", default="")
+    p_triage.add_argument("--rule-id", default="")
+    p_triage.add_argument("--path", default="")
+    p_triage.add_argument("--file", type=Path, default=None)
+    p_triage.add_argument("--report", type=Path, default=None)
+    p_triage.add_argument("--dry-run", action="store_true")
+    p_triage.add_argument("--strict", action="store_true")
+    p_triage.add_argument("--format", choices=("text", "json"), default="text")
+    p_triage.add_argument("--output", type=Path, default=None)
+
+    p_baseline = sub.add_parser("baseline", help="Update or audit .commit_guard_ignore.")
+    baseline_sub = p_baseline.add_subparsers(dest="baseline_command")
+    p_baseline_update = baseline_sub.add_parser("update", help="Add current findings to the baseline.")
+    p_baseline_update.add_argument("repo", nargs="?", default=".")
+    p_baseline_update.add_argument("--owner", default=None)
+    p_baseline_update.add_argument("--expiry", default=None)
+    p_baseline_update.add_argument("--diff", metavar="REV", dest="diff_revision", default=None)
+    p_baseline_update.add_argument("--all", action="store_true")
+    p_baseline_update.add_argument("--history", type=int, default=None)
+    p_baseline_update.add_argument("--quiet", action="store_true")
+    p_baseline_audit = baseline_sub.add_parser("audit", help="Audit baseline hygiene.")
+    p_baseline_audit.add_argument("repo", nargs="?", default=".")
+    p_baseline_audit.add_argument("--strict", action="store_true")
+
+    p_rules = sub.add_parser("rules", help="List, check, explain, or test rules.")
+    rules_sub = p_rules.add_subparsers(dest="rules_command")
+    p_rules_list = rules_sub.add_parser("list", help="List active rule IDs.")
+    p_rules_list.add_argument("repo", nargs="?", default=".")
+    p_rules_check = rules_sub.add_parser("check", help="Validate rules and corpus.")
+    p_rules_check.add_argument("repo", nargs="?", default=".")
+    p_rules_check.add_argument("--corpus", type=Path, default=None)
+    p_rules_explain = rules_sub.add_parser("explain", help="Show one rule's details.")
+    p_rules_explain.add_argument("rule_id")
+    p_rules_explain.add_argument("repo", nargs="?", default=".")
+    p_rules_test = rules_sub.add_parser("test", help="Run rule corpus tests.")
+    p_rules_test.add_argument("repo", nargs="?", default=".")
+    p_rules_test.add_argument("--corpus", type=Path, default=None)
 
     return parser
 
@@ -1310,6 +1434,9 @@ def main(argv: list[str] | None = None) -> int:
                 baseline_owner=args.baseline_owner,
                 baseline_expiry=args.baseline_expiry,
                 no_placeholder_filter=args.no_placeholder_filter,
+                use_policy=args.use_policy,
+                policy_path=args.policy,
+                policy_profile=args.policy_profile,
             )
         elif args.command == "gui":
             repo_root = find_repo_root(target)
@@ -1323,13 +1450,156 @@ def main(argv: list[str] | None = None) -> int:
                 report_only=args.report_only,
                 report_path=args.report_path,
             )
+        elif args.command == "gate":
+            from core.commands import command_gate
+
+            return command_gate(
+                target,
+                report=args.report,
+                fmt=args.format,
+                output=args.output,
+                policy_path=args.policy,
+                profile=args.profile,
+                threshold=args.threshold,
+                staged=True,
+                diff_revision=args.diff_revision,
+                scan_all=args.all,
+                history=args.history,
+                triage_path=args.triage,
+            )
+        elif args.command == "ingest":
+            from core.commands import command_ingest
+
+            return command_ingest(
+                args.inputs,
+                repo=target,
+                tool=args.tool,
+                fmt=args.format,
+                output=args.output,
+            )
+        elif args.command == "report":
+            if args.report_command != "merge":
+                print(
+                    "[commit-guard] ERROR: use `report merge <inputs...>`.",
+                    file=sys.stderr,
+                )
+                return 2
+            from core.commands import command_report_merge
+
+            return command_report_merge(
+                args.inputs,
+                fmt=args.format,
+                output=args.output,
+                repo=target,
+            )
+        elif args.command == "policy":
+            from core.commands import (
+                command_policy_explain,
+                command_policy_validate,
+            )
+
+            if args.policy_command == "validate":
+                return command_policy_validate(
+                    target,
+                    policy_path=args.file,
+                    profile=args.profile,
+                    fmt=args.format,
+                    output=args.output,
+                )
+            if args.policy_command == "explain":
+                return command_policy_explain(
+                    target,
+                    args.fingerprint,
+                    report=args.report,
+                    policy_path=args.file,
+                    profile=args.profile,
+                    triage_path=args.triage,
+                    fmt=args.format,
+                    output=args.output,
+                )
+            print("[commit-guard] ERROR: use `policy validate|explain`.", file=sys.stderr)
+            return 2
+        elif args.command == "triage":
+            from core.commands import command_triage
+
+            action = args.action
+            state = args.state
+            aliases = {
+                "accept": "accepted",
+                "false-positive": "false_positive",
+                "wont-fix": "wont_fix",
+                "fixed": "fixed",
+            }
+            if action in aliases:
+                state = aliases[action]
+                action = "set"
+            return command_triage(
+                target,
+                action,
+                fingerprint=args.fingerprint,
+                state=state,
+                owner=args.owner,
+                reason=args.reason,
+                ticket=args.ticket,
+                expires=args.expires,
+                evidence=args.evidence,
+                rule_id=args.rule_id,
+                path=args.path,
+                triage_path=args.file,
+                report=args.report,
+                dry_run=args.dry_run,
+                strict=args.strict,
+                fmt=args.format,
+                output=args.output,
+            )
+        elif args.command == "baseline":
+            if args.baseline_command == "update":
+                return run_manual_scan(
+                    target,
+                    use_baseline=True,
+                    update_baseline=True,
+                    baseline_owner=args.owner,
+                    baseline_expiry=args.expiry,
+                    diff_revision=args.diff_revision,
+                    scan_all=args.all,
+                    history=args.history,
+                    quiet=args.quiet,
+                    no_placeholder_filter=False,
+                )
+            if args.baseline_command == "audit":
+                return run_manual_scan(
+                    target,
+                    audit_suppressions=True,
+                    strict=args.strict,
+                )
+            print("[commit-guard] ERROR: use `baseline update|audit`.", file=sys.stderr)
+            return 2
+        elif args.command == "rules":
+            if args.rules_command not in {"list", "check", "explain", "test"}:
+                print("[commit-guard] ERROR: use `rules list|check|explain|test`.", file=sys.stderr)
+                return 2
+            repo_root = find_repo_root(target)
+            main_py = get_install_dir(repo_root) / "main.py"
+            if not main_py.is_file():
+                main_py = _TOOLKIT_DIR / "main.py"
+            command = [sys.executable, str(main_py), "--repo", str(repo_root)]
+            if args.rules_command == "list":
+                command.append("--list-rules")
+            elif args.rules_command in {"check", "test"}:
+                command.append("--check-rules")
+                if getattr(args, "corpus", None):
+                    command.extend(["--corpus", str(args.corpus)])
+            else:
+                command.extend(["--explain", args.rule_id])
+            return subprocess.run(command, cwd=str(repo_root), check=False).returncode
         elif args.command in ("check-rules", "explain", "suppressions"):
             repo_root = find_repo_root(target)
             main_py = get_install_dir(repo_root) / "main.py"
             if not main_py.is_file():
+                main_py = _TOOLKIT_DIR / "main.py"
+            if not main_py.is_file():
                 print(
-                    "[commit-guard] ERROR: Commit Guard isn't installed here yet. "
-                    "Run `install` first.",
+                    "[commit-guard] ERROR: Commit Guard scan engine is missing.",
                     file=sys.stderr,
                 )
                 return 2

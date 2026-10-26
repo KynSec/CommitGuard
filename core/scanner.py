@@ -39,6 +39,7 @@ import hashlib
 import math
 import re
 from dataclasses import dataclass, field, replace
+from typing import Any
 
 from core.entropy import shannon_entropy
 from core.git_diff import DiffLine
@@ -163,6 +164,42 @@ class Finding:
     fixed_versions: tuple[str, ...] = field(default_factory=tuple)
     aliases: tuple[str, ...] = field(default_factory=tuple)
     advisory_url: str | None = None
+    schema_version: int = 3
+    id: str = ""
+    engine: str = ""
+    category: str = ""
+    confidence: str = "medium"
+    column: int | None = None
+    end_line: int | None = None
+    end_column: int | None = None
+    fix: dict[str, Any] | None = None
+    references: tuple[str, ...] = field(default_factory=tuple)
+    code_flows: tuple[dict[str, Any], ...] = field(default_factory=tuple)
+    also_reported_by: tuple[str, ...] = field(default_factory=tuple)
+    rule_version: str = ""
+    pack_version: str = ""
+    provenance: dict[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        from core.findings import infer_category, infer_confidence, infer_engine
+
+        source = self.source or "unknown"
+        engine = infer_engine(source, self.rule_id, self.engine)
+        category = infer_category(
+            rule_id=self.rule_id,
+            source=source,
+            tags=self.tags,
+            cwe=self.cwe,
+            fixed_versions=self.fixed_versions,
+            category=self.category,
+        )
+        object.__setattr__(self, "engine", engine)
+        object.__setattr__(self, "category", category)
+        object.__setattr__(self, "schema_version", 3)
+        if not self.id:
+            object.__setattr__(self, "id", self.fingerprint)
+        if self.confidence == "medium" and engine in {"ast", "semgrep", "sca"}:
+            object.__setattr__(self, "confidence", infer_confidence(engine))
 
     def display_code(self, show_secrets: bool = False) -> str:
         """Returns the snippet to put in a report, redacted by default."""

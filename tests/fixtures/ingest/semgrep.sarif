@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "Semgrep",
+          "version": "1.90.0",
+          "rules": [
+            {
+              "id": "python.lang.security.audit.sql-injection",
+              "name": "sql-injection",
+              "shortDescription": {"text": "SQL injection"},
+              "helpUri": "https://semgrep.dev/r/python.lang.security.audit.sql-injection",
+              "defaultConfiguration": {"level": "error"},
+              "properties": {"tags": ["security", "CWE-89"], "cwe": "CWE-89"}
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "python.lang.security.audit.sql-injection",
+          "level": "error",
+          "message": {"text": "User input reaches an SQL sink."},
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {"uri": "src/db.py"},
+                "region": {"startLine": 12, "startColumn": 5, "endLine": 12, "endColumn": 30, "snippet": {"text": "cursor.execute(query)"}}
+              }
+            }
+          ],
+          "partialFingerprints": {"primaryLocationLineHash": "0123456789abcdef"},
+          "fixes": [
+            {
+              "description": {"text": "Use a parameterized query"},
+              "artifactChanges": [
+                {
+                  "artifactLocation": {"uri": "src/db.py"},
+                  "replacements": [
+                    {"deletedRegion": {"startLine": 12, "endLine": 12}, "insertedContent": {"text": "cursor.execute('SELECT 1', (value,))"}}
+                  ]
+                }
+              ]
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {"location": {"physicalLocation": {"artifactLocation": {"uri": "src/db.py"}, "region": {"startLine": 9}}, "message": {"text": "source"}}},
+                    {"location": {"physicalLocation": {"artifactLocation": {"uri": "src/db.py"}, "region": {"startLine": 12}}, "message": {"text": "sink"}}}
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

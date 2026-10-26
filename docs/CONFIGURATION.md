@@ -66,6 +66,20 @@ paths = []                         # findings in these paths are suppressed
 
 [severity]
 # rule-id = "critical" | "high" | "medium" | "low" | "info"
+
+[gate]
+profile = "balanced"               # strict | balanced | audit
+threshold = "high"
+fail_on = "new"
+ratchet = true
+allow_expired_triage = false
+enforce = true                     # false reports audit findings but passes
+max_new = { critical = 0, high = 0, medium = 25, low = 100 }
+
+[gate.budgets]
+# "*" = { critical = 0, high = 0, medium = 25, low = 100 }
+# ".py" = { critical = 0, high = 0, medium = 10, low = 50 }
+# secret = { critical = 0, high = 0, medium = 0, low = 0 }
 ```
 
 ### `[scan]`
@@ -85,6 +99,14 @@ paths = []                         # findings in these paths are suppressed
 | `fail_on` | string | `"all"` | `all` blocks every finding. `new` blocks only findings not present in `.commit_guard_ignore`; baselined findings stay visible with `baselineState: unchanged`. |
 | `filter_placeholders` | bool | `true` | Drop secret matches whose value is an obvious placeholder (`your_token_here`, `changeme`, `<...>`). |
 | `rules_dir` | string | unset | Alternate rules directory. Relative paths resolve against the repo root. |
+
+### `[gate]`
+
+Policy v1. `scan --gate`, `gate`, and the generated hooks evaluate this table.
+Keys: `profile`, `threshold`, `fail_on`, `ratchet`, `allow_expired_triage`,
+`enforce`, `max_new`, and `budgets` (path/category keys).
+Profiles here are policy profiles, not installer profiles. See
+[POLICY.md](POLICY.md).
 
 ### `[paths]`
 
@@ -270,3 +292,7 @@ suppressions are hiding.
 | `audit` | `high` + `soft_fail = true` | Report everything but never block. |
 
 The installer keeps an existing config unless you add `--force`.
+
+Installer profiles control the initial `[scan]` template. Policy profiles
+(`--policy-profile strict|balanced|audit`) control gate enforcement and are
+independent of the installer profile.

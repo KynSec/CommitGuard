@@ -1,0 +1,16 @@
+[
+  {
+    "RuleID": "github-pat",
+    "Description": "GitHub Personal Access Token",
+    "File": "config/settings.py",
+    "StartLine": 3,
+    "EndLine": 3,
+    "StartColumn": 12,
+    "EndColumn": 52,
+    "Match": "TOKEN = \"ghp_superSecretValue1234567890\"",
+    "Secret": "ghp_superSecretValue1234567890",
+    "Tags": ["key", "github"],
+    "Fingerprint": "config/settings.py:github-pat:3",
+    "Entropy": 4.2
+  }
+]

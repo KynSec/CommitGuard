@@ -40,13 +40,16 @@ jobs:
         run: >-
           python -m py_compile
           main.py install_hook.py gui_server.py gui_actions.py gui_page.py
-          core/*.py
+          core/*.py core/engines/*.py benchmarks/*.py
 
       - name: Rule corpus check
         run: python main.py --check-rules
 
       - name: Tests
         run: python -m unittest discover -s tests -v
+
+      - name: Staged-diff benchmark
+        run: python benchmarks/scan_benchmark.py --iterations 3 --max-median-ms 2000
 
   quality:
     name: Lint, types, and package
@@ -70,7 +73,7 @@ jobs:
         run: >-
           ruff check
           main.py install_hook.py gui_server.py gui_actions.py gui_page.py
-          core tests
+          core tests benchmarks
 
       - name: Type check
         run: >-

@@ -4,6 +4,20 @@
 
 ### Added
 
+- Commit Guard 3.0 preview: JSON schema v3 with stable IDs, engine/category/
+  confidence metadata, spans, fixes, references, code flows, and provenance.
+- Engine protocol, timeout-isolated parallel runner, deterministic dedupe, and
+  built-in `regex` and `ast` engine adapters.
+- Policy v1 with `strict`, `balanced`, and `audit` profiles, severity/rate
+  budgets, new-code gating, baseline ratchet, and expired-triage handling.
+- Committed triage state in `.commit_guard/triage.yaml`.
+- SARIF/native ingestion for Semgrep, gitleaks, Trivy, Checkov, and Bandit,
+  plus multi-report merging.
+- CLI commands: `gate`, `ingest`, `report merge`, `policy validate|explain`,
+  and `triage list|set|prune|audit`.
+- `scan --gate` and policy-aware pre-commit/pre-push hooks.
+- Staged-diff benchmark and CI performance regression job.
+- GUI policy-gate and triage actions.
 - Apache-2.0 licensing package: SPDX license metadata, `NOTICE`, and
   `THIRD_PARTY_NOTICES.md`.
 - `rules/PROVENANCE.yaml` with source, revision, license, retrieval date, and
@@ -38,6 +52,10 @@
 
 ### Changed
 
+- JSON reports now use `schema_version: 3`; SARIF remains 2.1.0 with additional
+  fix/code-flow properties. See `docs/UPGRADE-2.x-to-3.x.md`.
+- GitHub Action gains `gate`, `policy-file`, and `policy-profile` inputs.
+- `core.engines` is included in the wheel and installer copy.
 - Redesigned the local GUI with a responsive sidebar, page-aware headers,
   light/dark themes, accessible focus states, consistent cards, sticky table
   headers, mobile layouts, and deep-linkable tabs.

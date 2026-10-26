@@ -1,0 +1,15 @@
+{
+  "results": {
+    "failed_checks": [
+      {
+        "check_id": "CKV_AWS_24",
+        "check_name": "Ensure no security groups allow ingress from 0.0.0.0/0 to port 22",
+        "file_path": "deploy/main.tf",
+        "file_line_range": [10, 14],
+        "resource": "aws_security_group.bad",
+        "severity": "HIGH",
+        "guideline": "https://example.invalid/checkov/CKV_AWS_24"
+      }
+    ]
+  }
+}

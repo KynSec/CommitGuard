@@ -56,7 +56,7 @@ class ReporterTests(unittest.TestCase):
 
     def test_json_structure_and_redaction(self):
         payload = json.loads(build_json_report([finding()], "high"))
-        self.assertEqual(payload["schema_version"], 2)
+        self.assertEqual(payload["schema_version"], 3)
         self.assertTrue(payload["blocked"])
         self.assertTrue(payload["redacted"])
         self.assertEqual(payload["summary"]["high"], 1)

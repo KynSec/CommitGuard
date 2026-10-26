@@ -36,7 +36,7 @@ Source = "https://github.com/AmrEldhshan/CommitGuard"
 
 [tool.setuptools]
 py-modules = ["main", "install_hook", "gui_server", "gui_actions", "gui_page"]
-packages = ["core", "rules"]
+packages = ["core", "core.engines", "rules", "rules.ai_security", "rules.iac"]
 include-package-data = true
 
 [tool.setuptools.dynamic]

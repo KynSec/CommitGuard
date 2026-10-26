@@ -1,0 +1,17 @@
+{
+  "results": [
+    {
+      "check_id": "python.lang.security.audit.eval-injection",
+      "path": "src/eval.py",
+      "start": {"line": 4, "col": 5},
+      "end": {"line": 4, "col": 24},
+      "extra": {
+        "message": "Avoid eval on untrusted input.",
+        "severity": "WARNING",
+        "lines": "result = eval(user_input)",
+        "metadata": {"cwe": ["CWE-95: Improper Neutralization"], "tags": ["security"], "references": ["https://example.invalid/eval"]}
+      }
+    }
+  ],
+  "errors": []
+}

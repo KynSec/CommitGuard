@@ -32,6 +32,13 @@ Supported schema:
 
     [severity]
     "semgrep-generic-hardcoded-password" = "low"
+
+    [gate]
+    profile = "balanced"        # strict | balanced | audit (for --gate)
+    threshold = "high"
+    fail_on = "new"
+    ratchet = true
+    max_new = { critical = 0, high = 0, medium = 25, low = 100 }
 """
 
 from __future__ import annotations
@@ -270,6 +277,14 @@ paths = [
 [severity]
 # Raise or lower individual rules.
 # "semgrep-generic-hardcoded-password" = "low"
+
+[gate]
+# Policy v1, used by `scan --gate` and generated hooks.
+profile = "balanced"        # strict | balanced | audit
+threshold = "high"
+fail_on = "new"
+ratchet = true
+max_new = { critical = 0, high = 0, medium = 25, low = 100 }
 """
 
 

@@ -57,10 +57,8 @@ from __future__ import annotations
 
 import argparse
 import os
-import re
 import sys
 import time
-from dataclasses import replace
 from datetime import date
 from pathlib import Path
 
@@ -70,7 +68,7 @@ if str(_PROJECT_ROOT) not in sys.path:
 
 try:
     from core import __version__
-    from core.ast_taint import TAINT_RULES, scan_python_taint
+    from core.ast_taint import TAINT_RULES
     from core.autofix import AutoFixError, apply_fixes
     from core.config import (
         CONFIG_FILENAME,
@@ -87,8 +85,8 @@ try:
         build_dependency_graph,
         write_dependency_graph,
     )
+    from core.engines import Runner, ScanContext
     from core.git_diff import (
-        DiffLine,
         GitDiffError,
         get_all_files,
         get_context_lines,
@@ -98,7 +96,6 @@ try:
         get_staged_diff,
         is_inside_git_repo,
     )
-    from core.paths import PathMatcher
     from core.pr_creator import (
         GitHubAPIError,
         GitHubClient,
@@ -128,13 +125,10 @@ try:
     from core.sca import scan_dependencies
     from core.scanner import (
         Baseline,
-        Finding,
         annotate_baseline,
         apply_baseline,
         apply_report_allowlist,
         has_blocking_findings,
-        is_inline_suppressed,
-        scan_diff,
     )
     from core.suppressions import (
         add_fingerprints,
@@ -522,6 +516,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
                         help="Title for the generated pull request.")
     parser.add_argument("--review-pr", action="store_true",
                         help="Post inline auto-fix suggestions on the originating pull request.")
+    parser.add_argument("--gate", action="store_true", dest="use_policy",
+                        help="Evaluate policy v1 after scanning (threshold, budgets, ratchet).")
+    parser.add_argument("--policy", type=Path, default=None,
+                        help="Policy TOML file (default: [gate] in .commit_guard.toml).")
+    parser.add_argument("--policy-profile", choices=("strict", "balanced", "audit"),
+                        default=None, help="Override the policy profile.")
     parser.add_argument("--audit-suppressions", action="store_true",
                         help="Audit .commit_guard_ignore entries for expiry/staleness.")
     parser.add_argument("--strict", action="store_true",
@@ -625,60 +625,6 @@ def _dedupe_diff_lines(lines: list) -> list:
     return unique
 
 
-def _scan_python_taint(
-    files: dict[str, list[str]] | None,
-    diff_lines: list[DiffLine],
-    *,
-    ignore_inline: bool,
-    ignored_files: set[str],
-    ignored_rule_ids: set[str],
-    path_excludes: tuple[str, ...],
-    path_allowlist_regexes: tuple[re.Pattern[str], ...],
-    severity_overrides: dict[str, str],
-) -> list[Finding]:
-    changed_lines: dict[str, set[int]] = {}
-    for diff_line in diff_lines:
-        changed_lines.setdefault(diff_line.file_path, set()).add(diff_line.line_number)
-    result = scan_python_taint(files or {}, changed_lines)
-    for warning in result.warnings:
-        print(f"[commit-guard] AST WARNING: {warning}", file=sys.stderr)
-
-    excluded = PathMatcher(path_excludes)
-    findings: list[Finding] = []
-    for match in result.matches:
-        finding = match.finding
-        lines = (files or {}).get(finding.file, [])
-        changed = changed_lines.get(finding.file, set())
-        if (
-            finding.file in ignored_files
-            or finding.rule_id in ignored_rule_ids
-            or excluded.matches(finding.file)
-            or any(pattern.search(finding.file) for pattern in path_allowlist_regexes)
-        ):
-            continue
-        if is_inline_suppressed(
-            lines,
-            finding.line_number,
-            finding.rule_id,
-            changed_lines=changed,
-            ignore_inline=ignore_inline,
-        ) or is_inline_suppressed(
-            lines,
-            match.sink_line,
-            finding.rule_id,
-            changed_lines=changed,
-            ignore_inline=ignore_inline,
-        ):
-            continue
-        findings.append(
-            replace(
-                finding,
-                severity=severity_overrides.get(finding.rule_id, finding.severity),
-            )
-        )
-    return findings
-
-
 def run_scan(
     rules_dir: Path | None = None,
     report_path: Path | None = None,
@@ -716,6 +662,9 @@ def run_scan(
     sca_timeout: int | None = None,
     fix: bool | None = None,
     fix_dry_run: bool | None = None,
+    use_policy: bool = False,
+    policy_path: Path | None = None,
+    policy_profile: str | None = None,
     create_pr: bool = False,
     pr_base: str | None = None,
     pr_branch: str | None = None,
@@ -882,19 +831,10 @@ def run_scan(
     ruleset = apply_severity_overrides(ruleset, config.severity_overrides)
 
     if audit_suppressions:
-        findings = scan_diff(
-            diff_lines,
-            ruleset.rules,
-            allowlist_regexes=ruleset.line_allowlist,
-            allowlist_path_regexes=ruleset.path_allowlist,
-            path_excludes=config.exclude,
-            ignore_inline=config.ignore_inline,
-            ignored_files=ignored_files,
-            filter_placeholders=config.filter_placeholders,
-        )
         python_paths = [
             path for path in changed_paths if path.lower().endswith((".py", ".pyi"))
         ]
+        audit_file_lines = None
         if python_paths:
             try:
                 audit_file_lines = get_context_lines(
@@ -906,18 +846,33 @@ def run_scan(
                     file=sys.stderr,
                 )
                 return 2
-            findings.extend(
-                _scan_python_taint(
-                    audit_file_lines,
-                    diff_lines,
-                    ignore_inline=config.ignore_inline,
-                    ignored_files=ignored_files,
-                    ignored_rule_ids=set(),
-                    path_excludes=config.exclude,
-                    path_allowlist_regexes=ruleset.path_allowlist,
-                    severity_overrides=config.severity_overrides,
-                )
-            )
+        engine_context = ScanContext(
+            repo_root=target_repo,
+            diff_lines=tuple(diff_lines),
+            changed_paths=tuple(changed_paths),
+            files=audit_file_lines,
+            rules=tuple(ruleset.rules),
+            line_allowlist=ruleset.line_allowlist,
+            path_allowlist=ruleset.path_allowlist,
+            path_excludes=config.exclude,
+            ignore_inline=config.ignore_inline,
+            ignored_files=frozenset(ignored_files),
+            ignored_rule_ids=frozenset(),
+            filter_placeholders=config.filter_placeholders,
+            file_lines=audit_file_lines,
+            severity_overrides=dict(config.severity_overrides),
+            workers=2,
+        )
+        engine_report = Runner(workers=2).run(
+            engine_context, names=("regex", "ast")
+        )
+        findings = list(engine_report.findings)
+        for warning in engine_report.warnings:
+            print(f"[commit-guard] ENGINE WARNING: {warning}", file=sys.stderr)
+        for error in engine_report.errors:
+            print(f"[commit-guard] ENGINE ERROR: {error}", file=sys.stderr)
+        if any(error.startswith("regex:") for error in engine_report.errors):
+            return 2
         entries = parse_baseline_entries(resolved_baseline_path)
         issues = audit_entries(
             entries,
@@ -1026,34 +981,38 @@ def run_scan(
     ignored_rule_ids = set(baseline.rule_ids) | set(config.allowlist_rules)
     scan_limit = config.max_findings + 1 if config.max_findings else 0
 
-    findings = scan_diff(
-        diff_lines,
-        ruleset.rules,
-        ignored_rule_ids=ignored_rule_ids,
-        allowlist_regexes=ruleset.line_allowlist,
-        allowlist_path_regexes=ruleset.path_allowlist,
+    engine_context = ScanContext(
+        repo_root=target_repo,
+        diff_lines=tuple(diff_lines),
+        changed_paths=tuple(changed_paths),
+        files=file_lines,
+        rules=tuple(ruleset.rules),
+        line_allowlist=ruleset.line_allowlist,
+        path_allowlist=ruleset.path_allowlist,
         path_excludes=config.exclude,
         ignore_inline=config.ignore_inline,
-        max_findings=scan_limit,
-        ignored_files=ignored_files,
+        ignored_files=frozenset(ignored_files),
+        ignored_rule_ids=frozenset(ignored_rule_ids),
         filter_placeholders=config.filter_placeholders,
+        max_findings=scan_limit,
         file_lines=file_lines,
+        severity_overrides=dict(config.severity_overrides),
         detect_ignore_file=history is None and not pre_push,
+        workers=2,
     )
-
-    if python_paths and history is None and not pre_push:
-        findings.extend(
-            _scan_python_taint(
-                file_lines,
-                diff_lines,
-                ignore_inline=config.ignore_inline,
-                ignored_files=ignored_files,
-                ignored_rule_ids=ignored_rule_ids,
-                path_excludes=config.exclude,
-                path_allowlist_regexes=ruleset.path_allowlist,
-                severity_overrides=config.severity_overrides,
-            )
-        )
+    engine_report = Runner(workers=2).run(
+        engine_context, names=("regex", "ast")
+    )
+    findings = list(engine_report.findings)
+    for warning in engine_report.warnings:
+        if warning.startswith("ast:"):
+            print(f"[commit-guard] AST WARNING: {warning[4:].strip()}", file=sys.stderr)
+        else:
+            print(f"[commit-guard] ENGINE WARNING: {warning}", file=sys.stderr)
+    for error in engine_report.errors:
+        print(f"[commit-guard] ENGINE ERROR: {error}", file=sys.stderr)
+    if any(error.startswith("regex:") for error in engine_report.errors):
+        return 2
 
     sca_result = None
     if config.sca:
@@ -1130,6 +1089,45 @@ def run_scan(
     elif has_baseline:
         findings = apply_baseline(findings, effective_baseline)
 
+    gate_result = None
+    if use_policy or policy_path is not None:
+        try:
+            from core.policy import PolicyError, evaluate_gate, load_policy
+            from core.triage import TriageError, apply_triage, load_triage
+
+            policy = load_policy(
+                target_repo,
+                policy_path,
+                profile=policy_profile,
+                threshold=threshold,
+            )
+            triage_result = apply_triage(findings, load_triage(target_repo))
+            findings = list(triage_result.visible)
+            gate_result = evaluate_gate(
+                findings,
+                policy,
+                suppressed={"triage": triage_result.suppressed_total},
+            )
+        except (OSError, PolicyError, TriageError) as exc:
+            print(f"[commit-guard] ERROR: policy gate failed: {exc}", file=sys.stderr)
+            return 2
+        if not quiet:
+            status = "PASSED" if gate_result.passed else "FAILED"
+            print(
+                f"[commit-guard] Policy gate: {status} "
+                f"({gate_result.profile}, threshold {gate_result.threshold}, "
+                f"new={gate_result.new_findings})"
+            )
+            for reason in gate_result.reasons[:20]:
+                location = (
+                    f"{reason['path']}:{reason['line']}"
+                    if reason.get("path")
+                    else "-"
+                )
+                print(
+                    f"  - {location} [{reason['rule_id']}] {reason['reason']}"
+                )
+
     autofix_result = None
     if effective_fix:
         try:
@@ -1205,7 +1203,10 @@ def run_scan(
         return 2
     written.extend(dependency_paths)
 
-    blocked = has_blocking_findings(findings, effective_threshold)
+    if gate_result is not None:
+        blocked = not gate_result.passed
+    else:
+        blocked = has_blocking_findings(findings, effective_threshold)
     if not quiet:
         print_cli_summary(
             findings,
@@ -1333,6 +1334,9 @@ def main(argv: list[str] | None = None) -> int:
         pr_branch=args.pr_branch,
         pr_title=args.pr_title,
         review_pr=args.review_pr,
+        use_policy=bool(args.use_policy),
+        policy_path=args.policy,
+        policy_profile=args.policy_profile,
     )
 
 

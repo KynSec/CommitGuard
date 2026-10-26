@@ -1,0 +1,18 @@
+{
+  "results": [
+    {
+      "filename": "app.py",
+      "line_number": 8,
+      "col_offset": 4,
+      "end_col_offset": 20,
+      "issue_severity": "MEDIUM",
+      "issue_confidence": "HIGH",
+      "test_id": "B602",
+      "test_name": "subprocess_popen_with_shell_equals_true",
+      "issue_text": "subprocess call with shell=True",
+      "code": "subprocess.run(cmd, shell=True)",
+      "more_info": "https://example.invalid/bandit/B602",
+      "issue_cwe": {"id": 78}
+    }
+  ]
+}

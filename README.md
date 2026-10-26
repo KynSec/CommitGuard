@@ -22,6 +22,9 @@ or cloud service. Online dependency checks and GitHub PR features are opt-in.
 | [Configuration](docs/CONFIGURATION.md) | All settings, defaults, profiles, and precedence. |
 | [Rule authoring](docs/RULES.md) | Rule formats, suppression, validation, and current matcher support. |
 | [CI integrations](docs/CI.md) | GitHub Actions, SARIF, pre-commit, GitLab, and Jenkins examples. |
+| [Policy](docs/POLICY.md) | Gate profiles, budgets, ratchet, and triage state. |
+| [Interoperability](docs/INTEROP.md) | SARIF/native ingestion and report merging. |
+| [Upgrade guide](docs/UPGRADE-2.x-to-3.x.md) | Moving from schema 2 / Commit Guard 2.x to 3.x. |
 | [Troubleshooting](docs/TROUBLESHOOTING.md) | Common setup, hook, reporting, and false-positive issues. |
 | [Security policy](SECURITY.md) | Private reporting, disclosure targets, and security releases. |
 | [Threat model](docs/THREAT_MODEL.md) | Assets, adversaries, controls, and abuse cases for the tool itself. |
@@ -270,6 +273,10 @@ Run these from inside an installed repository:
 | `./commit-guard check-rules` | Validate all rules and corpus samples. |
 | `./commit-guard explain RULE_ID` | Show one rule's pattern, paths, and context. |
 | `./commit-guard suppressions audit` | Report expired/stale baseline entries. |
+| `./commit-guard gate` | Evaluate policy v1 for staged changes. |
+| `./commit-guard triage list` | Show committed triage decisions. |
+| `./commit-guard ingest FILE` | Normalize SARIF or a supported native report. |
+| `./commit-guard report merge FILES...` | Merge reports into one JSON document. |
 
 On Windows without Git Bash, use `commit-guard.bat`. Running the manager with
 no subcommand opens an interactive menu.
@@ -293,6 +300,8 @@ no subcommand opens an interactive menu.
 ./commit-guard scan --format html            # self-contained report and trends
 ./commit-guard scan --fix-dry-run            # preview eligible rule-provided fixes
 ./commit-guard scan --fix                    # apply eligible fixes and re-stage files
+./commit-guard scan --gate                    # apply policy budgets/ratchet
+./commit-guard scan --gate --policy-profile audit
 ./commit-guard scan --soft-fail              # report, but exit 0
 ./commit-guard scan --fail-on new            # block only findings new to baseline
 ./commit-guard scan --update-baseline        # accept current findings
@@ -361,8 +370,10 @@ Every scan writes to `commit_guard_reports/` by default:
 | GitLab Code Quality | `report.gitlab.json` | GitLab merge-request widgets. |
 | Checkstyle XML | `report.checkstyle.xml` | CI dashboards and IDE integrations. |
 
-Reports include severity, file, line, rule ID, source, CWE, tags, a stable
-fingerprint, and the flagged snippet.
+Reports use JSON schema 3 and include severity, file, line, rule ID, engine,
+category, confidence, source, CWE, tags, a stable fingerprint, and the flagged
+snippet. Schema 3 is additive; see the
+[upgrade guide](docs/UPGRADE-2.x-to-3.x.md).
 
 **Secrets are masked by default** (`AK********LE`). Use `--show-secrets`
 (or `redact = false` in config) only when you intentionally need the raw value
@@ -584,10 +595,11 @@ jobs:
           fetch-depth: 0
       - uses: AmrEldhshan/CommitGuard@main
         with:
-          threshold: high
           format: sarif
           scan-mode: all
           dep-graph: true
+          gate: true
+          policy-profile: balanced
       - name: Upload SARIF to GitHub code scanning
         if: always()
         uses: github/codeql-action/upload-sarif@v3

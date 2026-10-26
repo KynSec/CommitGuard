@@ -55,6 +55,22 @@ inputs:
     description: Report findings without failing the job.
     required: false
     default: "false"
+  gate:
+    description: Evaluate policy v1 (threshold, new-code, budgets, ratchet).
+    required: false
+    default: "true"
+  policy-file:
+    description: Path to a policy TOML file (defaults to [gate] in .commit_guard.toml).
+    required: false
+    default: ""
+  policy-profile:
+    description: Policy profile override (strict, balanced, audit).
+    required: false
+    default: ""
+  policy-threshold:
+    description: Policy threshold override (empty uses the policy/profile threshold).
+    required: false
+    default: ""
   github-token:
     description: Token used for report PRs. Defaults to github.token.
     required: false
@@ -98,9 +114,13 @@ runs:
         CG_PR_TITLE: ${{ inputs.pr-title }}
         CG_REVIEW_PR: ${{ inputs.review-pr }}
         CG_SOFT_FAIL: ${{ inputs.soft-fail }}
+        CG_GATE: ${{ inputs.gate }}
+        CG_POLICY_FILE: ${{ inputs.policy-file }}
+        CG_POLICY_PROFILE: ${{ inputs.policy-profile }}
+        CG_POLICY_THRESHOLD: ${{ inputs.policy-threshold }}
         CG_EXTRA_ARGS: ${{ inputs.extra-args }}
       run: |
-        args=(--threshold "$CG_THRESHOLD" --format "$CG_FORMAT")
+        args=(--format "$CG_FORMAT")
         case "$CG_SCAN_MODE" in
           all) args+=(--all) ;;
           staged) ;;
@@ -117,6 +137,14 @@ runs:
         if [ "$CG_REVIEW_PR" = "true" ]; then
           args+=(--review-pr)
           if [ -z "${GITHUB_TOKEN:-}" ]; then echo "::error::github-token is required for review-pr"; exit 2; fi
+        fi
+        if [ "$CG_GATE" = "true" ]; then
+          args+=(--gate)
+          if [ -n "$CG_POLICY_FILE" ]; then args+=(--policy "$CG_POLICY_FILE"); fi
+          if [ -n "$CG_POLICY_PROFILE" ]; then args+=(--policy-profile "$CG_POLICY_PROFILE"); fi
+          if [ -n "$CG_POLICY_THRESHOLD" ]; then args+=(--threshold "$CG_POLICY_THRESHOLD"); fi
+        else
+          args+=(--threshold "$CG_THRESHOLD")
         fi
         if [ "$CG_SOFT_FAIL" = "true" ]; then args+=(--soft-fail); fi
         if [ -n "$CG_EXTRA_ARGS" ]; then

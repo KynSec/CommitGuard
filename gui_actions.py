@@ -35,6 +35,7 @@ MAINTENANCE_TIMEOUT = 300
 
 VALID_MODES = ("staged", "all", "history", "diff")
 VALID_THRESHOLDS = ("critical", "high", "medium", "low", "info")
+VALID_POLICY_PROFILES = ("strict", "balanced", "audit")
 VALID_DEP_GRAPH_FORMATS = ("mermaid", "json", "dot", "all")
 REPORT_FORMATS = {
     "markdown": (".md", "text/markdown"),
@@ -1439,6 +1440,16 @@ def build_scan_command(
         command.append("--no-placeholder-filter")
     if _as_bool(opts.get("no_config")):
         command.append("--no-config")
+    if _as_bool(opts.get("gate")):
+        command.append("--gate")
+        policy_path = _path_option(opts.get("policy_path"), "policy")
+        if policy_path:
+            command.extend(["--policy", policy_path])
+        profile = str(opts.get("policy_profile") or "").strip().lower()
+        if profile:
+            if profile not in VALID_POLICY_PROFILES:
+                raise ActionError(f"Unknown policy profile: {profile}")
+            command.extend(["--policy-profile", profile])
     if _as_bool(opts.get("strict")):
         command.append("--strict")
     if _as_bool(opts.get("soft_fail")):
@@ -1604,31 +1615,111 @@ def run_scan(
 # --------------------------------------------------------------------------
 
 def findings_from_report(report: dict) -> list:
-    from core.scanner import Finding
+    from core.findings import finding_from_dict
 
     findings = []
     for item in report.get("findings", []):
-        findings.append(
-            Finding(
-                file=str(item.get("file", "")),
-                line_number=int(item.get("line") or 0),
-                rule_id=str(item.get("rule_id", "")),
-                description=str(item.get("description", "")),
-                severity=str(item.get("severity", "info")),
-                source=str(item.get("source", "")),
-                flagged_code=str(item.get("flagged_code", "")),
-                redacted_code=str(item.get("flagged_code", "")),
-                fingerprint=str(item.get("fingerprint", "")),
-                tags=tuple(item.get("tags") or ()),
-                cwe=item.get("cwe"),
-                blocking=bool(item.get("blocking", True)),
-                baseline_state=str(item.get("baseline_state", "new")),
-                fixed_versions=tuple(item.get("fixed_versions") or ()),
-                aliases=tuple(item.get("aliases") or ()),
-                advisory_url=item.get("advisory_url"),
-            )
-        )
+        payload = dict(item)
+        payload.setdefault("description", payload.get("rule_id", "finding"))
+        payload.setdefault("source", "commit-guard")
+        payload.setdefault("redacted_code", payload.get("flagged_code", ""))
+        findings.append(finding_from_dict(payload))
     return findings
+
+
+def policy_gate(
+    target: str | Path,
+    report: dict,
+    options: dict | None = None,
+) -> dict:
+    repo = find_repo_root(target)
+    opts = options or {}
+    from core.policy import PolicyError, evaluate_gate, load_policy
+    from core.suppressions import build_baseline, parse_baseline_entries
+    from core.triage import TriageError, apply_triage, load_triage
+
+    profile = str(opts.get("profile") or "").strip().lower() or None
+    if profile is not None and profile not in VALID_POLICY_PROFILES:
+        raise ActionError(f"Unknown policy profile: {profile}")
+    threshold = str(opts.get("threshold") or "").strip().lower() or None
+    if threshold is not None and threshold not in VALID_THRESHOLDS:
+        raise ActionError(f"Unknown threshold: {threshold}")
+    policy_path = _path_option(opts.get("policy_path"), "policy")
+    try:
+        policy = load_policy(
+            repo,
+            policy_path or None,
+            profile=profile,
+            threshold=threshold,
+        )
+        triage = apply_triage(findings_from_report(report), load_triage(repo))
+        baseline_path = repo / BASELINE_FILENAME
+        baseline = (
+            set(build_baseline(parse_baseline_entries(baseline_path)).fingerprints)
+            if baseline_path.is_file()
+            else set()
+        )
+    except (OSError, PolicyError, TriageError) as exc:
+        raise ActionError(str(exc)) from exc
+    result = evaluate_gate(
+        triage.visible,
+        policy,
+        baseline_fingerprints=baseline,
+        suppressed={"triage": triage.suppressed_total},
+    )
+    return {
+        "ok": True,
+        "repo": str(repo),
+        "gate": result.to_dict(),
+        "suppressed": triage.suppressed,
+        "expired": [entry.to_dict() for entry in triage.expired],
+        "fixed_still_present": [
+            entry.to_dict() for entry in triage.fixed_still_present
+        ],
+    }
+
+
+def triage_state(target: str | Path) -> dict:
+    repo = find_repo_root(target)
+    from core.triage import load_triage
+
+    try:
+        state = load_triage(repo)
+    except OSError as exc:
+        raise ActionError(str(exc)) from exc
+    return {"ok": True, "repo": str(repo), **state.to_dict()}
+
+
+def triage_set(
+    target: str | Path,
+    fingerprint: str,
+    state: str,
+    options: dict | None = None,
+) -> dict:
+    repo = find_repo_root(target)
+    opts = options or {}
+    from core.triage import TriageError, load_triage, save_triage, set_entry
+
+    if not fingerprint.strip():
+        raise ActionError("A finding fingerprint is required.")
+    try:
+        current = load_triage(repo)
+        updated = set_entry(
+            current,
+            fingerprint=fingerprint,
+            triage_state=state,
+            owner=str(opts.get("owner") or ""),
+            reason=str(opts.get("reason") or ""),
+            rule_id=str(opts.get("rule_id") or ""),
+            path=str(opts.get("path") or ""),
+            ticket=str(opts.get("ticket") or ""),
+            expires=str(opts.get("expires") or ""),
+            evidence=str(opts.get("evidence") or ""),
+        )
+        path = save_triage(updated)
+    except (OSError, TriageError) as exc:
+        raise ActionError(str(exc)) from exc
+    return {"ok": True, "repo": str(repo), "path": str(path), **updated.to_dict()}
 
 
 def list_rules(target: str | Path, engine: str | Path | None = None) -> dict:

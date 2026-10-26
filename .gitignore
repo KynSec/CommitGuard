@@ -1,5 +1,6 @@
 # Commit Guard local install artifacts (never commit these)
-.commit_guard/
+.commit_guard/*
+!.commit_guard/triage.yaml
 commit_guard_reports/
 commit-guard
 commit-guard.bat

@@ -51,12 +51,14 @@ class InstallerTests(unittest.TestCase):
         install_dir = self.quiet_install()
         hook = self.root / ".git" / "hooks" / "pre-commit"
         self.assertTrue((install_dir / "main.py").is_file())
+        self.assertTrue((install_dir / "core" / "engines" / "runner.py").is_file())
         self.assertTrue((install_dir / "gui_server.py").is_file())
         self.assertTrue((install_dir / "gui_actions.py").is_file())
         self.assertTrue((install_dir / "gui_page.py").is_file())
         self.assertTrue((self.root / "commit-guard").is_file())
         self.assertTrue(os.access(hook, os.X_OK))
-        self.assertIn(".commit_guard/", (self.root / ".gitignore").read_text())
+        self.assertIn("--gate", hook.read_text())
+        self.assertIn(".commit_guard/*", (self.root / ".gitignore").read_text())
 
         with contextlib.redirect_stdout(io.StringIO()):
             install_hook.disable(self.root)

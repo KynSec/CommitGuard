@@ -1,0 +1,36 @@
+{
+  "Results": [
+    {
+      "Target": "requirements.txt",
+      "Class": "lang-pkgs",
+      "Type": "pip",
+      "Vulnerabilities": [
+        {
+          "VulnerabilityID": "CVE-2024-0001",
+          "PkgName": "example-package",
+          "InstalledVersion": "1.0.0",
+          "FixedVersion": "1.2.0",
+          "Severity": "HIGH",
+          "Title": "Example package vulnerability",
+          "PrimaryURL": "https://example.invalid/CVE-2024-0001",
+          "CweIDs": ["CWE-400"]
+        }
+      ]
+    },
+    {
+      "Target": "deploy/main.tf",
+      "Class": "config",
+      "Type": "terraform",
+      "Misconfigurations": [
+        {
+          "ID": "AVD-AWS-0001",
+          "Title": "Security group allows all ingress",
+          "Severity": "CRITICAL",
+          "Message": "Ingress is open to the world.",
+          "PrimaryURL": "https://example.invalid/AVD-AWS-0001",
+          "CauseMetadata": {"Resource": "aws_security_group.bad", "StartLine": 7}
+        }
+      ]
+    }
+  ]
+}

@@ -27,6 +27,7 @@ from pathlib import Path
 from typing import Any
 
 from core import __version__
+from core.findings import SCHEMA_VERSION, finding_to_dict
 from core.rule_loader import SEVERITY_ORDER
 from core.scanner import Finding, has_blocking_findings, sort_findings_by_severity
 
@@ -182,7 +183,7 @@ def build_json_report(
     blocked = has_blocking_findings(findings, block_threshold)
 
     payload = {
-        "schema_version": 2,
+        "schema_version": SCHEMA_VERSION,
         "tool": {"name": "CommitGuard", "version": __version__},
         "generated": _timestamp(),
         "block_threshold": block_threshold,
@@ -192,27 +193,64 @@ def build_json_report(
         "summary": counts,
         "total": len(findings),
         "findings": [
-            {
-                "file": finding.file,
-                "line": finding.line_number,
-                "rule_id": finding.rule_id,
-                "severity": finding.severity,
-                "source": finding.source,
-                "description": finding.description,
-                "cwe": finding.cwe,
-                "tags": list(finding.tags),
-                "fingerprint": finding.fingerprint,
-                "blocking": finding.blocking,
-                "baseline_state": finding.baseline_state,
-                "fixed_versions": list(finding.fixed_versions),
-                "aliases": list(finding.aliases),
-                "advisory_url": finding.advisory_url,
-                "flagged_code": finding.display_code(show_secrets),
-            }
+            finding_to_dict(finding, show_secrets=show_secrets)
             for finding in _sorted(findings)
         ],
     }
     return json.dumps(payload, indent=2) + "\n"
+
+
+def _sarif_fix(finding: Finding) -> dict[str, Any]:
+    fix = finding.fix or {}
+    replacements = []
+    for edit in fix.get("edits", []) if isinstance(fix.get("edits"), list) else []:
+        if not isinstance(edit, dict):
+            continue
+        start_line = int(edit.get("start_line") or finding.line_number)
+        region = {
+            "startLine": start_line,
+            "endLine": int(edit.get("end_line") or start_line),
+        }
+        if edit.get("start_column"):
+            region["startColumn"] = int(edit["start_column"])
+        if edit.get("end_column"):
+            region["endColumn"] = int(edit["end_column"])
+        replacements.append(
+            {
+                "deletedRegion": region,
+                "insertedContent": {"text": str(edit.get("replacement", ""))},
+            }
+        )
+    return {
+        "description": {"text": str(fix.get("description") or "Apply suggested fix")},
+        "artifactChanges": [
+            {
+                "artifactLocation": {"uri": finding.file.replace("\\", "/")},
+                "replacements": replacements,
+            }
+        ],
+    }
+
+
+def _sarif_code_flow(finding: Finding) -> dict[str, Any]:
+    locations = []
+    for flow in finding.code_flows:
+        path = str(flow.get("file") or finding.file).replace("\\", "/")
+        line = int(flow.get("line") or finding.line_number)
+        if line < 1:
+            line = finding.line_number
+        locations.append(
+            {
+                "location": {
+                    "physicalLocation": {
+                        "artifactLocation": {"uri": path},
+                        "region": {"startLine": line},
+                    },
+                    "message": {"text": str(flow.get("message") or "data flow")},
+                }
+            }
+        )
+    return {"threadFlows": [{"locations": locations}]}
 
 
 def build_sarif_report(
@@ -235,10 +273,15 @@ def build_sarif_report(
             "defaultConfiguration": {"level": _SARIF_LEVEL.get(finding.severity, "warning")},
             "properties": {
                 "severity": finding.severity,
+                "engine": finding.engine,
+                "category": finding.category,
+                "confidence": finding.confidence,
                 "source": finding.source,
                 "tags": list(finding.tags),
             },
         }
+        if finding.advisory_url:
+            rule["helpUri"] = finding.advisory_url
         if finding.cwe:
             rule["properties"]["cwe"] = finding.cwe
         if finding.aliases:
@@ -249,40 +292,55 @@ def build_sarif_report(
 
     results = []
     for finding in _sorted(findings):
-        region = {
+        region: dict[str, Any] = {
             "startLine": finding.line_number,
             "snippet": {"text": finding.display_code(show_secrets)},
         }
-        results.append(
-            {
-                "ruleId": finding.rule_id,
-                "ruleIndex": rule_indexes[finding.rule_id],
-                "level": _SARIF_LEVEL.get(finding.severity, "warning"),
-                "message": {"text": f"{finding.description} ({finding.rule_id})"},
-                "locations": [
-                    {
-                        "physicalLocation": {
-                            "artifactLocation": {
-                                "uri": finding.file.replace("\\", "/"),
-                            },
-                            "region": region,
-                        }
+        if finding.column:
+            region["startColumn"] = finding.column
+        if finding.end_line and finding.end_line != finding.line_number:
+            region["endLine"] = finding.end_line
+        if finding.end_column:
+            region["endColumn"] = finding.end_column
+        result: dict[str, Any] = {
+            "ruleId": finding.rule_id,
+            "ruleIndex": rule_indexes[finding.rule_id],
+            "level": _SARIF_LEVEL.get(finding.severity, "warning"),
+            "message": {"text": f"{finding.description} ({finding.rule_id})"},
+            "locations": [
+                {
+                    "physicalLocation": {
+                        "artifactLocation": {
+                            "uri": finding.file.replace("\\", "/"),
+                        },
+                        "region": region,
                     }
-                ],
-                "baselineState": finding.baseline_state,
-                "partialFingerprints": {
-                    "primaryLocationLineHash": finding.fingerprint,
-                },
-                "properties": {
-                    "severity": finding.severity,
-                    "source": finding.source,
-                    "blocking": finding.blocking,
-                    "aliases": list(finding.aliases),
-                    "fixedVersions": list(finding.fixed_versions),
-                    "advisoryUrl": finding.advisory_url,
-                },
-            }
-        )
+                }
+            ],
+            "baselineState": finding.baseline_state,
+            "partialFingerprints": {
+                "primaryLocationLineHash": finding.fingerprint,
+            },
+            "properties": {
+                "id": finding.id,
+                "severity": finding.severity,
+                "engine": finding.engine,
+                "category": finding.category,
+                "confidence": finding.confidence,
+                "source": finding.source,
+                "blocking": finding.blocking,
+                "aliases": list(finding.aliases),
+                "fixedVersions": list(finding.fixed_versions),
+                "advisoryUrl": finding.advisory_url,
+                "references": list(finding.references),
+                "alsoReportedBy": list(finding.also_reported_by),
+            },
+        }
+        if finding.fix:
+            result["fixes"] = [_sarif_fix(finding)]
+        if finding.code_flows:
+            result["codeFlows"] = [_sarif_code_flow(finding)]
+        results.append(result)
 
     payload = {
         "$schema": "https://json.schemastore.org/sarif-2.1.0.json",

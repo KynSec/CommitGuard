@@ -630,6 +630,9 @@ body.focus-mode #gitPopoutBtn{display:none}
             <label class="small"><input type="checkbox" id="optNoConfig"> Ignore .commit_guard.toml</label>
             <label class="small"><input type="checkbox" id="optStrict"> Strict mode (suppression issues fail)</label>
             <label class="small"><input type="checkbox" id="optSoftFail"> Soft-fail (always exit 0)</label>
+            <label class="small"><input type="checkbox" id="optGate"> Apply policy v1 gate</label>
+            <div class="field"><label for="policyProfile">Policy profile</label><select id="policyProfile"><option value="">default</option><option>balanced</option><option>strict</option><option>audit</option></select></div>
+            <div class="field"><label for="policyPath">Policy file</label><input id="policyPath" placeholder="optional path"></div>
             <label class="small"><input type="checkbox" id="optGithubAnnotations"> GitHub Actions annotations</label>
             <label class="small"><input type="checkbox" id="optVerboseRules"> Verbose skipped-rule diagnostics</label>
             <div class="field"><label for="configPath">Custom config file</label><input id="configPath" placeholder="optional path"></div>
@@ -1265,6 +1268,9 @@ function gatherOptions(){
     no_config: $("#optNoConfig").checked,
     strict: $("#optStrict").checked,
     soft_fail: $("#optSoftFail").checked,
+    gate: $("#optGate").checked,
+    policy_profile: $("#policyProfile").value,
+    policy_path: $("#policyPath").value.trim(),
     github_annotations: $("#optGithubAnnotations").checked,
     verbose_rules: $("#optVerboseRules").checked,
     config_path: $("#configPath").value.trim(),

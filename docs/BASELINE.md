@@ -49,3 +49,19 @@ git tag -a v2.1.0-baseline -m "CommitGuard 2.1.0 baseline"
 Then commit the Phase 0 hygiene changes separately. If the tag is created after
 Phase 0 is committed, label it as the Phase 0 exit tag instead of a pure 2.1.0
 baseline. Do not move an existing baseline tag.
+
+## Phase 1 preview verification
+
+Measured on 2026-10-26 after the CommitGuard 3.0 preview implementation:
+
+| Item | Value |
+|---|---|
+| Tests | 273 passed, 0 failed |
+| JSON schema | 3 |
+| Active rules | 342 |
+| Skipped rule entries | 2,059 |
+| Default staged benchmark median | ~990 ms (120 files x 20 lines, warm cache) |
+| Lint / type check | `ruff` clean; `mypy` clean for 33 application sources |
+
+This is a verification snapshot, not a release tag. The historical 2.1.0
+baseline above remains the comparison point for Phase 0.

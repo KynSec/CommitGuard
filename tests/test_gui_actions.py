@@ -148,6 +148,9 @@ class GuiActionTests(unittest.TestCase):
                 "sca_online": True,
                 "sca_snapshot": "osv.json",
                 "sca_timeout": 7,
+                "gate": True,
+                "policy_path": "policy.toml",
+                "policy_profile": "audit",
             },
         )
         for flag in (
@@ -159,10 +162,13 @@ class GuiActionTests(unittest.TestCase):
             "--dep-graph",
             "--sca",
             "--sca-online",
+            "--gate",
         ):
             self.assertIn(flag, full)
         self.assertEqual(full[full.index("--dep-graph-format") + 1], "json")
         self.assertEqual(full[full.index("--sca-timeout") + 1], "7")
+        self.assertEqual(full[full.index("--policy") + 1], "policy.toml")
+        self.assertEqual(full[full.index("--policy-profile") + 1], "audit")
         with self.assertRaises(actions.ActionError):
             actions.build_scan_command(engine, self.root, report, {"mode": "nope"})
         with self.assertRaises(actions.ActionError):
@@ -350,6 +356,40 @@ class GuiFixTests(unittest.TestCase):
             check=False,
         )
         self.assertIn("yaml.safe_load", staged.stdout)
+
+    @unittest.skipUnless(GIT, "git is required")
+    def test_policy_gate_and_triage_actions(self):
+        from core.reporter import build_json_report
+        from core.scanner import Finding
+
+        finding = Finding(
+            file="app.py",
+            line_number=1,
+            rule_id="cg-test",
+            description="test",
+            severity="high",
+            source="custom",
+            flagged_code="test",
+            redacted_code="test",
+            fingerprint="aaaaaaaaaaaaaaaa",
+        )
+        report = __import__("json").loads(build_json_report([finding], "info"))
+        result = actions.policy_gate(self.root, report)
+        self.assertFalse(result["gate"]["passed"])
+        actions.triage_set(
+            self.root,
+            "aaaaaaaaaaaaaaaa",
+            "accepted",
+            {
+                "owner": "@team",
+                "reason": "Accepted fixture finding with tracked ticket.",
+                "expires": "2099-01-01",
+            },
+        )
+        result = actions.policy_gate(self.root, report)
+        self.assertTrue(result["gate"]["passed"])
+        listed = actions.triage_state(self.root)
+        self.assertEqual(len(listed["entries"]), 1)
 
     def test_inline_suggestions_preview(self):
         engine = TOOLKIT / "main.py"

@@ -76,7 +76,7 @@ interactive version of the same results.
 
 ```json
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "tool": {"name": "CommitGuard", "version": "2.1.0"},
   "generated": "2026-01-01 12:00:00 UTC",
   "block_threshold": "high",
@@ -89,8 +89,12 @@ interactive version of the same results.
     {
       "file": "src/app.py",
       "line": 12,
+      "id": "0123456789abcdef",
       "rule_id": "generic-api-key",
       "severity": "high",
+      "engine": "regex",
+      "category": "secret",
+      "confidence": "high",
       "source": "gitleaks",
       "description": "Detected a Generic API Key...",
       "cwe": "CWE-798",
@@ -104,10 +108,30 @@ interactive version of the same results.
 }
 ```
 
+Schema 3 adds `id`, `engine`, `category`, `confidence`, optional spans,
+`fix`, `references`, `code_flows`, `also_reported_by`, and provenance metadata.
+The change is additive; consumers should accept schema 3. See
+[UPGRADE-2.x-to-3.x.md](UPGRADE-2.x-to-3.x.md).
+
 `findings[].flagged_code` is redacted unless `--show-secrets` was passed.
 `blocking` is `false` for findings in `[paths].report_allowlist`; those still
 appear in the report. `baseline_state` is `"new"` or `"unchanged"` and maps
 directly to SARIF `baselineState`.
+
+---
+
+## Policy gate
+
+```bash
+python .commit_guard/main.py --diff origin/main...HEAD --gate --quiet
+```
+
+The gate applies the configured profile, budgets, ratchet, and triage state
+after baseline matching. Use `--policy-profile audit` for an observe-only
+rollout, or pass `--policy PATH` for a standalone policy file. In the composite
+Action, use `policy-threshold` for a gate threshold override; the legacy
+`threshold` input applies only when `gate: false`. See
+[POLICY.md](POLICY.md).
 
 ---
 
