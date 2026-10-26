@@ -1627,6 +1627,17 @@ def findings_from_report(report: dict) -> list:
     return findings
 
 
+def policy_summary(target: str | Path) -> dict:
+    repo = find_repo_root(target)
+    from core.policy import PolicyError, load_policy
+
+    try:
+        policy = load_policy(repo)
+    except (OSError, PolicyError) as exc:
+        raise ActionError(str(exc)) from exc
+    return {"ok": True, "repo": str(repo), "policy": policy.to_dict()}
+
+
 def policy_gate(
     target: str | Path,
     report: dict,
@@ -1720,6 +1731,50 @@ def triage_set(
     except (OSError, TriageError) as exc:
         raise ActionError(str(exc)) from exc
     return {"ok": True, "repo": str(repo), "path": str(path), **updated.to_dict()}
+
+
+def triage_audit(target: str | Path, report: dict) -> dict:
+    repo = find_repo_root(target)
+    from core.triage import TriageError, audit_triage, load_triage
+
+    try:
+        state = load_triage(repo)
+        issues = audit_triage(
+            state,
+            (finding.fingerprint for finding in findings_from_report(report)),
+        )
+    except (OSError, TriageError) as exc:
+        raise ActionError(str(exc)) from exc
+    return {
+        "ok": True,
+        "repo": str(repo),
+        "issues": issues,
+        "entries": len(state.entries),
+    }
+
+
+def list_pipelines(target: str | Path) -> dict:
+    repo = find_repo_root(target)
+    from core.pipelines import PipelineError
+    from core.pipelines import list_pipelines as _list_pipelines
+
+    try:
+        result = _list_pipelines(repo)
+    except (OSError, PipelineError) as exc:
+        raise ActionError(str(exc)) from exc
+    return {"ok": True, "repo": str(repo), **result}
+
+
+def run_pipeline(target: str | Path, name: str) -> dict:
+    repo = find_repo_root(target)
+    from core.pipelines import PipelineError
+    from core.pipelines import run_pipeline as _run_pipeline
+
+    try:
+        result = _run_pipeline(repo, name)
+    except (OSError, PipelineError) as exc:
+        raise ActionError(str(exc)) from exc
+    return {"ok": True, "repo": str(repo), "result": result.to_dict()}
 
 
 def list_rules(target: str | Path, engine: str | Path | None = None) -> dict:
@@ -2478,8 +2533,12 @@ def config_save(target: str | Path, text: str) -> dict:
     try:
         temp_path.write_text(text, encoding="utf-8")
         from core.config import load_config
+        from core.pipelines import PipelineError, load_pipelines
 
         load_config(repo, explicit_path=temp_path)
+        load_pipelines(repo, config_path=temp_path)
+    except PipelineError as exc:
+        raise ActionError(f"Configuration is invalid: {exc}") from exc
     except ActionError:
         raise
     except Exception as exc:

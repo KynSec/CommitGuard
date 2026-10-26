@@ -230,11 +230,14 @@ What you can control from the page:
 
 | Area | Actions |
 |---|---|
+| Overview | Repository/branch/remotes, change counts, latest findings, gate status, pipeline discovery, and one-click navigation into each workflow. |
 | Scan | Staged / whole tree / history / revision range, threshold, baseline, cache, placeholders, dependency graph, SCA, secret visibility, strict/soft-fail, annotations, and fix preview/apply. |
+| Gate & triage | Evaluate policy v1 against the last scan, inspect blocking reasons/budgets, and manage committed suppressions with owner, reason, ticket, and expiry. |
+| Pipelines | Run configured or detected test, lint, type-check, build, security, and deploy commands locally with a command preview, timeout, and captured console. |
 | Fixes | Preview rule-provided before/after fixes, select individual fixes, apply and stage them, preview PR inline suggestions. |
 | Pull requests | Create or update a report PR, or post inline suggestions to an existing PR (token stays in page memory). |
 | Baseline | Add current findings, owner/expiry metadata, per-finding suppression, and stale-suppression audits. |
-| Git | Status, diffs, staging, commits, fetch/pull/push, branch create/switch/delete, recent commits, and a recent-history doctor. |
+| Git | Status, diffs, staging, commits, fetch/pull/push, branch create/switch/delete, stash, remotes, and quick-command access to tags and advanced operations. |
 | Rules | Search active rules, inspect patterns, validate the rule pack, and download/update opt-in gitleaks or YAML packs. |
 | Reports | Download HTML, JSON, SARIF, JUnit, GitLab, Checkstyle, or Markdown from the last scan. |
 | Maintenance | Status, doctor, install/repair, update, enable/disable hook, init config, uninstall. |
@@ -243,6 +246,8 @@ What you can control from the page:
 Safety defaults: the server binds to `127.0.0.1`, every request needs a per-run
 token, the `Host` header is validated, secret values stay redacted unless you
 explicitly opt in, and GitHub actions require a token you provide per session.
+Pipelines run only after you confirm the exact command, never use a shell, stay
+confined to the repository, and inherit only explicitly added environment keys.
 The GUI is opt-in — hooks and CI keep using the CLI and never start a server.
 The page follows your system theme (with a light/dark switch), works on mobile,
 and tabs are deep-linkable with hashes such as `#git` or `#rules`.
@@ -487,7 +492,7 @@ allowlist can hide a real regression forever.
 |---|---|---|
 | gitleaks | `rules/gitleaks.toml` | 200+ secret rules with entropy, keywords, path filters, and allowlists. |
 | Semgrep | `rules/semgrep_rules/*.yaml` | Only regex-backed rules run. AST-only rules are counted as skipped, never approximated. |
-| Commit Guard native | `rules/custom_rules.yaml`, `rules/custom/*.yaml` | Curated high-signal rules, including bounded multi-line context checks. |
+| Commit Guard native | `rules/custom_rules.yaml`, `rules/ai_security/`, `rules/iac/`, `rules/custom/*.yaml` | 120+ curated language, framework, CI, Kubernetes, Terraform, Docker, and configuration checks, including bounded multi-line context rules. |
 | Rule corpus | `rules/corpus.yaml` | Positive/negative samples exercised by `check-rules`. |
 | nuclei | `rules/nuclei_generic_key.yaml` | Regex file templates; capture group 1 is treated as the secret. |
 | Experimental | `rules/experimental/` | Reference material, not loaded (e.g. the OWASP CRS request-signature pack). |

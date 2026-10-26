@@ -57,8 +57,22 @@ class GuiPageMarkupTests(unittest.TestCase):
             "optFixApply",
             "optFixDryRun",
             "baselinePathInfo",
+            "ovKpis",
+            "ovGateBtn",
+            "gateRunBtn",
+            "triageSaveBtn",
+            "triageBody",
+            "pipelineList",
+            "pipelineOut",
         }
         self.assertTrue(required.issubset(set(self.ids)), sorted(required - set(self.ids)))
+        sections = set(re.findall(r'<section id="tab-([A-Za-z0-9_-]+)"', self.html))
+        self.assertTrue({"overview", "gate", "pipelines"}.issubset(sections))
+
+    def test_open_tab_controls_target_real_tabs(self):
+        tabs = set(re.findall(r'data-tab="([A-Za-z0-9_-]+)"', self.html))
+        openers = set(re.findall(r'data-open-tab="([A-Za-z0-9_-]+)"', self.html))
+        self.assertTrue(openers.issubset(tabs), sorted(openers - tabs))
 
     def test_git_new_tab_actions_share_one_handler(self):
         self.assertEqual(

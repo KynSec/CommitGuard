@@ -80,6 +80,13 @@ max_new = { critical = 0, high = 0, medium = 25, low = 100 }
 # "*" = { critical = 0, high = 0, medium = 25, low = 100 }
 # ".py" = { critical = 0, high = 0, medium = 10, low = 50 }
 # secret = { critical = 0, high = 0, medium = 0, low = 0 }
+
+# [pipelines.test]
+# command = ["python", "-m", "unittest", "discover", "-s", "tests"]
+# category = "test"
+# timeout = 300
+# cwd = "."
+# env = { CI = "local" }
 ```
 
 ### `[scan]`
@@ -107,6 +114,41 @@ Keys: `profile`, `threshold`, `fail_on`, `ratchet`, `allow_expired_triage`,
 `enforce`, `max_new`, and `budgets` (path/category keys).
 Profiles here are policy profiles, not installer profiles. See
 [POLICY.md](POLICY.md).
+
+### `[pipelines]`
+
+Local delivery pipelines used by the GUI **Pipelines** tab. Each named table is
+one command. The GUI also detects common project checks (pytest/unittest, Ruff,
+mypy, Python build, package.json scripts, Make targets, and Docker/Compose
+builds) as suggestions, but detected commands are not pinned until you add them
+to this table.
+
+```toml
+[pipelines.test]
+command = ["python", "-m", "unittest", "discover", "-s", "tests"]
+category = "test"
+timeout = 300
+cwd = "."
+env = { CI = "local" }
+
+[pipelines.lint]
+command = ["python", "-m", "ruff", "check", "."]
+category = "lint"
+```
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `command` | string or list | required | Explicit argv. A string is parsed with shell-like quoting; no shell is used. |
+| `category` | string | `"custom"` | `test`, `lint`, `typecheck`, `build`, `security`, `deploy`, or `custom`. |
+| `description` | string | empty | Display text in the GUI. |
+| `timeout` | int | `300` | Seconds, from `1` to `3600`. On timeout the process group is terminated. |
+| `cwd` | string | `"."` | Working directory, resolved against the repository root and required to stay inside it. |
+| `env` | table | `{}` | Environment keys added to the inherited environment. Keys must be valid environment names; values are converted to strings. |
+
+Name tables with letters, digits, `-`, and `_`. The GUI shows the exact command
+before running it, uses no shell, prevents concurrent runs of the same pipeline,
+and caps captured output. Treat `.commit_guard.toml` as reviewed code: a
+pipeline can run any executable your user account can run.
 
 ### `[paths]`
 

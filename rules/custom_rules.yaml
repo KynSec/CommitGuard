@@ -263,3 +263,560 @@ rules:
     languages: [python]
     tags: [misconfiguration]
     regex: '(?i)\bDEBUG\s*=\s*True\b'
+
+  # ------------------------------------------------------------------------
+  # Python — additional high-signal checks
+  # ------------------------------------------------------------------------
+  - id: cg-python-unsafe-tempfile
+    description: tempfile.mktemp() is race-prone; use NamedTemporaryFile or mkstemp.
+    severity: medium
+    languages: [python]
+    tags: [race-condition, filesystem]
+    cwe: CWE-377
+    regex: '\btempfile\.mktemp\s*\('
+
+  - id: cg-python-weak-random-secret
+    description: A secret-like value is generated with the non-cryptographic random module.
+    severity: medium
+    languages: [python]
+    tags: [crypto, randomness]
+    cwe: CWE-338
+    regex: '(?i)\b(?:token|password|passwd|secret|api[_-]?key|nonce|salt)\w*\s*=\s*[^=\n]*\brandom\.(?:random|randint|choice|randrange|getrandbits|shuffle)\s*\('
+
+  - id: cg-python-unverified-ssl-context
+    description: TLS certificate verification is disabled with an unverified SSL context or CERT_NONE.
+    severity: high
+    languages: [python]
+    tags: [tls, crypto]
+    cwe: CWE-295
+    regex: '(?:\bssl\._create_unverified_context\s*\(|\bverify_mode\s*=\s*ssl\.CERT_NONE\b)'
+
+  - id: cg-python-tarfile-extractall
+    description: tarfile.extractall() can write outside the target directory when archives contain traversal paths.
+    severity: medium
+    languages: [python]
+    tags: [archive, path-traversal]
+    cwe: CWE-22
+    regex: '\.extractall\s*\('
+
+  - id: cg-python-marshal-loads
+    description: marshal.loads() deserializes data that can crash the interpreter or execute unsafe object state.
+    severity: medium
+    languages: [python]
+    tags: [deserialization]
+    cwe: CWE-502
+    regex: '\bmarshal\.loads?\s*\('
+
+  - id: cg-python-jinja-autoescape-off
+    description: Jinja autoescaping is explicitly disabled, increasing XSS risk.
+    severity: medium
+    languages: [python]
+    tags: [xss, template]
+    cwe: CWE-79
+    regex: '(?i)\bautoescape\s*=\s*False\b'
+
+  - id: cg-python-django-csrf-exempt
+    description: A Django view is exempt from CSRF protection.
+    severity: medium
+    languages: [python]
+    tags: [django, csrf]
+    cwe: CWE-352
+    regex: '@csrf_exempt\b'
+
+  - id: cg-python-jwt-none-algorithm
+    description: JWT verification accepts the unsigned "none" algorithm.
+    severity: high
+    languages: [python]
+    tags: [jwt, authentication]
+    cwe: CWE-347
+    regex: '(?i)\balgorithms?\s*=\s*\[\s*["\x27]none["\x27]'
+
+  - id: cg-python-jwt-signature-verify-off
+    description: JWT signature verification is explicitly disabled.
+    severity: high
+    languages: [python]
+    tags: [jwt, authentication]
+    cwe: CWE-347
+    regex: '(?i)\bverify_signature["\x27]?\s*[:=]\s*False\b'
+
+  - id: cg-python-os-popen
+    description: os.popen() invokes a shell and can permit command injection.
+    severity: medium
+    languages: [python]
+    tags: [command-injection]
+    cwe: CWE-78
+    regex: '\bos\.popen\s*\('
+
+  - id: cg-python-weak-hash
+    description: MD5 or SHA-1 is used from hashlib; use SHA-256 or stronger for security decisions.
+    severity: low
+    languages: [python]
+    tags: [crypto, hashing]
+    cwe: CWE-328
+    regex: '(?i)\bhashlib\.(?:md5|sha1)\s*\('
+
+  - id: cg-python-django-wildcard-hosts
+    description: Django ALLOWED_HOSTS accepts every hostname.
+    severity: medium
+    languages: [python]
+    tags: [django, misconfiguration]
+    cwe: CWE-183
+    regex: '(?i)\bALLOWED_HOSTS\s*=\s*\[[^\]]*["\x27]\*["\x27]'
+
+  # ------------------------------------------------------------------------
+  # JavaScript / TypeScript — additional high-signal checks
+  # ------------------------------------------------------------------------
+  - id: cg-javascript-document-write
+    description: document.write() can introduce DOM-based XSS.
+    severity: medium
+    languages: [javascript, typescript]
+    tags: [xss]
+    cwe: CWE-79
+    regex: '\bdocument\.write(?:ln)?\s*\('
+
+  - id: cg-javascript-insert-adjacent-html
+    description: insertAdjacentHTML() parses untrusted markup and can enable XSS.
+    severity: medium
+    languages: [javascript, typescript]
+    tags: [xss]
+    cwe: CWE-79
+    regex: '\.insertAdjacentHTML\s*\('
+
+  - id: cg-javascript-function-constructor
+    description: The Function constructor compiles strings as code and can enable injection.
+    severity: medium
+    languages: [javascript, typescript]
+    tags: [code-injection]
+    cwe: CWE-95
+    regex: '\bnew\s+Function\s*\('
+
+  - id: cg-javascript-timer-string
+    description: setTimeout/setInterval with a string argument evaluates code.
+    severity: medium
+    languages: [javascript, typescript]
+    tags: [code-injection]
+    cwe: CWE-95
+    regex: '\bset(?:Timeout|Interval)\s*\(\s*["\x27`]'
+
+  - id: cg-node-exec-sync
+    description: child_process.execSync() invokes a shell and can permit command injection.
+    severity: high
+    languages: [javascript, typescript]
+    tags: [command-injection, node]
+    cwe: CWE-78
+    regex: '\bexecSync\s*\('
+
+  - id: cg-javascript-tls-verify-off
+    description: rejectUnauthorized false disables TLS certificate verification.
+    severity: high
+    languages: [javascript, typescript]
+    tags: [tls]
+    cwe: CWE-295
+    regex: '\brejectUnauthorized\s*:\s*false\b'
+
+  - id: cg-javascript-jwt-none-algorithm
+    description: JWT verification accepts the unsigned "none" algorithm.
+    severity: high
+    languages: [javascript, typescript]
+    tags: [jwt, authentication]
+    cwe: CWE-347
+    regex: '(?i)\balgorithms?\s*:\s*\[\s*["\x27]none["\x27]'
+
+  - id: cg-javascript-weak-hash
+    description: MD5 or SHA-1 is used through createHash.
+    severity: low
+    languages: [javascript, typescript]
+    tags: [crypto, hashing]
+    cwe: CWE-328
+    regex: '(?i)\bcreateHash\s*\(\s*["\x27](?:md5|sha1)["\x27]'
+
+  - id: cg-javascript-localstorage-secret
+    description: A token, password, or API key is stored in localStorage where scripts can read it.
+    severity: medium
+    languages: [javascript, typescript]
+    tags: [storage, credentials]
+    cwe: CWE-922
+    regex: '(?i)\blocalStorage\.setItem\s*\(\s*["\x27][^"\x27]*(?:token|jwt|password|secret|api[_-]?key)'
+
+  - id: cg-javascript-postmessage-wildcard
+    description: postMessage() uses a wildcard target origin, exposing messages to any origin.
+    severity: low
+    languages: [javascript, typescript]
+    tags: [postmessage, browser]
+    cwe: CWE-345
+    regex: '\.postMessage\s*\([^\n)]*,\s*["\x27]\*["\x27]\s*\)'
+
+  - id: cg-javascript-weak-random-secret
+    description: A secret-like value is generated with Math.random().
+    severity: medium
+    languages: [javascript, typescript]
+    tags: [crypto, randomness]
+    cwe: CWE-338
+    regex: '(?i)\b(?:token|password|secret|nonce|salt)\w*\s*=\s*[^=\n]*Math\.random\s*\('
+
+  # ------------------------------------------------------------------------
+  # Go
+  # ------------------------------------------------------------------------
+  - id: cg-go-tls-insecure-skip-verify
+    description: Go TLS configuration disables certificate verification with InsecureSkipVerify.
+    severity: high
+    languages: [go]
+    tags: [tls]
+    cwe: CWE-295
+    regex: '\bInsecureSkipVerify\s*:\s*true\b'
+
+  - id: cg-go-shell-command
+    description: exec.Command invokes a shell, which can enable command injection.
+    severity: high
+    languages: [go]
+    tags: [command-injection]
+    cwe: CWE-78
+    regex: '\bexec\.Command(?:Context)?\s*\([^\n)]*["\x27](?:/bin/)?(?:sh|bash|dash|zsh|cmd(?:\.exe)?)["\x27]'
+
+  - id: cg-go-weak-hash
+    description: MD5 or SHA-1 is used for hashing.
+    severity: low
+    languages: [go]
+    tags: [crypto, hashing]
+    cwe: CWE-328
+    regex: '\b(?:md5|sha1)\.New\s*\('
+
+  - id: cg-go-sql-concat
+    description: A SQL query is built with string concatenation.
+    severity: high
+    languages: [go]
+    tags: [sqli]
+    cwe: CWE-89
+    regex: '(?i)\.(?:Query|QueryRow|Exec)(?:Context)?\s*\([^\n)]*["\x27][^\n"\x27]*["\x27]\s*\+'
+
+  # ------------------------------------------------------------------------
+  # Java
+  # ------------------------------------------------------------------------
+  - id: cg-java-runtime-exec
+    description: Runtime.exec() can execute arbitrary operating-system commands.
+    severity: high
+    languages: [java]
+    tags: [command-injection]
+    cwe: CWE-78
+    regex: '\bRuntime\.getRuntime\s*\(\s*\)\.exec\s*\('
+
+  - id: cg-java-object-input-stream
+    description: Java native deserialization via ObjectInputStream is unsafe for untrusted data.
+    severity: medium
+    languages: [java]
+    tags: [deserialization]
+    cwe: CWE-502
+    regex: '\bnew\s+ObjectInputStream\s*\('
+
+  - id: cg-java-weak-hash
+    description: MessageDigest uses MD5 or SHA-1.
+    severity: medium
+    languages: [java]
+    tags: [crypto, hashing]
+    cwe: CWE-328
+    regex: '(?i)\bMessageDigest\.getInstance\s*\(\s*["\x27](?:MD5|SHA-?1)["\x27]'
+
+  - id: cg-java-sql-concat
+    description: A JDBC statement is built with string concatenation.
+    severity: high
+    languages: [java]
+    tags: [sqli]
+    cwe: CWE-89
+    regex: '(?i)\.(?:executeQuery|executeUpdate|execute)\s*\(\s*["\x27][^\n"\x27]*["\x27]\s*\+'
+
+  - id: cg-java-spring-csrf-disabled
+    description: Spring Security CSRF protection is disabled.
+    severity: medium
+    languages: [java]
+    tags: [spring, csrf]
+    cwe: CWE-352
+    regex: '\.csrf\s*\(\s*\)\s*\.disable\s*\('
+
+  # ------------------------------------------------------------------------
+  # PHP
+  # ------------------------------------------------------------------------
+  - id: cg-php-eval
+    description: PHP eval() executes arbitrary code.
+    severity: high
+    languages: [php]
+    tags: [code-injection]
+    cwe: CWE-95
+    regex: '(?<![\w$])eval\s*\('
+
+  - id: cg-php-command-exec
+    description: PHP command-execution function can run arbitrary shell commands.
+    severity: high
+    languages: [php]
+    tags: [command-injection]
+    cwe: CWE-78
+    regex: '\b(?:system|exec|shell_exec|passthru|popen|proc_open)\s*\('
+
+  - id: cg-php-unserialize
+    description: PHP unserialize() on untrusted data can lead to object injection.
+    severity: high
+    languages: [php]
+    tags: [deserialization]
+    cwe: CWE-502
+    regex: '\bunserialize\s*\('
+
+  - id: cg-php-weak-hash
+    description: MD5 or SHA-1 is used for hashing.
+    severity: low
+    languages: [php]
+    tags: [crypto, hashing]
+    cwe: CWE-328
+    regex: '(?i)\b(?:md5|sha1)\s*\('
+
+  - id: cg-php-dynamic-include
+    description: Include or require uses request data, enabling local or remote file inclusion.
+    severity: high
+    languages: [php]
+    tags: [file-inclusion]
+    cwe: CWE-98
+    regex: '\b(?:include|require)(?:_once)?\s*\(?\s*\$_(?:GET|POST|REQUEST|COOKIE|SERVER)'
+
+  - id: cg-php-sql-concat
+    description: A SQL query is built with string concatenation.
+    severity: high
+    languages: [php]
+    tags: [sqli]
+    cwe: CWE-89
+    regex: '(?i)\b(?:mysqli_query|mysql_query)\s*\([^\n)]*\.\s*\$|\bquery\s*\(\s*["\x27][^"\x27]*["\x27]\s*\.\s*\$'
+
+  # ------------------------------------------------------------------------
+  # Ruby
+  # ------------------------------------------------------------------------
+  - id: cg-ruby-eval
+    description: Ruby eval() can execute arbitrary code.
+    severity: medium
+    languages: [ruby]
+    tags: [code-injection]
+    cwe: CWE-95
+    regex: '(?<![\w.])eval\s*\('
+
+  - id: cg-ruby-command-exec
+    description: system/exec/spawn can run shell commands with attacker-controlled input.
+    severity: medium
+    languages: [ruby]
+    tags: [command-injection]
+    cwe: CWE-78
+    regex: '\b(?:system|exec|spawn)\s*\('
+
+  - id: cg-ruby-yaml-load
+    description: YAML.load can instantiate arbitrary Ruby objects; use safe_load.
+    severity: high
+    languages: [ruby]
+    tags: [deserialization]
+    cwe: CWE-502
+    regex: '\bYAML\.load\s*\('
+    fix_pattern: '\bYAML\.load\s*\('
+    fix_replacement: 'YAML.safe_load('
+
+  - id: cg-ruby-marshal-load
+    description: Marshal.load deserializes arbitrary Ruby objects.
+    severity: high
+    languages: [ruby]
+    tags: [deserialization]
+    cwe: CWE-502
+    regex: '\bMarshal\.load\s*\('
+
+  - id: cg-ruby-sql-interpolation
+    description: A ActiveRecord query interpolates Ruby values into SQL.
+    severity: high
+    languages: [ruby]
+    tags: [sqli]
+    cwe: CWE-89
+    regex: '(?i)\.(?:where|find_by_sql|order|select|joins)\s*\(\s*(?:"|%[Qq]?\()[^\n]*#\{'
+
+  # ------------------------------------------------------------------------
+  # Rust
+  # ------------------------------------------------------------------------
+  - id: cg-rust-tls-accept-invalid
+    description: The Rust TLS client accepts invalid certificates.
+    severity: high
+    languages: [rust]
+    tags: [tls]
+    cwe: CWE-295
+    regex: '\bdanger_accept_invalid_certs\s*\(\s*true\b'
+
+  - id: cg-rust-shell-command
+    description: Command::new invokes a shell, which can enable command injection.
+    severity: high
+    languages: [rust]
+    tags: [command-injection]
+    cwe: CWE-78
+    regex: '\bCommand::new\s*\(\s*["\x27](?:sh|bash|zsh|cmd(?:\.exe)?)["\x27]'
+
+  - id: cg-rust-weak-hash
+    description: MD5 or SHA-1 is used for hashing.
+    severity: low
+    languages: [rust]
+    tags: [crypto, hashing]
+    cwe: CWE-328
+    regex: '\b(?:Md5|Sha1)::new\s*\('
+
+  # ------------------------------------------------------------------------
+  # C / C++
+  # ------------------------------------------------------------------------
+  - id: cg-c-gets
+    description: gets() cannot enforce buffer bounds and is unsafe.
+    severity: high
+    languages: [c, cpp]
+    tags: [memory-safety]
+    cwe: CWE-242
+    regex: '(?<![\w.])gets\s*\('
+
+  - id: cg-c-system
+    description: system() invokes a shell and can permit command injection.
+    severity: medium
+    languages: [c, cpp]
+    tags: [command-injection]
+    cwe: CWE-78
+    regex: '(?<![\w.])system\s*\('
+
+  - id: cg-c-mktemp
+    description: mktemp() is race-prone; use mkstemp() or a secure temporary-file API.
+    severity: medium
+    languages: [c, cpp]
+    tags: [race-condition, filesystem]
+    cwe: CWE-377
+    regex: '(?<![\w.])mktemp\s*\('
+
+  - id: cg-c-scanf-percent-s
+    description: scanf-family %s without a field width can overflow a destination buffer.
+    severity: low
+    languages: [c, cpp]
+    tags: [memory-safety]
+    cwe: CWE-120
+    regex: '\b(?:scanf|fscanf|sscanf)\s*\([^\n)]*%s'
+
+  # ------------------------------------------------------------------------
+  # Shell
+  # ------------------------------------------------------------------------
+  - id: cg-shell-eval
+    description: eval executes shell text and can turn data into commands.
+    severity: high
+    languages: [bash]
+    tags: [command-injection]
+    cwe: CWE-95
+    regex: '(?i)^\s*eval\b'
+
+  - id: cg-shell-curl-insecure
+    description: curl is invoked with TLS verification disabled.
+    severity: medium
+    languages: [bash]
+    tags: [tls]
+    cwe: CWE-295
+    regex: '(?i)\bcurl\b[^\n]*\s(?:-k|--insecure)(?:\s|$)'
+
+  - id: cg-shell-rm-root
+    description: Recursive force deletion targets the filesystem root.
+    severity: high
+    languages: [bash]
+    tags: [destructive]
+    cwe: CWE-73
+    regex: '(?i)\brm\s+(?:-[a-z]*r[a-z]*f[a-z]*|-[a-z]*f[a-z]*r[a-z]*)\s+/(?:\s|$)'
+
+  - id: cg-shell-ssh-host-check-off
+    description: SSH host-key checking is disabled.
+    severity: medium
+    languages: [bash]
+    tags: [ssh, tls]
+    cwe: CWE-295
+    regex: '(?i)\bStrictHostKeyChecking\s*=\s*(?:no|false|off)\b'
+
+  # ------------------------------------------------------------------------
+  # Web framework configuration
+  # ------------------------------------------------------------------------
+  - id: cg-flask-cors-wildcard
+    description: Flask-CORS allows every origin.
+    severity: medium
+    languages: [python]
+    tags: [cors, flask]
+    cwe: CWE-942
+    regex: '(?i)\bCORS\s*\([^\n)]*origins\s*=\s*["\x27]\*["\x27]'
+
+  - id: cg-express-cors-wildcard
+    description: Express CORS middleware allows every origin.
+    severity: medium
+    languages: [javascript, typescript]
+    tags: [cors, express]
+    cwe: CWE-942
+    regex: '(?i)\bcors\s*\(\s*\{[^\n}]*origin\s*:\s*["\x27]\*["\x27]'
+
+  - id: cg-express-session-insecure-cookie
+    description: Express session cookies are configured without the Secure flag.
+    severity: medium
+    languages: [javascript, typescript]
+    tags: [session, cookie]
+    cwe: CWE-614
+    regex: '(?i)\bcookie\s*:\s*\{[^\n}]*secure\s*:\s*false'
+
+  - id: cg-spring-actuator-exposed
+    description: Spring Boot exposes every Actuator endpoint.
+    paths: ["**/*.properties", "**/application*.yml", "**/application*.yaml"]
+    tags: [spring, misconfiguration]
+    cwe: CWE-200
+    regex: '(?i)management\.endpoints\.web\.exposure\.include\s*[=:]\s*["\x27]?\*'
+
+  - id: cg-nginx-proxy-ssl-verify-off
+    description: Nginx disables upstream TLS certificate verification.
+    paths: ["**/nginx.conf", "**/*nginx*.conf", "**/sites-enabled/*"]
+    tags: [nginx, tls]
+    cwe: CWE-295
+    regex: '(?i)^\s*proxy_ssl_verify\s+off\s*;'
+
+  - id: cg-apache-proxy-ssl-verify-off
+    description: Apache disables upstream TLS certificate verification.
+    paths: ["**/httpd.conf", "**/apache2.conf", "**/*.conf"]
+    tags: [apache, tls]
+    cwe: CWE-295
+    regex: '(?i)^\s*SSLProxyVerify\s+none\b'
+
+  # ------------------------------------------------------------------------
+  # GitHub Actions / CI supply chain
+  # ------------------------------------------------------------------------
+  - id: cg-gha-script-injection
+    description: Untrusted GitHub event data is interpolated directly into a run script.
+    severity: high
+    languages: [yaml]
+    paths: [".github/workflows/*.yml", ".github/workflows/*.yaml"]
+    tags: [ci, github-actions, injection]
+    cwe: CWE-94
+    regex: '(?i)\brun\s*:\s*[^\n]*\$\{\{[^\n}]*\bgithub\.event\.(?:issue|pull_request|comment|review|head_commit|commits|inputs|discussion)\b'
+
+  - id: cg-gha-pull-request-target
+    description: pull_request_target runs with base-repository privileges and needs careful secret handling.
+    severity: medium
+    languages: [yaml]
+    paths: [".github/workflows/*.yml", ".github/workflows/*.yaml"]
+    tags: [ci, github-actions]
+    cwe: CWE-829
+    regex: '(?i)^\s*pull_request_target\s*:'
+
+  - id: cg-gha-write-all
+    description: The workflow grants write-all token permissions.
+    severity: medium
+    languages: [yaml]
+    paths: [".github/workflows/*.yml", ".github/workflows/*.yaml"]
+    tags: [ci, github-actions]
+    cwe: CWE-732
+    regex: '(?i)^\s*permissions\s*:\s*write-all\s*$'
+
+  - id: cg-gha-action-branch-ref
+    description: A GitHub Action is referenced by a mutable branch name instead of a tag or commit SHA.
+    severity: low
+    languages: [yaml]
+    paths: [".github/workflows/*.yml", ".github/workflows/*.yaml"]
+    tags: [ci, github-actions, supply-chain]
+    cwe: CWE-1357
+    regex: '(?i)^\s*(?:-\s*)?uses\s*:\s*[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+@(?:main|master|latest|HEAD)\s*$'
+
+  - id: cg-gha-curl-pipe-shell
+    description: A workflow pipes a remote download directly into a shell.
+    severity: high
+    languages: [yaml]
+    paths: [".github/workflows/*.yml", ".github/workflows/*.yaml"]
+    tags: [ci, github-actions, supply-chain]
+    cwe: CWE-494
+    regex: '(?i)\b(?:curl|wget)\b[^\n|]*\|\s*(?:ba|z|k)?sh\b'

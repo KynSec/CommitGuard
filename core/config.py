@@ -285,6 +285,13 @@ threshold = "high"
 fail_on = "new"
 ratchet = true
 max_new = { critical = 0, high = 0, medium = 25, low = 100 }
+
+# [pipelines.test]
+# command = ["python", "-m", "unittest", "discover", "-s", "tests"]
+# category = "test"          # test | lint | typecheck | build | security | deploy | custom
+# timeout = 300              # seconds, 1..3600
+# cwd = "."                  # must stay inside the repository
+# env = { CI = "local" }     # only these keys are added to the inherited environment
 """
 
 

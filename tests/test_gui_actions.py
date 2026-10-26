@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import json
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -116,6 +118,49 @@ class GuiActionTests(unittest.TestCase):
         for remote, expected in cases.items():
             self.assertEqual(actions.parse_github_slug(remote), expected, remote)
 
+    def test_policy_triage_and_pipeline_actions(self):
+        config = (
+            "[pipelines.smoke]\ncommand = "
+            + json.dumps([sys.executable, "-c", "print('smoke')"])
+            + "\ncategory = 'test'\ntimeout = 30\n"
+        )
+        (self.root / ".commit_guard.toml").write_text(config, encoding="utf-8")
+        summary = actions.policy_summary(self.root)
+        self.assertEqual(summary["policy"]["profile"], "balanced")
+        pipelines = actions.list_pipelines(self.root)
+        self.assertEqual([item["name"] for item in pipelines["configured"]], ["smoke"])
+        run = actions.run_pipeline(self.root, "smoke")
+        self.assertTrue(run["result"]["ok"])
+        self.assertIn("smoke", run["result"]["stdout"])
+
+        saved = actions.triage_set(
+            self.root,
+            "fingerprint-1",
+            "accepted",
+            {
+                "owner": "@team",
+                "reason": "Accepted test fixture.",
+                "ticket": "SEC-1",
+                "expires": "2099-01-01",
+            },
+        )
+        self.assertEqual(saved["entries"][0]["state"], "accepted")
+        audit = actions.triage_audit(
+            self.root,
+            {
+                "findings": [
+                    {
+                        "file": "app.py",
+                        "line": 1,
+                        "rule_id": "test-rule",
+                        "severity": "high",
+                        "fingerprint": "fingerprint-1",
+                    }
+                ]
+            },
+        )
+        self.assertEqual(audit["issues"], [])
+
     @unittest.skipUnless(GIT, "git is required")
     def test_build_scan_command_modes_and_flags(self):
         engine = self.root / "main.py"
@@ -215,6 +260,8 @@ class GuiActionTests(unittest.TestCase):
         self.assertTrue((self.root / ".commit_guard.toml.bak").is_file())
         with self.assertRaises(actions.ActionError):
             actions.config_save(self.root, '[scan]\nthreshold = "bogus"\n')
+        with self.assertRaises(actions.ActionError):
+            actions.config_save(self.root, "[pipelines.bad]\ncommand = []\n")
         restored = actions.config_restore(self.root)
         self.assertEqual(restored["summary"]["threshold"], "medium")
 

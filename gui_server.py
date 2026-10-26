@@ -226,6 +226,12 @@ def _make_handler(state: AppState, token: str):
                 if path == "/api/triage":
                     self._send_json(actions.triage_state(query.get("repo") or state.repo or ""))
                     return
+                if path == "/api/policy":
+                    self._send_json(actions.policy_summary(query.get("repo") or state.repo or ""))
+                    return
+                if path == "/api/pipelines":
+                    self._send_json(actions.list_pipelines(query.get("repo") or state.repo or ""))
+                    return
                 if path == "/api/reports/download":
                     self._serve_report(query.get("repo") or state.repo or "", query.get("name") or "")
                     return
@@ -355,6 +361,29 @@ def _make_handler(state: AppState, token: str):
                     raise actions.ActionError("Policy options must be an object.")
                 self._send_json(
                     actions.policy_gate(self._repo(payload), report, options)
+                )
+                return
+
+            if path == "/api/pipelines/run":
+                if not self._lock():
+                    return
+                try:
+                    self._send_json(
+                        actions.run_pipeline(
+                            self._repo(payload),
+                            str(payload.get("name") or ""),
+                        )
+                    )
+                finally:
+                    self._unlock()
+                return
+
+            if path == "/api/triage/audit":
+                report = payload.get("report") or state.report
+                if not isinstance(report, dict):
+                    raise actions.ActionError("Run a scan first.")
+                self._send_json(
+                    actions.triage_audit(self._repo(payload), report)
                 )
                 return
 

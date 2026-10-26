@@ -151,13 +151,13 @@ sources:
     bundled_default: true
     files:
       - path: rules/custom_rules.yaml
-        sha256: e18836fbb416824dd08b259c54d6ff05bf03f5bf44fb0e7d2a4cf81def24c0c7
+        sha256: 66be9d8d78ee7e96f4ca71312cd353456a6d0086b5415850ad728899ebd1b5b4
       - path: rules/ai_security/rules.yaml
         sha256: 8b70755fe235b5eefd0ab6cedb4ab3e1faf61b2f73a3096edad3c27774100819
       - path: rules/iac/rules.yaml
-        sha256: 37d51949731b40418a448712daebf80d21195b7a9c8f44adcfb901ab9979c87e
+        sha256: 21bd1af87ffb2aaae66c532c8f10d178789487874f4436b2ec119ac69ec51f8b
       - path: rules/corpus.yaml
-        sha256: 653aafbea4f0bd6f1076a4d6c7a77362b86f7dc9e755204b6d6cfdfc73e901a4
+        sha256: 739a438794699c5f9c0c191dfda6a0dc2f8cd437a4ef4a03373b60acf9a15481
         notes: Positive/negative samples for check-rules; not a detection pack.
       - path: rules/nuclei_generic_key.yaml
         sha256: 6d5ae7e2e6f1d204f0dd761a021067f3249c818cc9517cab83011f696b5e0366

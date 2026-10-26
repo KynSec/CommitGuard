@@ -1,9 +1,15 @@
+# SPDX-License-Identifier: Apache-2.0
+"""Validates the checked-in native rule packs and their corpus samples."""
+
 from __future__ import annotations
 
+import contextlib
+import io
 import unittest
 from pathlib import Path
 
 from core.git_diff import DiffLine
+from core.rule_check import check_rules
 from core.rule_loader import load_ruleset
 from core.scanner import scan_diff
 
@@ -33,6 +39,17 @@ class BundledRuleTests(unittest.TestCase):
     def test_global_allowlist_still_matches_boolean_literals(self):
         line = "False"
         self.assertTrue(any(p.search(line) for p in self.ruleset.line_allowlist))
+
+    def test_bundled_rules_and_corpus_validate(self) -> None:
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            result = check_rules(
+                RULES_DIR,
+                RULES_DIR / "corpus.yaml",
+                use_cache=False,
+            )
+        self.assertEqual(result, 0, output.getvalue())
+        self.assertIn("schema/corpus issues: 0", output.getvalue())
 
 
 if __name__ == "__main__":

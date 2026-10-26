@@ -95,3 +95,114 @@ rules:
     secret: true
     secret_group: 1
     regex: '(?i)\b[\w-]*(?:password|secret|token|api[_-]?key|access[_-]?key)\s*=\s*"([^"\s]{8,})"'
+
+  # ------------------------------------------------------------------------
+  # Kubernetes hardening
+  # ------------------------------------------------------------------------
+  - id: cg-k8s-allow-privilege-escalation
+    description: A container explicitly allows privilege escalation.
+    severity: medium
+    languages: [yaml]
+    tags: [kubernetes, iac, hardening]
+    cwe: CWE-250
+    regex: '(?i)\ballowPrivilegeEscalation\s*:\s*true\b'
+
+  - id: cg-k8s-host-network
+    description: A pod shares the host network namespace.
+    severity: medium
+    languages: [yaml]
+    tags: [kubernetes, iac, network]
+    cwe: CWE-250
+    regex: '(?i)\bhostNetwork\s*:\s*true\b'
+
+  - id: cg-k8s-host-pid
+    description: A pod shares the host PID namespace.
+    severity: medium
+    languages: [yaml]
+    tags: [kubernetes, iac, hardening]
+    cwe: CWE-250
+    regex: '(?i)\bhostPID\s*:\s*true\b'
+
+  - id: cg-k8s-run-as-root
+    description: A pod or container explicitly runs as UID 0.
+    severity: medium
+    languages: [yaml]
+    tags: [kubernetes, iac, hardening]
+    cwe: CWE-250
+    regex: '(?i)\brunAsUser\s*:\s*0\b'
+
+  - id: cg-k8s-capabilities-all
+    description: A container adds all Linux capabilities.
+    severity: medium
+    languages: [yaml]
+    tags: [kubernetes, iac, hardening]
+    cwe: CWE-250
+    regex: '(?i)^\s*-\s*ALL\s*$'
+    context:
+      before: 4
+      after: 0
+      regex: '(?i)^\s*capabilities\s*:'
+
+  - id: cg-k8s-seccomp-unconfined
+    description: A container disables seccomp confinement.
+    severity: medium
+    languages: [yaml]
+    tags: [kubernetes, iac, hardening]
+    cwe: CWE-250
+    regex: '(?i)^\s*type\s*:\s*Unconfined\s*$'
+    context:
+      before: 3
+      after: 1
+      regex: '(?i)\bseccompProfile\b'
+
+  # ------------------------------------------------------------------------
+  # Terraform / cloud hardening
+  # ------------------------------------------------------------------------
+  - id: cg-terraform-iam-wildcard
+    description: An IAM policy allows every action.
+    severity: high
+    languages: [terraform]
+    paths: ["**/*.tf", "**/*.tf.json"]
+    tags: [terraform, iac, iam]
+    cwe: CWE-732
+    regex: '(?i)\b(?:actions?|Action)\s*=\s*\[?\s*["\x27]\*["\x27]'
+
+  - id: cg-terraform-kms-rotation-off
+    description: KMS automatic key rotation is disabled.
+    severity: medium
+    languages: [terraform]
+    paths: ["**/*.tf"]
+    tags: [terraform, iac, encryption]
+    cwe: CWE-311
+    regex: '(?i)\benable_key_rotation\s*=\s*false\b'
+    fix_pattern: '(?i)\benable_key_rotation\s*=\s*false\b'
+    fix_replacement: 'enable_key_rotation = true'
+
+  - id: cg-terraform-azure-public-network
+    description: An Azure resource allows public network access.
+    severity: medium
+    languages: [terraform]
+    paths: ["**/*.tf"]
+    tags: [terraform, iac, azure, network]
+    cwe: CWE-284
+    regex: '(?i)\bpublic_network_access_enabled\s*=\s*true\b'
+
+  - id: cg-terraform-public-ip
+    description: An EC2 instance is explicitly assigned a public IP address.
+    severity: low
+    languages: [terraform]
+    paths: ["**/*.tf"]
+    tags: [terraform, iac, aws, network]
+    cwe: CWE-284
+    regex: '(?i)\bassociate_public_ip_address\s*=\s*true\b'
+
+  # ------------------------------------------------------------------------
+  # Docker build context
+  # ------------------------------------------------------------------------
+  - id: cg-docker-copy-secrets
+    description: The Docker build context copies a credential file into the image.
+    severity: high
+    languages: [dockerfile]
+    tags: [docker, iac, secret]
+    cwe: CWE-798
+    regex: '(?i)^\s*(?:COPY|ADD)\s+[^\n]*(?:\.env(?!\.(?:example|sample|template))|id_[re]sa|\.pem\b|credentials|secrets?\.(?:json|ya?ml|txt))'

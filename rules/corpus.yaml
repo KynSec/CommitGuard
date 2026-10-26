@@ -129,3 +129,394 @@ samples:
     path: prod.tfvars
     positive: 'database_password = "SuperSecret123!"' # commit-guard-ignore
     negative: 'database_password = var.database_password' # commit-guard-ignore
+
+  # Additional language and configuration coverage
+  - rule_id: cg-python-unsafe-tempfile
+    path: sample.py
+    positive: 'name = tempfile.mktemp()'
+    negative: 'name = tempfile.NamedTemporaryFile().name'
+
+  - rule_id: cg-python-weak-random-secret
+    path: sample.py
+    positive: 'token = random.random()'
+    negative: 'token = secrets.token_urlsafe(32)'
+
+  - rule_id: cg-python-unverified-ssl-context
+    path: sample.py
+    positive: 'context = ssl._create_unverified_context()'
+    negative: 'context = ssl.create_default_context()'
+
+  - rule_id: cg-python-tarfile-extractall
+    path: sample.py
+    positive: 'tar.extractall("/tmp/out")'
+    negative: 'tar.extractfile(member)'
+
+  - rule_id: cg-python-marshal-loads
+    path: sample.py
+    positive: 'obj = marshal.loads(payload)'
+    negative: 'obj = json.loads(payload)'
+
+  - rule_id: cg-python-jinja-autoescape-off
+    path: sample.py
+    positive: 'env = Environment(autoescape=False)'
+    negative: 'env = Environment(autoescape=True)'
+
+  - rule_id: cg-python-django-csrf-exempt
+    path: views.py
+    positive: '@csrf_exempt'
+    negative: '@csrf_protect'
+
+  - rule_id: cg-python-jwt-none-algorithm
+    path: auth.py
+    positive: 'jwt.decode(token, algorithms=["none"])'
+    negative: 'jwt.decode(token, algorithms=["RS256"])'
+
+  - rule_id: cg-python-jwt-signature-verify-off
+    path: auth.py
+    positive: 'jwt.decode(token, options={"verify_signature": False})'
+    negative: 'jwt.decode(token, options={"verify_signature": True})'
+
+  - rule_id: cg-python-os-popen
+    path: sample.py
+    positive: 'os.popen(command)'
+    negative: 'subprocess.run(["ls"], check=True)'
+
+  - rule_id: cg-python-weak-hash
+    path: sample.py
+    positive: 'digest = hashlib.md5(value)'
+    negative: 'digest = hashlib.sha256(value)'
+
+  - rule_id: cg-python-django-wildcard-hosts
+    path: settings.py
+    positive: 'ALLOWED_HOSTS = ["*"]'
+    negative: 'ALLOWED_HOSTS = ["example.com"]'
+
+  - rule_id: cg-javascript-document-write
+    path: sample.js
+    positive: 'document.write(userInput)'
+    negative: 'document.createTextNode(userInput)'
+
+  - rule_id: cg-javascript-insert-adjacent-html
+    path: sample.js
+    positive: 'element.insertAdjacentHTML("beforeend", html)'
+    negative: 'element.append(text)'
+
+  - rule_id: cg-javascript-function-constructor
+    path: sample.js
+    positive: 'const fn = new Function("return 1")'
+    negative: 'const fn = () => 1'
+
+  - rule_id: cg-javascript-timer-string
+    path: sample.js
+    positive: 'setTimeout("run()", 100)'
+    negative: 'setTimeout(run, 100)'
+
+  - rule_id: cg-node-exec-sync
+    path: sample.js
+    positive: 'execSync(command)'
+    negative: 'execFile("ls", ["-la"])'
+
+  - rule_id: cg-javascript-tls-verify-off
+    path: sample.js
+    positive: 'agent = { rejectUnauthorized: false }'
+    negative: 'agent = { rejectUnauthorized: true }'
+
+  - rule_id: cg-javascript-jwt-none-algorithm
+    path: auth.js
+    positive: 'verify(token, secret, { algorithms: ["none"] })'
+    negative: 'verify(token, secret, { algorithms: ["HS256"] })'
+
+  - rule_id: cg-javascript-weak-hash
+    path: sample.js
+    positive: 'createHash("md5")'
+    negative: 'createHash("sha256")'
+
+  - rule_id: cg-javascript-localstorage-secret
+    path: sample.js
+    positive: 'localStorage.setItem("access_token", token)'
+    negative: 'localStorage.setItem("theme", "dark")'
+
+  - rule_id: cg-javascript-postmessage-wildcard
+    path: sample.js
+    positive: 'window.postMessage(data, "*")'
+    negative: 'window.postMessage(data, "https://app.example.com")'
+
+  - rule_id: cg-javascript-weak-random-secret
+    path: sample.js
+    positive: 'token = Math.random().toString(36)'
+    negative: 'token = crypto.randomUUID()'
+
+  - rule_id: cg-go-tls-insecure-skip-verify
+    path: main.go
+    positive: 'TLSClientConfig: &tls.Config{InsecureSkipVerify: true},'
+    negative: 'TLSClientConfig: &tls.Config{InsecureSkipVerify: false},'
+
+  - rule_id: cg-go-shell-command
+    path: main.go
+    positive: 'exec.Command("sh", "-c", command)'
+    negative: 'exec.Command("git", "status")'
+
+  - rule_id: cg-go-weak-hash
+    path: main.go
+    positive: 'digest := md5.New()'
+    negative: 'digest := sha256.New()'
+
+  - rule_id: cg-go-sql-concat
+    path: main.go
+    positive: 'rows, err := db.Query("SELECT * FROM users WHERE id = " + id)'
+    negative: 'rows, err := db.Query("SELECT * FROM users WHERE id = $1", id)'
+
+  - rule_id: cg-java-runtime-exec
+    path: Main.java
+    positive: 'Runtime.getRuntime().exec(command);'
+    negative: 'new ProcessBuilder("git", "status").start();'
+
+  - rule_id: cg-java-object-input-stream
+    path: Main.java
+    positive: 'ObjectInputStream input = new ObjectInputStream(stream);'
+    negative: 'DataInputStream input = new DataInputStream(stream);'
+
+  - rule_id: cg-java-weak-hash
+    path: Main.java
+    positive: 'MessageDigest.getInstance("MD5");'
+    negative: 'MessageDigest.getInstance("SHA-256");'
+
+  - rule_id: cg-java-sql-concat
+    path: Main.java
+    positive: 'stmt.executeQuery("SELECT * FROM users WHERE id = " + id);'
+    negative: 'stmt.executeQuery("SELECT * FROM users WHERE id = ?");'
+
+  - rule_id: cg-java-spring-csrf-disabled
+    path: SecurityConfig.java
+    positive: 'http.csrf().disable();'
+    negative: 'http.csrf(csrf -> csrf.ignoringRequestMatchers("/api/webhook"));'
+
+  - rule_id: cg-php-eval
+    path: sample.php
+    positive: 'eval($code);'
+    negative: '$value = 1;'
+
+  - rule_id: cg-php-command-exec
+    path: sample.php
+    positive: 'system($command);'
+    negative: '$safe = escapeshellarg($command);'
+
+  - rule_id: cg-php-unserialize
+    path: sample.php
+    positive: '$data = unserialize($input);'
+    negative: '$data = json_decode($input, true);'
+
+  - rule_id: cg-php-weak-hash
+    path: sample.php
+    positive: '$hash = md5($value);'
+    negative: '$hash = password_hash($value, PASSWORD_DEFAULT);'
+
+  - rule_id: cg-php-dynamic-include
+    path: sample.php
+    positive: "include $_GET['page'];"
+    negative: "include 'config.php';"
+
+  - rule_id: cg-php-sql-concat
+    path: sample.php
+    positive: '$result = mysqli_query($db, "SELECT * FROM users WHERE id = " . $id);'
+    negative: '$stmt = $db->prepare("SELECT * FROM users WHERE id = ?");'
+
+  - rule_id: cg-ruby-eval
+    path: sample.rb
+    positive: 'eval(user_input)'
+    negative: 'value = 1'
+
+  - rule_id: cg-ruby-command-exec
+    path: sample.rb
+    positive: 'system(user_input)'
+    negative: 'Open3.capture3("ls")'
+
+  - rule_id: cg-ruby-yaml-load
+    path: sample.rb
+    positive: 'YAML.load(data)'
+    negative: 'YAML.safe_load(data)'
+
+  - rule_id: cg-ruby-marshal-load
+    path: sample.rb
+    positive: 'Marshal.load(data)'
+    negative: 'JSON.parse(data)'
+
+  - rule_id: cg-ruby-sql-interpolation
+    path: sample.rb
+    positive: 'User.where("name = ''#{name}''")'
+    negative: 'User.where(name: name)'
+
+  - rule_id: cg-rust-tls-accept-invalid
+    path: main.rs
+    positive: '.danger_accept_invalid_certs(true)'
+    negative: '.danger_accept_invalid_certs(false)'
+
+  - rule_id: cg-rust-shell-command
+    path: main.rs
+    positive: 'Command::new("sh")'
+    negative: 'Command::new("git")'
+
+  - rule_id: cg-rust-weak-hash
+    path: main.rs
+    positive: 'let mut hasher = Md5::new();'
+    negative: 'let mut hasher = Sha256::new();'
+
+  - rule_id: cg-c-gets
+    path: main.c
+    positive: 'gets(buffer);'
+    negative: 'fgets(buffer, sizeof buffer, stdin);'
+
+  - rule_id: cg-c-system
+    path: main.c
+    positive: 'system(command);'
+    negative: 'execvp(args[0], args);'
+
+  - rule_id: cg-c-mktemp
+    path: main.c
+    positive: 'char *path = mktemp(template);'
+    negative: 'int fd = mkstemp(template);'
+
+  - rule_id: cg-c-scanf-percent-s
+    path: main.c
+    positive: 'scanf("%s", buffer);'
+    negative: 'scanf("%15s", buffer);'
+
+  - rule_id: cg-shell-eval
+    path: script.sh
+    positive: 'eval "$command"'
+    negative: 'echo "$command"'
+
+  - rule_id: cg-shell-curl-insecure
+    path: script.sh
+    positive: 'curl -k https://example.com'
+    negative: 'curl --fail https://example.com'
+
+  - rule_id: cg-shell-rm-root
+    path: script.sh
+    positive: 'rm -rf /'
+    negative: 'rm -rf ./build'
+
+  - rule_id: cg-shell-ssh-host-check-off
+    path: script.sh
+    positive: 'StrictHostKeyChecking=no'
+    negative: 'StrictHostKeyChecking=yes'
+
+  - rule_id: cg-flask-cors-wildcard
+    path: app.py
+    positive: 'CORS(app, origins="*")'
+    negative: 'CORS(app, origins=["https://app.example.com"])'
+
+  - rule_id: cg-express-cors-wildcard
+    path: app.js
+    positive: 'cors({ origin: "*" })'
+    negative: 'cors({ origin: "https://app.example.com" })'
+
+  - rule_id: cg-express-session-insecure-cookie
+    path: app.js
+    positive: 'cookie: { secure: false }'
+    negative: 'cookie: { secure: true }'
+
+  - rule_id: cg-spring-actuator-exposed
+    path: application.properties
+    positive: 'management.endpoints.web.exposure.include=*'
+    negative: 'management.endpoints.web.exposure.include=health'
+
+  - rule_id: cg-nginx-proxy-ssl-verify-off
+    path: nginx.conf
+    positive: 'proxy_ssl_verify off;'
+    negative: 'proxy_ssl_verify on;'
+
+  - rule_id: cg-apache-proxy-ssl-verify-off
+    path: httpd.conf
+    positive: 'SSLProxyVerify none'
+    negative: 'SSLProxyVerify require'
+
+  - rule_id: cg-gha-script-injection
+    path: .github/workflows/test.yml
+    positive: 'run: echo "${{ github.event.pull_request.title }}"'
+    negative: 'run: echo "build"'
+
+  - rule_id: cg-gha-pull-request-target
+    path: .github/workflows/test.yml
+    positive: 'pull_request_target:'
+    negative: 'pull_request:'
+
+  - rule_id: cg-gha-write-all
+    path: .github/workflows/test.yml
+    positive: 'permissions: write-all'
+    negative: 'permissions: read-all'
+
+  - rule_id: cg-gha-action-branch-ref
+    path: .github/workflows/test.yml
+    positive: 'uses: actions/checkout@main'
+    negative: 'uses: actions/checkout@v4'
+
+  - rule_id: cg-gha-curl-pipe-shell
+    path: .github/workflows/test.yml
+    positive: 'run: curl -fsSL https://example.com/install.sh | bash'  # commit-guard-ignore: hooks-wget-pipe-bash-generic
+    negative: 'run: curl -fsSL -o install.sh https://example.com/install.sh'
+
+  - rule_id: cg-k8s-allow-privilege-escalation
+    path: pod.yaml
+    positive: 'allowPrivilegeEscalation: true'
+    negative: 'allowPrivilegeEscalation: false'
+
+  - rule_id: cg-k8s-host-network
+    path: pod.yaml
+    positive: 'hostNetwork: true'
+    negative: 'hostNetwork: false'
+
+  - rule_id: cg-k8s-host-pid
+    path: pod.yaml
+    positive: 'hostPID: true'
+    negative: 'hostPID: false'
+
+  - rule_id: cg-k8s-run-as-root
+    path: pod.yaml
+    positive: 'runAsUser: 0'
+    negative: 'runAsUser: 1000'
+
+  - rule_id: cg-k8s-capabilities-all
+    path: pod.yaml
+    context:
+      - 'securityContext:'
+      - '  capabilities:'
+      - '    add:'
+    positive: '    - ALL'
+    negative: '    - NET_BIND_SERVICE'
+
+  - rule_id: cg-k8s-seccomp-unconfined
+    path: pod.yaml
+    context:
+      - 'securityContext:'
+      - '  seccompProfile:'
+    positive: '    type: Unconfined'
+    negative: '    type: RuntimeDefault'
+    negative_context:
+      - 'securityContext:'
+      - '  seccompProfile:'
+
+  - rule_id: cg-terraform-iam-wildcard
+    path: main.tf
+    positive: 'actions = ["*"]'
+    negative: 'actions = ["s3:GetObject"]'
+
+  - rule_id: cg-terraform-kms-rotation-off
+    path: main.tf
+    positive: 'enable_key_rotation = false'
+    negative: 'enable_key_rotation = true'
+
+  - rule_id: cg-terraform-azure-public-network
+    path: main.tf
+    positive: 'public_network_access_enabled = true'
+    negative: 'public_network_access_enabled = false'
+
+  - rule_id: cg-terraform-public-ip
+    path: main.tf
+    positive: 'associate_public_ip_address = true'
+    negative: 'associate_public_ip_address = false'
+
+  - rule_id: cg-docker-copy-secrets
+    path: Dockerfile
+    positive: 'COPY .env /app/.env'
+    negative: 'COPY .env.example /app/.env.example'

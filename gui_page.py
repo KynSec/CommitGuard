@@ -486,6 +486,28 @@ body.focus-mode #gitPopoutBtn{display:none}
   body.focus-mode .git-studio{height:auto;min-height:100vh}
   .git-commit-actions{width:100%}
 }
+
+.overview-body{display:grid;gap:8px;font-size:12.5px;color:var(--muted)}
+.overview-body strong{color:var(--text)}
+.kpi{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:10px;padding:12px}
+.kpi b{display:block;font-size:22px;line-height:1.1;color:var(--text)}
+.kpi span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.kpi.warn b{color:var(--warn)}.kpi.bad b{color:var(--bad)}.kpi.ok b{color:var(--ok)}
+.status-pill{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:999px;padding:3px 9px;font-size:11px;color:var(--muted)}
+.status-pill.ok{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 40%,var(--line))}
+.status-pill.bad{color:var(--bad);border-color:color-mix(in srgb,var(--bad) 40%,var(--line))}
+.status-pill.warn{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 40%,var(--line))}
+.pipeline-group{margin:12px 0 6px;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.pipeline-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+.pipeline-row:first-of-type{border-top:0}
+.pipeline-main{min-width:0;display:grid;gap:3px}
+.pipeline-main code{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:min(720px,70vw)}
+.pipeline-badges{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.badge{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:1px 7px;font-size:10.5px;color:var(--muted)}
+.badge.detected{color:var(--warn)}
+.pipeline-console{max-height:460px;overflow:auto;white-space:pre-wrap;word-break:break-word}
+.gate-reason{border-left:3px solid var(--bad);background:color-mix(in srgb,var(--bad) 8%,var(--panel));border-radius:8px;padding:8px 10px;margin-top:6px;font-size:12px}
+.gate-pass{border-left:3px solid var(--ok);background:color-mix(in srgb,var(--ok) 8%,var(--panel));border-radius:8px;padding:10px 12px;font-size:12.5px}
 </style>
 </head>
 <body>
@@ -501,9 +523,21 @@ body.focus-mode #gitPopoutBtn{display:none}
     <nav class="nav" id="nav" aria-label="Main navigation">
       <div class="nav-group">
         <span class="nav-label">Workspace</span>
-        <button type="button" data-tab="scan" class="active" title="Scan">
+        <button type="button" data-tab="overview" class="active" title="Overview">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.2"/><rect x="14" y="3" width="7" height="7" rx="1.2"/><rect x="3" y="14" width="7" height="7" rx="1.2"/><rect x="14" y="14" width="7" height="7" rx="1.2"/></svg>
+          <span class="nav-label-text">Overview</span>
+        </button>
+        <button type="button" data-tab="scan" title="Scan">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
           <span class="nav-label-text">Scan</span>
+        </button>
+        <button type="button" data-tab="gate" title="Policy gate and triage">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4.5 6v5.2c0 4.6 3.2 8.8 7.5 9.8 4.3-1 7.5-5.2 7.5-9.8V6L12 3Z"/><path d="m8.7 12.2 2.1 2.1 4.6-4.6"/></svg>
+          <span class="nav-label-text">Gate &amp; triage</span>
+        </button>
+        <button type="button" data-tab="pipelines" title="Delivery pipelines">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h6M4 12h10M4 18h6"/><path d="m16 8 3 4-3 4"/></svg>
+          <span class="nav-label-text">Pipelines</span>
         </button>
         <button type="button" data-tab="git" title="Git studio">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.2"/><circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="8" r="2.2"/><path d="M6 8.2v7.6M8.2 6H14a4 4 0 0 1 4 4"/></svg>
@@ -596,7 +630,41 @@ body.focus-mode #gitPopoutBtn{display:none}
     </div>
     <div class="chips" id="repoChips"></div>
 
-    <section id="tab-scan">
+    <section id="tab-overview">
+      <div class="card">
+        <div class="row" style="justify-content:space-between;align-items:flex-start;gap:12px">
+          <div><h2 id="ovTitle">Workspace overview</h2><p class="hint" id="ovSubtitle">Repository, delivery checks, and security posture in one place.</p></div>
+          <button class="btn small" id="ovRefreshBtn">Refresh</button>
+        </div>
+        <div class="grid g4" id="ovKpis"></div>
+      </div>
+      <div class="grid g2">
+        <div class="card">
+          <h2>Repository</h2>
+          <div id="ovRepo" class="overview-body"><p class="hint">Load a repository to begin.</p></div>
+          <div class="row" style="margin-top:12px"><button class="btn" data-open-tab="git">Open Git Studio</button><button class="btn" id="ovRemoteRefresh">Refresh remotes</button></div>
+        </div>
+        <div class="card">
+          <h2>Quality gate</h2>
+          <div id="ovGate" class="overview-body"><p class="hint">Run a scan to evaluate policy.</p></div>
+          <div class="row" style="margin-top:12px"><button class="btn" data-open-tab="scan">Scan</button><button class="btn" id="ovGateBtn">Evaluate gate</button><button class="btn" data-open-tab="gate">Triage</button></div>
+        </div>
+      </div>
+      <div class="grid g2">
+        <div class="card">
+          <h2>Delivery pipelines</h2>
+          <div id="ovPipelines" class="overview-body"><p class="hint">Configure or detect project checks.</p></div>
+          <div class="row" style="margin-top:12px"><button class="btn" data-open-tab="pipelines">Manage pipelines</button></div>
+        </div>
+        <div class="card">
+          <h2>Latest findings</h2>
+          <div id="ovFindings" class="overview-body"><p class="hint">No scan loaded.</p></div>
+          <div class="row" style="margin-top:12px"><button class="btn" data-open-tab="scan">Review findings</button><button class="btn" data-open-tab="reports">Reports</button></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-scan" class="hidden">
       <div class="card">
         <h2>Scan your changes</h2>
         <p class="hint">Scans staged changes by default. Everything runs locally; secrets are redacted unless you explicitly opt in.</p>
@@ -726,6 +794,45 @@ body.focus-mode #gitPopoutBtn{display:none}
       </div>
     </section>
 
+    <section id="tab-gate" class="hidden">
+      <div class="grid g2">
+        <div class="card">
+          <h2>Policy gate</h2>
+          <p class="hint" id="gatePolicyInfo">Policy v1 is evaluated after baseline and triage.</p>
+          <div class="grid g2">
+            <div class="field"><label for="gateProfile">Profile</label><select id="gateProfile"><option value="">default</option><option>balanced</option><option>strict</option><option>audit</option></select></div>
+            <div class="field"><label for="gateThreshold">Threshold</label><select id="gateThreshold"><option value="">default</option><option>critical</option><option>high</option><option>medium</option><option>low</option><option>info</option></select></div>
+            <div class="field"><label for="gatePolicyFile">Policy file</label><input id="gatePolicyFile" placeholder="optional path"></div>
+            <div class="field"><label>&nbsp;</label><button class="btn primary" id="gateRunBtn">Evaluate last scan</button></div>
+          </div>
+          <div class="row" style="margin-top:8px"><button class="btn small" id="gateReloadBtn">Reload policy</button><button class="btn small" data-open-tab="config">Edit config</button></div>
+          <div id="gateOut" style="margin-top:14px"></div>
+        </div>
+        <div class="card">
+          <h2>Triage decision</h2>
+          <p class="hint">Accepted, false-positive, and wont-fix decisions suppress matching fingerprints. Fixed means the finding must disappear.</p>
+          <div class="grid g2">
+            <div class="field"><label for="triageFingerprint">Fingerprint</label><input id="triageFingerprint" list="triageFingerprintList" placeholder="from a finding"><datalist id="triageFingerprintList"></datalist></div>
+            <div class="field"><label for="triageState">State</label><select id="triageState"><option>accepted</option><option>false_positive</option><option>wont_fix</option><option>fixed</option></select></div>
+            <div class="field"><label for="triageOwner">Owner</label><input id="triageOwner" placeholder="@team"></div>
+            <div class="field"><label for="triageExpires">Expires</label><input id="triageExpires" type="date"></div>
+            <div class="field"><label for="triageTicket">Ticket</label><input id="triageTicket" placeholder="SEC-123"></div>
+            <div class="field"><label for="triageReason">Reason</label><input id="triageReason" placeholder="why this decision is safe"></div>
+          </div>
+          <div class="row" style="margin-top:10px"><button class="btn primary" id="triageSaveBtn">Save decision</button><button class="btn small" id="triageAuditBtn">Audit triage</button><button class="btn small" id="triageReloadBtn">Reload</button></div>
+          <div id="triageOut" style="margin-top:12px"></div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Current triage ledger</h2>
+        <p class="hint">This file belongs in version control: <code>.commit_guard/triage.yaml</code>.</p>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Fingerprint</th><th>State</th><th>Rule</th><th>Path</th><th>Owner</th><th>Expires</th><th>Ticket</th></tr></thead>
+          <tbody id="triageBody"></tbody>
+        </table></div>
+      </div>
+    </section>
+
     <section id="tab-git" class="hidden">
       <div class="git-studio">
         <div class="git-top">
@@ -844,6 +951,42 @@ body.focus-mode #gitPopoutBtn{display:none}
           <button class="git-mini" id="gitDoctorBtn">Scan history</button>
         </div>
         <div id="gitDoctorOut" class="git-doctor"></div>
+      </div>
+    </section>
+
+    <section id="tab-pipelines" class="hidden">
+      <div class="card">
+        <div class="row" style="justify-content:space-between;align-items:flex-start;gap:12px">
+          <div><h2>Delivery pipelines</h2><p class="hint">Run tests, lint, type checks, builds, container validation, or project-specific deploy/check commands locally. Commands are explicit argv arrays from <code>.commit_guard.toml</code>; they never use a shell.</p></div>
+          <div class="row"><button class="btn small" id="pipelineRefreshBtn">Refresh</button><button class="btn small" data-open-tab="config">Edit config</button></div>
+        </div>
+        <div class="notice">A pipeline runs only when you press Run and confirm the exact command. Treat repository configuration like code and review changes.</div>
+        <div id="pipelineList" style="margin-top:14px"><p class="hint">Load a repository to see configured and detected checks.</p></div>
+      </div>
+      <div class="card hidden" id="pipelineRunCard">
+        <div class="row" style="justify-content:space-between;align-items:center">
+          <h2 id="pipelineRunTitle">Pipeline output</h2>
+          <span class="status-pill" id="pipelineRunStatus">idle</span>
+        </div>
+        <p class="hint" id="pipelineRunCommand"></p>
+        <pre class="pre pipeline-console" id="pipelineOut"></pre>
+      </div>
+      <div class="card">
+        <h2>Configuration example</h2>
+        <p class="hint">Add named tables under <code>[pipelines]</code>. Use <code>cwd</code>, <code>timeout</code>, and <code>env</code> when needed. Detected checks are suggestions; copy them into configuration to pin them.</p>
+        <pre class="pre">[pipelines.test]
+command = ["python", "-m", "unittest", "discover", "-s", "tests"]
+category = "test"
+timeout = 300
+
+[pipelines.lint]
+command = ["python", "-m", "ruff", "check", "."]
+category = "lint"
+
+[pipelines.deploy-staging]
+command = ["./scripts/deploy", "staging"]
+category = "deploy"
+env = { DEPLOY_ENV = "staging" }</pre>
       </div>
     </section>
 
@@ -1074,7 +1217,7 @@ const FOCUS_MODE = new URLSearchParams(location.search).get("focus") === "1";
 if(FOCUS_MODE) document.body.classList.add("focus-mode");
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
-const state = { repo: INITIAL_REPO, info: null, report: null, options: null, rules: [], lastFixes: [] };
+const state = { repo: INITIAL_REPO, info: null, report: null, options: null, rules: [], lastFixes: [], pipelines: null, policy: null, triage: null };
 let ghToken = "";
 
 function esc(value){
@@ -1121,7 +1264,10 @@ async function api(path, options){
   return data;
 }
 const TAB_META = {
+  overview: ["Overview", "A single control plane for repository state, security posture, gates, and delivery checks."],
   scan: ["Scan", "Run the same security checks as hooks and CI, then review findings in one place."],
+  gate: ["Gate & triage", "Evaluate policy v1 and manage committed suppressions with owners, tickets, and expiry."],
+  pipelines: ["Pipelines", "Run local tests, lint, builds, container checks, and project delivery commands from one console."],
   git: ["Git studio", "A keyboard-driven LazyGit-style workspace for staging, diffing, committing, stashing, and syncing."],
   fixes: ["Fixes & suggestions", "Preview rule-provided fixes, apply only what you select, and inspect PR-ready suggestions."],
   pr: ["Pull requests", "Publish security reports and inline fix suggestions to GitHub with a session-only token."],
@@ -1180,6 +1326,9 @@ function showTab(name){
   $("#pageSubtitle").textContent = meta[1];
   document.title = meta[0] + " · Commit Guard";
   try { history.replaceState(null, "", "#" + name); } catch(e){}
+  if(name === "overview") loadOverview().catch(()=>{});
+  if(name === "gate") loadGate().catch(()=>{});
+  if(name === "pipelines") loadPipelines().catch(()=>{});
   if(name === "reports") loadReports().catch(()=>{});
   if(name === "baseline") loadBaseline().catch(()=>{});
   if(name === "config") loadConfig().catch(()=>{});
@@ -1238,6 +1387,7 @@ async function loadRepo(repo){
       notify("Loaded previous scan for this repository.", "ok");
     }
     notify("Repository loaded.", "ok");
+    if(!$("#tab-overview").classList.contains("hidden")) loadOverview().catch(() => {});
   }catch(err){
     notify(err.message, "bad");
   }finally{
@@ -1304,6 +1454,7 @@ async function runScan(){
     const data = await api("/api/scan", {method:"POST", body:{repo:state.repo, options}});
     state.report = data.report;
     state.options = options;
+    state.gateResult = null;
     renderResults();
     const total = data.report.total || 0;
     status.textContent = "Scanned in " + (data.duration_ms/1000).toFixed(2) + "s · exit " + data.exit_code;
@@ -2938,6 +3089,314 @@ document.addEventListener("keydown", (event) => {
 $("#optFixApply").addEventListener("change", () => { if($("#optFixApply").checked) $("#optFixDryRun").checked = false; });
 $("#optFixDryRun").addEventListener("change", () => { if($("#optFixDryRun").checked) $("#optFixApply").checked = false; });
 
+
+function kpi(label, value, kind){
+  return '<div class="kpi ' + (kind || '') + '"><b>' + esc(value) + '</b><span>' + esc(label) + '</span></div>';
+}
+function safeLoad(promise){
+  return promise.catch((err) => ({error: err && err.message ? err.message : String(err)}));
+}
+function gateOptions(){
+  return {
+    profile: ($("#gateProfile").value || "").trim(),
+    threshold: ($("#gateThreshold").value || "").trim(),
+    policy_path: ($("#gatePolicyFile").value || "").trim()
+  };
+}
+async function loadOverview(){
+  const repo = state.repo;
+  if(!repo){
+    $("#ovKpis").innerHTML = "";
+    $("#ovRepo").innerHTML = '<p class="hint">Load a repository to begin.</p>';
+    $("#ovGate").innerHTML = '<p class="hint">No repository loaded.</p>';
+    $("#ovPipelines").innerHTML = '<p class="hint">No repository loaded.</p>';
+    $("#ovFindings").innerHTML = '<p class="hint">No scan loaded.</p>';
+    return;
+  }
+  if(!state.info || state.info.root !== repo){
+    try { state.info = await api("/api/repo/info?repo=" + encodeURIComponent(repo)); }
+    catch(err){ $("#ovRepo").innerHTML = '<div class="notice">' + esc(err.message) + '</div>'; return; }
+  }
+  const info = state.info;
+  const [git, pipes, triage, policy] = await Promise.all([
+    safeLoad(api("/api/git/status?repo=" + encodeURIComponent(repo))),
+    safeLoad(api("/api/pipelines?repo=" + encodeURIComponent(repo))),
+    safeLoad(api("/api/triage?repo=" + encodeURIComponent(repo))),
+    safeLoad(api("/api/policy?repo=" + encodeURIComponent(repo)))
+  ]);
+  if(!git.error) state.gitStatus = git;
+  if(!pipes.error) state.pipelines = pipes;
+  if(!triage.error) state.triage = triage;
+  if(!policy.error) state.policy = policy.policy;
+
+  const changed = git.error ? 0 : Number(git.staged_count || 0) + Number(git.unstaged_count || 0) + Number(git.untracked_count || 0);
+  const findings = state.report ? Number(state.report.total || 0) : null;
+  const gate = state.gateResult;
+  $("#ovTitle").textContent = "Workspace overview · " + (info.name || "repository");
+  $("#ovSubtitle").textContent = info.root;
+  $("#ovKpis").innerHTML = [
+    kpi("Git changes", git.error ? "?" : changed, changed ? "warn" : "ok"),
+    kpi("Findings", findings === null ? "no scan" : findings, findings ? "warn" : "ok"),
+    kpi("Gate", gate ? (gate.passed ? "pass" : "blocked") : "not run", gate ? (gate.passed ? "ok" : "bad") : ""),
+    kpi("Pipelines", pipes.error ? "?" : (Number(pipes.configured.length) + Number(pipes.detected.length)), "")
+  ].join("");
+
+  if(git.error){
+    $("#ovRepo").innerHTML = '<div class="notice">' + esc(git.error) + '</div>';
+  } else {
+    const commit = git.last_commit ? esc(git.last_commit.subject || "") : "no commits";
+    $("#ovRepo").innerHTML =
+      '<div><strong>' + esc(info.root) + '</strong></div>' +
+      '<div>Branch <strong>' + esc(git.branch || (git.detached ? "detached" : "unborn")) + '</strong>' +
+      (git.upstream ? ' → <strong>' + esc(git.upstream) + '</strong>' : '') + '</div>' +
+      '<div>' + esc(changed) + ' change(s) · ahead ' + esc(git.ahead) + ' · behind ' + esc(git.behind) + '</div>' +
+      '<div>Hook <strong>' + esc(info.hook || "unknown") + '</strong> · baseline <strong>' + esc(info.baseline_exists ? "yes" : "no") + '</strong></div>' +
+      '<div>Remotes <strong>' + esc((git.remotes || []).join(", ") || "none") + '</strong></div>' +
+      '<div class="hint">Last commit: ' + commit + '</div>';
+  }
+
+  if(policy.error){
+    $("#ovGate").innerHTML = '<div class="notice">' + esc(policy.error) + '</div>';
+  } else if(state.policy){
+    const p = state.policy;
+    $("#ovGate").innerHTML =
+      '<div>Profile <strong>' + esc(p.profile) + '</strong> · threshold <strong>' + esc(p.threshold) + '</strong></div>' +
+      '<div>Fail on <strong>' + esc(p.fail_on) + '</strong> · ratchet <strong>' + esc(p.ratchet ? "on" : "off") + '</strong></div>' +
+      '<div>Enforcement <strong>' + esc(p.enforce ? "enabled" : "audit only") + '</strong></div>' +
+      '<div>Suppressed findings <strong>' + esc(triage.error ? "?" : (triage.entries || []).length) + '</strong></div>' +
+      '<div class="hint">Source: ' + esc(p.source || "defaults") + '</div>';
+  }
+
+  if(pipes.error){
+    $("#ovPipelines").innerHTML = '<div class="notice">' + esc(pipes.error) + '</div>';
+  } else {
+    const configured = pipes.configured || [];
+    const detected = pipes.detected || [];
+    const names = configured.concat(detected).slice(0, 6).map((item) => item.name);
+    $("#ovPipelines").innerHTML =
+      '<div>Configured <strong>' + configured.length + '</strong> · detected suggestions <strong>' + detected.length + '</strong></div>' +
+      '<div>' + (names.length ? names.map((name) => '<span class="badge">' + esc(name) + '</span>').join(" ") : '<span class="hint">No checks configured or detected.</span>') + '</div>';
+  }
+
+  if(!state.report){
+    $("#ovFindings").innerHTML = '<p class="hint">No scan loaded. Run a scan to see severity counts and gate evidence.</p>';
+  } else {
+    const summary = state.report.summary || {};
+    $("#ovFindings").innerHTML =
+      '<div><strong>' + esc(state.report.total || 0) + '</strong> finding(s)</div>' +
+      '<div>Critical <strong>' + esc(summary.critical || 0) + '</strong> · High <strong>' + esc(summary.high || 0) + '</strong> · Medium <strong>' + esc(summary.medium || 0) + '</strong> · Low <strong>' + esc(summary.low || 0) + '</strong></div>' +
+      '<div class="hint">' + (state.report.timestamp ? "Scanned " + esc(fmtTime(state.report.timestamp)) : "Latest in-memory report") + '</div>';
+  }
+}
+
+function renderGatePolicy(){
+  const p = state.policy;
+  if(!p){ $("#gatePolicyInfo").textContent = "No policy loaded."; return; }
+  $("#gatePolicyInfo").innerHTML =
+    'Profile <strong>' + esc(p.profile) + '</strong> · fail on <strong>' + esc(p.fail_on) + '</strong> · threshold <strong>' + esc(p.threshold) + '</strong> · ' +
+    'ratchet <strong>' + esc(p.ratchet ? "on" : "off") + '</strong> · ' + esc(p.enforce ? "enforcing" : "audit only") +
+    '<br><span class="hint">Source: ' + esc(p.source || "defaults") + '</span>';
+  $("#gateProfile").value = p.profile || "";
+  $("#gateThreshold").value = p.threshold || "";
+}
+function renderTriage(){
+  const entries = (state.triage && state.triage.entries) || [];
+  const list = $("#triageFingerprintList");
+  if(list){
+    const seen = new Set();
+    list.innerHTML = "";
+    if(state.report && Array.isArray(state.report.findings)){
+      state.report.findings.forEach((finding) => {
+        const fp = finding.fingerprint;
+        if(!fp || seen.has(fp)) return;
+        seen.add(fp);
+        const option = document.createElement("option");
+        option.value = fp;
+        option.label = (finding.rule_id || "") + " · " + (finding.file || "");
+        list.appendChild(option);
+      });
+    }
+  }
+  if(!entries.length){
+    $("#triageBody").innerHTML = '<tr><td colspan="7" class="hint">No triage decisions yet.</td></tr>';
+    return;
+  }
+  $("#triageBody").innerHTML = entries.map((entry) =>
+    '<tr><td><code title="' + esc(entry.fingerprint) + '">' + esc(String(entry.fingerprint || "").slice(0, 16)) + '…</code></td>' +
+    '<td>' + esc(entry.state) + '</td><td>' + esc(entry.rule_id || "") + '</td><td>' + esc(entry.path || "") + '</td>' +
+    '<td>' + esc(entry.owner || "") + '</td><td>' + esc(entry.expires || "") + '</td><td>' + esc(entry.ticket || "") + '</td></tr>'
+  ).join("");
+}
+async function loadGate(){
+  if(!state.repo){ notify("Load a repository first.", "warn"); return; }
+  const [policy, triage] = await Promise.all([
+    api("/api/policy?repo=" + encodeURIComponent(state.repo)),
+    api("/api/triage?repo=" + encodeURIComponent(state.repo))
+  ]);
+  state.policy = policy.policy;
+  state.triage = triage;
+  renderGatePolicy();
+  renderTriage();
+}
+function renderGateResult(gate){
+  if(!gate){ $("#gateOut").innerHTML = ""; return; }
+  const reasons = gate.reasons || [];
+  const summary = '<div class="' + (gate.passed ? "gate-pass" : "gate-reason") + '">' +
+    (gate.passed ? "Gate passed" : "Gate blocked") + " · profile " + esc(gate.profile) +
+    " · threshold " + esc(gate.threshold) + " · " + esc(gate.new_findings) + " new · " +
+    esc(gate.blocking) + " blocking · " + esc(gate.total) + " total</div>";
+  const rows = reasons.length ? reasons.map((reason) =>
+    '<div class="gate-reason"><strong>' + esc(reason.rule_id || "policy") + '</strong> · ' + esc(reason.reason || "") +
+    '<br><span class="hint">' + esc(reason.path || "") + (reason.line ? ":" + esc(reason.line) : "") + ' · ' + esc(reason.fingerprint || "") + '</span></div>'
+  ).join("") : "";
+  $("#gateOut").innerHTML = summary + rows;
+}
+async function evaluateGate(){
+  if(!state.repo){ notify("Load a repository first.", "warn"); return; }
+  if(!state.report){ notify("Run a scan first so the gate has evidence.", "warn"); showTab("scan"); return; }
+  const buttons = [$("#gateRunBtn"), $("#ovGateBtn")].filter(Boolean);
+  buttons.forEach((button) => { button.disabled = true; });
+  try{
+    const data = await api("/api/policy/gate", {
+      method: "POST",
+      body: { repo: state.repo, report: state.report, options: gateOptions() }
+    });
+    state.gateResult = data.gate;
+    renderGateResult(data.gate);
+    notify(data.gate.passed ? "Policy gate passed." : "Policy gate blocked the change.", data.gate.passed ? "ok" : "warn");
+    if(!$("#tab-overview").classList.contains("hidden")) loadOverview().catch(()=>{});
+  }catch(err){
+    $("#gateOut").innerHTML = '<div class="notice">' + esc(err.message) + '</div>';
+    notify(err.message, "bad");
+  }finally{
+    buttons.forEach((button) => { button.disabled = false; });
+  }
+}
+async function saveTriageDecision(){
+  const fingerprint = ($("#triageFingerprint").value || "").trim();
+  if(!fingerprint){ notify("Enter a finding fingerprint.", "warn"); return; }
+  const button = $("#triageSaveBtn");
+  button.disabled = true;
+  try{
+    const data = await api("/api/triage", {
+      method: "POST",
+      body: {
+        repo: state.repo,
+        fingerprint,
+        state: $("#triageState").value,
+        options: {
+          owner: $("#triageOwner").value,
+          reason: $("#triageReason").value,
+          ticket: $("#triageTicket").value,
+          expires: $("#triageExpires").value
+        }
+      }
+    });
+    notify("Triage decision saved to " + data.path, "ok");
+    state.gateResult = null;
+    await loadGate();
+    $("#gateOut").innerHTML = '<div class="notice">Triage changed. Re-evaluate the gate against the current scan.</div>';
+    $("#triageOut").innerHTML = '<div class="okbox">Saved. Commit <code>.commit_guard/triage.yaml</code> with the finding it governs.</div>';
+  }catch(err){
+    $("#triageOut").innerHTML = '<div class="notice">' + esc(err.message) + '</div>';
+    notify(err.message, "bad");
+  }finally{
+    button.disabled = false;
+  }
+}
+async function auditTriageDecisions(){
+  if(!state.report){ notify("Run a scan first to audit against current findings.", "warn"); showTab("scan"); return; }
+  try{
+    const data = await api("/api/triage/audit", {method: "POST", body: {repo: state.repo, report: state.report}});
+    const issues = data.issues || [];
+    $("#triageOut").innerHTML = issues.length
+      ? '<div class="notice"><strong>' + issues.length + ' triage issue(s)</strong>' + issues.map((issue) => '<div>· ' + esc(issue) + '</div>').join("") + '</div>'
+      : '<div class="okbox">Triage ledger is consistent with the current scan.</div>';
+  }catch(err){
+    $("#triageOut").innerHTML = '<div class="notice">' + esc(err.message) + '</div>';
+    notify(err.message, "bad");
+  }
+}
+
+function pipelineRow(spec, detected){
+  const badges = '<span class="badge">' + esc(spec.category) + '</span>' +
+    (detected ? '<span class="badge detected">detected</span>' : '<span class="badge">configured</span>');
+  return '<div class="pipeline-row"><div class="pipeline-main"><div class="pipeline-badges"><strong>' + esc(spec.name) + '</strong>' + badges + '</div>' +
+    '<code title="' + esc(spec.display_command) + '">' + esc(spec.display_command) + '</code>' +
+    '<div class="hint">' + esc(spec.description || "") + ' · timeout ' + esc(spec.timeout) + 's</div></div>' +
+    '<button class="btn small" data-run-pipeline="' + esc(spec.name) + '">Run</button></div>';
+}
+function renderPipelines(){
+  const data = state.pipelines;
+  if(!data){ $("#pipelineList").innerHTML = '<p class="hint">Refresh to load pipelines.</p>'; return; }
+  const configured = data.configured || [];
+  const detected = data.detected || [];
+  if(!configured.length && !detected.length){
+    $("#pipelineList").innerHTML = '<div class="notice">No pipelines configured and no project checks detected. Add a <code>[pipelines.&lt;name&gt;]</code> table to <code>.commit_guard.toml</code>.</div>';
+    return;
+  }
+  $("#pipelineList").innerHTML =
+    (configured.length ? '<div class="pipeline-group">Configured</div>' + configured.map((spec) => pipelineRow(spec, false)).join("") : "") +
+    (detected.length ? '<div class="pipeline-group">Detected suggestions</div>' + detected.map((spec) => pipelineRow(spec, true)).join("") : "");
+}
+async function loadPipelines(){
+  if(!state.repo){ notify("Load a repository first.", "warn"); return; }
+  try{
+    state.pipelines = await api("/api/pipelines?repo=" + encodeURIComponent(state.repo));
+    renderPipelines();
+  }catch(err){
+    $("#pipelineList").innerHTML = '<div class="notice">' + esc(err.message) + '</div>';
+    notify(err.message, "bad");
+  }
+}
+async function runNamedPipeline(name){
+  const data = state.pipelines || {configured: [], detected: []};
+  const spec = (data.configured || []).concat(data.detected || []).find((item) => item.name === name);
+  if(!spec) return;
+  if(!confirm("Run pipeline " + name + "?\n\n" + spec.display_command)) return;
+  const card = $("#pipelineRunCard");
+  card.classList.remove("hidden");
+  $("#pipelineRunTitle").textContent = "Pipeline · " + name;
+  $("#pipelineRunCommand").textContent = spec.display_command;
+  $("#pipelineRunStatus").textContent = "running";
+  $("#pipelineRunStatus").className = "status-pill warn";
+  $("#pipelineOut").textContent = "Running in " + (spec.cwd || ".") + " …";
+  $$("[data-run-pipeline]").forEach((button) => { button.disabled = true; });
+  try{
+    const response = await api("/api/pipelines/run", {method: "POST", body: {repo: state.repo, name}});
+    const result = response.result;
+    const output = result.output || [result.stdout, result.stderr].filter(Boolean).join("\n");
+    $("#pipelineOut").textContent = output || "(no output)";
+    $("#pipelineRunStatus").textContent = result.timed_out ? "timeout" : (result.ok ? "passed" : "failed · exit " + result.exit_code);
+    $("#pipelineRunStatus").className = "status-pill " + (result.ok ? "ok" : "bad");
+    notify(name + (result.ok ? " passed" : " failed") + " in " + result.duration_ms + "ms", result.ok ? "ok" : "bad");
+  }catch(err){
+    $("#pipelineOut").textContent = err.message;
+    $("#pipelineRunStatus").textContent = "failed to start";
+    $("#pipelineRunStatus").className = "status-pill bad";
+    notify(err.message, "bad");
+  }finally{
+    $$("[data-run-pipeline]").forEach((button) => { button.disabled = false; });
+  }
+}
+
+document.addEventListener("click", (event) => {
+  const opener = event.target.closest("[data-open-tab]");
+  if(opener){ showTab(opener.dataset.openTab); return; }
+  const runner = event.target.closest("[data-run-pipeline]");
+  if(runner){ runNamedPipeline(runner.dataset.runPipeline).catch((err) => notify(err.message, "bad")); }
+});
+if($("#ovRefreshBtn")) $("#ovRefreshBtn").addEventListener("click", () => loadOverview().catch((e) => notify(e.message, "bad")));
+if($("#ovRemoteRefresh")) $("#ovRemoteRefresh").addEventListener("click", () => loadOverview().catch((e) => notify(e.message, "bad")));
+if($("#ovGateBtn")) $("#ovGateBtn").addEventListener("click", evaluateGate);
+if($("#gateRunBtn")) $("#gateRunBtn").addEventListener("click", evaluateGate);
+if($("#gateProfile")) $("#gateProfile").addEventListener("change", () => { $("#gateThreshold").value = ""; });
+if($("#gateReloadBtn")) $("#gateReloadBtn").addEventListener("click", () => loadGate().catch((e) => notify(e.message, "bad")));
+if($("#triageSaveBtn")) $("#triageSaveBtn").addEventListener("click", saveTriageDecision);
+if($("#triageAuditBtn")) $("#triageAuditBtn").addEventListener("click", auditTriageDecisions);
+if($("#triageReloadBtn")) $("#triageReloadBtn").addEventListener("click", () => loadGate().catch((e) => notify(e.message, "bad")));
+if($("#pipelineRefreshBtn")) $("#pipelineRefreshBtn").addEventListener("click", () => loadPipelines().catch((e) => notify(e.message, "bad")));
+
 (function init(){
   let savedTheme = null;
   try { savedTheme = localStorage.getItem("commitguard.theme"); } catch(e){}
@@ -2948,7 +3407,7 @@ $("#optFixDryRun").addEventListener("change", () => { if($("#optFixDryRun").chec
   const target = saved || INITIAL_REPO;
   if(target){ $("#repoPath").value = target; loadRepo(target).catch(() => {}); }
   else { $("#repoPath").focus(); }
-  const initialTab = location.hash.slice(1) || (FOCUS_MODE ? "git" : "");
+  const initialTab = location.hash.slice(1) || (FOCUS_MODE ? "git" : "overview");
   if(TAB_META[initialTab]) showTab(initialTab);
 })();
 </script>

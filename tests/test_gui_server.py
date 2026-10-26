@@ -4,6 +4,7 @@ import http.client
 import json
 import shutil
 import subprocess
+import sys
 import tempfile
 import threading
 import unittest
@@ -129,6 +130,9 @@ class GuiServerTests(unittest.TestCase):
         self.assertIn("test-token", text)
         self.assertNotIn("__TOKEN__", text)
         self.assertIn("text/html", headers.get("Content-Type", ""))
+        self.assertIn('id="tab-overview"', text)
+        self.assertIn('id="tab-gate"', text)
+        self.assertIn('id="tab-pipelines"', text)
 
     def test_host_header_is_validated(self):
         connection = http.client.HTTPConnection("127.0.0.1", self.port, timeout=10)
@@ -211,6 +215,33 @@ class GuiServerTests(unittest.TestCase):
         )
         self.assertEqual(status, 200, gate)
         self.assertTrue(gate["gate"]["passed"])
+
+    def test_pipeline_and_policy_routes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+            (root / ".commit_guard.toml").write_text(
+                "[pipelines.smoke]\ncommand = "
+                + json.dumps([sys.executable, "-c", "print('route')"])
+                + "\ncategory = 'test'\ntimeout = 30\n",
+                encoding="utf-8",
+            )
+            status, listing, _ = self._request(
+                "/api/pipelines?repo=" + urllib.parse.quote(str(root))
+            )
+            self.assertEqual(status, 200, listing)
+            self.assertEqual([item["name"] for item in listing["configured"]], ["smoke"])
+            status, policy, _ = self._request(
+                "/api/policy?repo=" + urllib.parse.quote(str(root))
+            )
+            self.assertEqual(status, 200, policy)
+            self.assertEqual(policy["policy"]["profile"], "balanced")
+            status, result, _ = self._request(
+                "/api/pipelines/run", {"repo": str(root), "name": "smoke"}
+            )
+            self.assertEqual(status, 200, result)
+            self.assertTrue(result["result"]["ok"])
+            self.assertIn("route", result["result"]["stdout"])
 
     def test_report_download_and_traversal(self):
         self._request(

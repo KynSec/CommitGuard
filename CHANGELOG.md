@@ -20,6 +20,9 @@
 - GUI policy-gate and triage actions.
 - Apache-2.0 licensing package: SPDX license metadata, `NOTICE`, and
   `THIRD_PARTY_NOTICES.md`.
+- Expanded native rule packs to 120+ curated checks across Python,
+  JavaScript/TypeScript, Go, Java, PHP, Ruby, Rust, C/C++, shell, web-server
+  configuration, GitHub Actions, Kubernetes, Terraform, and Docker.
 - `rules/PROVENANCE.yaml` with source, revision, license, retrieval date, and
   SHA-256 checksums for every bundled rule file. Semgrep packs are marked
   release-blocked and excluded from release artifacts.
@@ -37,7 +40,12 @@
 - GUI server binds to loopback, requires a per-run token, validates the `Host`
   header, caps request bodies, and keeps secrets redacted by default.
 - GUI Git workspace: status/diffs, stage/unstage, commit, fetch/pull/push,
-  branch create/switch/delete, recent log, and a recent-history doctor.
+  branch create/switch/delete, stash, remotes, quick-command access to tags and
+  advanced operations, recent log, and a recent-history doctor.
+- GUI control-plane expansion: repository overview, policy gate with blocking
+  reasons, committed triage editor/auditor, and a shell-free delivery pipeline
+  console for configured or auto-detected test, lint, type-check, build,
+  security, and deploy commands.
 - GUI dependency graph preview/save and advanced scan controls for strict,
   soft-fail, GitHub annotations, verbose rules, custom config/rules/baseline,
   no-config, fix preview/apply, and SCA snapshot/timeout.

@@ -12,7 +12,7 @@ rules, and how to test them.
 |---|---|---|---|
 | gitleaks | `rules/gitleaks.toml` | 220+ | Secrets, entropy, keywords, per-rule allowlists. |
 | Semgrep regex | `rules/semgrep_rules/*.yaml` | 60+ | Language-scoped regex SAST patterns. Release-blocked: local development only, excluded from packages. |
-| Commit Guard native | `rules/custom_rules.yaml`, `rules/custom/**` | 28+ | Curated high-signal SAST/misconfiguration checks. |
+| Commit Guard native | `rules/custom_rules.yaml`, `rules/ai_security/`, `rules/iac/`, `rules/custom/**` | 120+ | Curated language, framework, CI, Kubernetes, Terraform, Docker, and configuration checks. |
 | Python AST taint | Built into `core/ast_taint.py` | 2 | Intraprocedural request/input-to-SQL and shell checks; no extra parser dependency. |
 | nuclei | `rules/nuclei_generic_key.yaml` | 2+ | Regex file templates for exposed credentials. |
 | Experimental | `rules/experimental/**` | not loaded | Reference packs kept for study/opt-in. |
