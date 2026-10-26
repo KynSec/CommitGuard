@@ -82,7 +82,11 @@ try:
         default_config_text,
         load_config,
     )
-    from core.dep_graph import build_dependency_graph, write_dependency_graph
+    from core.dep_graph import (
+        DependencyGraph,
+        build_dependency_graph,
+        write_dependency_graph,
+    )
     from core.git_diff import (
         DiffLine,
         GitDiffError,
@@ -286,7 +290,7 @@ def _write_dependency_outputs(
     config: Config,
     findings: list,
     vulnerable_packages: set[str] | None = None,
-) -> tuple[list[Path], str | None, object | None]:
+) -> tuple[list[Path], str | None, DependencyGraph | None]:
     """Builds the graph once and returns (written files, markdown, graph)."""
     if not config.dep_graph:
         return [], None, None
@@ -318,7 +322,7 @@ def _write_html_outputs(
     *,
     show_secrets: bool,
     truncated: bool,
-    dependency_graph: object | None,
+    dependency_graph: DependencyGraph | None,
 ) -> list[Path]:
     if "html" not in targets:
         return []
@@ -994,7 +998,7 @@ def run_scan(
         path for path in changed_paths if path.lower().endswith((".py", ".pyi"))
     }
     python_paths = (
-        changed_python_paths if history is None and not pre_push else set()
+        sorted(changed_python_paths) if history is None and not pre_push else []
     )
     if changed_python_paths and not python_paths:
         print(

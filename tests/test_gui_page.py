@@ -42,6 +42,8 @@ class GuiPageMarkupTests(unittest.TestCase):
     def test_critical_controls_are_present(self):
         required = {
             "themeToggle",
+            "openGitTabBtn",
+            "gitPopoutBtn",
             "pageTitle",
             "pageSubtitle",
             "gitRefreshBtn",
@@ -57,6 +59,18 @@ class GuiPageMarkupTests(unittest.TestCase):
             "baselinePathInfo",
         }
         self.assertTrue(required.issubset(set(self.ids)), sorted(required - set(self.ids)))
+
+    def test_git_new_tab_actions_share_one_handler(self):
+        self.assertEqual(
+            self.script.count('addEventListener("click", openGitStudioTab)'),
+            2,
+        )
+        helper = re.search(
+            r"function openGitStudioTab\(\)\{(.*?)\n\}", self.script, re.DOTALL
+        )
+        self.assertIsNotNone(helper)
+        self.assertIn('url.searchParams.set("focus", "1")', helper.group(1))
+        self.assertIn('url.hash = "git"', helper.group(1))
 
     def test_advanced_scan_controls_are_collected(self):
         match = re.search(r"function gatherOptions\(\)\{(.*?)\n\}", self.script, re.DOTALL)

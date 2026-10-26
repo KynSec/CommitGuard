@@ -310,6 +310,8 @@ def _as_bool(value: object, default: bool = False) -> bool:
 def _as_int(value: object, default: int | None = None) -> int | None:
     if value is None or value == "":
         return default
+    if not isinstance(value, (int, str)):
+        raise ActionError(f"Expected an integer, got: {value!r}")
     try:
         return int(value)
     except (TypeError, ValueError) as exc:

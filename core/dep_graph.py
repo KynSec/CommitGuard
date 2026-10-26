@@ -376,9 +376,9 @@ def _resolve_python(
             return candidate
     # `from package import module` may target a submodule rather than __init__.
     for suffix in ("",):
-        candidate = module_map.get(module + suffix)
-        if candidate:
-            return candidate
+        mapped = module_map.get(module + suffix)
+        if mapped:
+            return mapped
     return None
 
 
@@ -703,6 +703,7 @@ def build_dependency_graph(repo_root: Path, *, max_files: int = _MAX_FILES) -> D
             imports, external = _parse_php(path, text, existing)
         else:
             imports, external = set(), set()
+        assert language is not None
         nodes[path] = DependencyNode(
             path=path,
             language=language,

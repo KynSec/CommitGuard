@@ -23,6 +23,10 @@ or cloud service. Online dependency checks and GitHub PR features are opt-in.
 | [Rule authoring](docs/RULES.md) | Rule formats, suppression, validation, and current matcher support. |
 | [CI integrations](docs/CI.md) | GitHub Actions, SARIF, pre-commit, GitLab, and Jenkins examples. |
 | [Troubleshooting](docs/TROUBLESHOOTING.md) | Common setup, hook, reporting, and false-positive issues. |
+| [Security policy](SECURITY.md) | Private reporting, disclosure targets, and security releases. |
+| [Threat model](docs/THREAT_MODEL.md) | Assets, adversaries, controls, and abuse cases for the tool itself. |
+| [Naming and packages](docs/NAMING.md) | Canonical names and the PyPI availability record. |
+| [Baseline](docs/BASELINE.md) | Measured 2.1.0 test and rule counts. |
 | [Contributing](CONTRIBUTING.md) | Development setup, tests, and contribution workflow. |
 | [Changelog](CHANGELOG.md) | Version history and notable changes. |
 
@@ -664,9 +668,10 @@ file changes. Set `COMMIT_GUARD_CACHE_DIR` to relocate it.
 - Redaction is a reporting safeguard, not encryption. A real leaked credential
   should be **rotated**, not merely suppressed.
 
-If you find a security issue in Commit Guard itself, please open a private
-report with the maintainers rather than filing a public issue containing
-exploit details.
+If you find a security issue in Commit Guard itself, use the private reporting
+process in [SECURITY.md](SECURITY.md). Do not file a public issue containing
+exploit details. The threat model for the tool is documented in
+[docs/THREAT_MODEL.md](docs/THREAT_MODEL.md).
 
 ---
 
@@ -778,7 +783,10 @@ CommitGuard bundles or integrates with ideas and formats from these projects:
 - [Gitleaks](https://github.com/gitleaks/gitleaks) — upstream-style secret
   detection rules.
 - [Semgrep](https://semgrep.dev/) — source for regex-compatible rule packs;
-  AST-only Semgrep rules are not executed by CommitGuard.
+  AST-only Semgrep rules are not executed by CommitGuard. The semgrep-rules
+  license forbids redistribution, so those packs are local-development only and
+  are excluded from release artifacts. See
+  [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 - [OSV.dev](https://osv.dev/) — vulnerability data for optional dependency
   scanning.
 - [SARIF](https://github.com/oasis-tcs/sarif-spec) — standard format for

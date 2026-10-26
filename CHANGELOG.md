@@ -4,6 +4,17 @@
 
 ### Added
 
+- Apache-2.0 licensing package: SPDX license metadata, `NOTICE`, and
+  `THIRD_PARTY_NOTICES.md`.
+- `rules/PROVENANCE.yaml` with source, revision, license, retrieval date, and
+  SHA-256 checksums for every bundled rule file. Semgrep packs are marked
+  release-blocked and excluded from release artifacts.
+- `SECURITY.md`, `docs/THREAT_MODEL.md`, and RFC 9116 `security.txt` files with
+  private disclosure instructions and a 90-day coordinated disclosure target.
+- CI matrix for Python 3.11, 3.12, and 3.13 with lint, type checks, tests, rule
+  corpus validation, package build, and release-artifact checks.
+- `docs/NAMING.md` with the PyPI availability record and canonical surface
+  names, plus `docs/BASELINE.md` with the measured 2.1.0 baseline.
 - Optional local web control center (`./commit-guard gui`, `commit-guard-gui`):
   scan modes, severity filters, safe-fix preview/apply with per-finding
   selection, baseline management, rule explorer, configuration editor,

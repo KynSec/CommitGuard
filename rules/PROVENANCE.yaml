@@ -1,0 +1,164 @@
+# Rule provenance and redistribution audit.
+#
+# Every bundled rule file must appear exactly once below. Third-party packs are
+# not released unless their status is "cleared" and their license permits
+# redistribution. Run `python -m unittest tests.test_provenance` after changing
+# a rule file or adding a pack.
+schema_version: 1
+updated: 2026-10-26
+checksum_algorithm: sha256
+policy:
+  release_rule: "Only sources with status 'cleared' and redistribution 'allowed' may ship in a release artifact."
+  blocked_rule: "Sources with status 'release-blocked' must be excluded from wheels, sdists, and every other release channel."
+  reference_rule: "Sources with status 'reference-only' are present for audit or local experimentation and are not loaded by default."
+
+sources:
+  - id: gitleaks-default-config
+    kind: third-party-rule-pack
+    status: cleared
+    project: gitleaks
+    source_url: https://github.com/gitleaks/gitleaks
+    source_path: config/gitleaks.toml
+    revision: v8.30.1 (83d9cd684c87d95d656c1458ef04895a7f1cbd8e)
+    retrieved: 2026-10-22
+    license: MIT
+    license_url: https://github.com/gitleaks/gitleaks/blob/master/LICENSE
+    redistribution: allowed
+    bundled_default: true
+    files:
+      - path: rules/gitleaks.toml
+        sha256: 9ad910b401b67eba450292914a458152b1d75b26d85e59964ef6992fe7dc9db5
+        notes: >-
+          One local change versus upstream v8.30.1: the allowlist regex
+          "(?i)^true|false|null$" was regrouped as "(?i)^(?:true|false|null)$"
+          so Python's re applies the case-insensitive flag to the whole
+          alternation.
+
+  - id: semgrep-rules-corpus
+    kind: third-party-rule-pack
+    status: release-blocked
+    project: semgrep-rules
+    source_url: https://github.com/semgrep/semgrep-rules
+    revision: 85ea422496b5b30587bd0b6c1bf5462c20f7fbda (2026-09-04)
+    retrieved: 2026-09-12
+    license: Semgrep Rules License v1.0
+    license_url: https://semgrep.dev/legal/rules-license
+    redistribution: blocked
+    bundled_default: false
+    packaged: false
+    notes: >-
+      The Semgrep Rules License permits internal use only and forbids
+      distribution. The local packs are YAML-normalized concatenations of
+      upstream rule files, so byte hashes differ from upstream files; the
+      revision identifies the upstream tree used as the source. Some rules
+      carry additional per-rule license metadata that requires a file-by-file
+      review. These files are excluded from package-data and must not be
+      published until this entry is cleared.
+    files:
+      - path: rules/semgrep_rules/semgrep_ai.yaml
+        sha256: fd3e6afd404a35dc07129e1076cbca68303e0904627f304c9cfe0d6e63decac9
+      - path: rules/semgrep_rules/semgrep_bash.yaml
+        sha256: 9677e1aa121f2c1eca48268fad0d722f5b241ad0668692953fd939250b06aeba
+      - path: rules/semgrep_rules/semgrep_c.yaml
+        sha256: ef9fb0f0ea0f5ae397929c758c4521da4e19d8574cfcad29c1a43f6cdc6edc0d
+      - path: rules/semgrep_rules/semgrep_csharp.yaml
+        sha256: 179d5837186f945fad0dd4e2c3f391235ac71e7545c3fe3eafab8ce641ca7adb
+      - path: rules/semgrep_rules/semgrep_dockerfile.yaml
+        sha256: 880616b00422eb1ce3d5e5a29c06eb290b9287dc4f333c5ca58b0192add93722
+      - path: rules/semgrep_rules/semgrep_elixir.yaml
+        sha256: 41ba465fb2e9599d2fbf9a93947e5913a83c5f9c645b8cd535d9dc347228783c
+      - path: rules/semgrep_rules/semgrep_generic.yaml
+        sha256: c0fe71ce3a6a23d832de6f7e403fedb771bc25dea936fb8e87f9386cf5ef7d40
+      - path: rules/semgrep_rules/semgrep_generic_secrets.yaml
+        sha256: 3b1342cd312704f092acbb90e94e13f5ac1c3fac3d2e1fee95f0f5801ec65516
+      - path: rules/semgrep_rules/semgrep_go.yaml
+        sha256: fc8c3d48c2ef07f453fb1578d659d856a3410a23e19305b77b1e949ba4e857d6
+      - path: rules/semgrep_rules/semgrep_java.yaml
+        sha256: 010cc7269c8c36dbbfebd8ba3e5b2dbdca8e42c937b851b05dd227339e386448
+      - path: rules/semgrep_rules/semgrep_javascript.yaml
+        sha256: 9206d54b26277f26ac871b9054e7f2a79e372717e4da7e00bd5c9f41b478dd2d
+      - path: rules/semgrep_rules/semgrep_json.yaml
+        sha256: 0ad6f9168e0ad84b121750262c1d0b1c6ddbbb68ac287da8a08b7d464bb0d31a
+      - path: rules/semgrep_rules/semgrep_kotlin.yaml
+        sha256: 2f0fa0b3393eecf77349d743cb08e3f94583ba557f9c3663d0a89a2ce5028b12
+      - path: rules/semgrep_rules/semgrep_php.yaml
+        sha256: 59826872663ea190fefba4eacc1af0e7cbd672b05fb1acaff3bb728e33ff05b6
+      - path: rules/semgrep_rules/semgrep_python.yaml
+        sha256: 5551238bae5827d59f51679dabcda24e75566288c2341eb3294a6f62b7604357
+      - path: rules/semgrep_rules/semgrep_python_eval.yaml
+        sha256: dacec433b07c958445e7df65940543072475b965799eba5a1ba0da83b945ddbf
+      - path: rules/semgrep_rules/semgrep_ruby.yaml
+        sha256: f493234a86b9c98c479f0c7fc9fd61336f3ba1bd3e5121d97d550cfea07e6efe
+      - path: rules/semgrep_rules/semgrep_rust.yaml
+        sha256: 8ec7064f50db18bd28eb7e2cd166f077c8c3abacdd1365652b21d72e95b50fe2
+      - path: rules/semgrep_rules/semgrep_scala.yaml
+        sha256: 9b8ae6302d4de631b7e149d31b58cf3c7b67651171aef70d298068225184d9df
+      - path: rules/semgrep_rules/semgrep_solidity.yaml
+        sha256: 35ae6ee2f5a6494f06dfd2e55bd6c374d8bf0aacb72342354dfa046cfab20a76
+      - path: rules/semgrep_rules/semgrep_swift.yaml
+        sha256: 7dda717b8f8186bef9081692f57504a3d144cdbfd838d033176881b2edf401a8
+      - path: rules/semgrep_rules/semgrep_terraform.yaml
+        sha256: 13205466097482e6c7977e2e82b309f93230289dc0aa4436e0faf93baa6670c7
+      - path: rules/semgrep_rules/semgrep_typescript.yaml
+        sha256: 5a359c7017ca2eb6f46afa4c4aadbe051c8a2268596382cad41afe688b83d7e7
+      - path: rules/semgrep_rules/semgrep_yaml.yaml
+        sha256: 310de0255faab0c23d956ecd38340b4732be310e482177275406a4b685dc83f7
+
+  - id: owasp-crs-sqli-942
+    kind: third-party-rule-pack
+    status: reference-only
+    project: OWASP Core Rule Set
+    source_url: https://github.com/coreruleset/coreruleset
+    source_path: rules/REQUEST-942-APPLICATION-ATTACK-SQLI.conf
+    revision: 87de6a8e04c774533e6e939323588a61cca46a6a (OWASP_CRS/4.30.0-dev)
+    retrieved: 2026-09-12
+    license: Apache-2.0
+    license_url: https://github.com/coreruleset/coreruleset/blob/main/LICENSE
+    redistribution: allowed
+    bundled_default: false
+    files:
+      - path: rules/experimental/owasp_sqli.conf
+        sha256: 4d5297b8b352022d484a7f3fe15a0b05bde6d9a92d055fa6cda32a71fb3fc7f2
+        notes: Upstream file is byte-identical. Not loaded by default.
+
+  - id: bandit-b102-exec
+    kind: third-party-rule-pack
+    status: reference-only
+    project: Bandit
+    source_url: https://github.com/PyCQA/bandit
+    source_path: bandit/plugins/exec.py
+    revision: 3aaa2b07be47090344d89e5532bcde15127c2909
+    retrieved: 2026-09-12
+    license: Apache-2.0
+    license_url: https://github.com/PyCQA/bandit/blob/main/LICENSE
+    redistribution: allowed
+    bundled_default: false
+    files:
+      - path: rules/experimental/bandit_exec_rule.py
+        sha256: e64a2c4a6808f18d9733867fe61c08abb5914e67697c333913bb97613686c60a
+        notes: Upstream B102 plugin is byte-identical. Not executed by CommitGuard.
+
+  - id: commitguard-native-rules
+    kind: project-authored
+    status: cleared
+    project: CommitGuard
+    source_url: https://github.com/AmrEldhshan/CommitGuard
+    revision: project working tree
+    retrieved: 2026-10-26
+    license: Apache-2.0
+    license_url: https://github.com/AmrEldhshan/CommitGuard/blob/main/LICENSE
+    redistribution: allowed
+    bundled_default: true
+    files:
+      - path: rules/custom_rules.yaml
+        sha256: e18836fbb416824dd08b259c54d6ff05bf03f5bf44fb0e7d2a4cf81def24c0c7
+      - path: rules/ai_security/rules.yaml
+        sha256: 8b70755fe235b5eefd0ab6cedb4ab3e1faf61b2f73a3096edad3c27774100819
+      - path: rules/iac/rules.yaml
+        sha256: 37d51949731b40418a448712daebf80d21195b7a9c8f44adcfb901ab9979c87e
+      - path: rules/corpus.yaml
+        sha256: 653aafbea4f0bd6f1076a4d6c7a77362b86f7dc9e755204b6d6cfdfc73e901a4
+        notes: Positive/negative samples for check-rules; not a detection pack.
+      - path: rules/nuclei_generic_key.yaml
+        sha256: 6d5ae7e2e6f1d204f0dd761a021067f3249c818cc9517cab83011f696b5e0366
+        notes: Original nuclei-style template authored for CommitGuard; no upstream template is copied.

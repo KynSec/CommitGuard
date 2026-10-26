@@ -1,0 +1,6 @@
+Contact: mailto:amr171516@gmail.com
+Expires: 2027-10-26T00:00:00.000Z
+Preferred-Languages: en
+Canonical: https://amreldhshan.github.io/CommitGuard/.well-known/security.txt
+Policy: https://github.com/AmrEldhshan/CommitGuard/blob/main/SECURITY.md
+Acknowledgments: https://github.com/AmrEldhshan/CommitGuard/security/advisories

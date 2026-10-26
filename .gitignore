@@ -11,6 +11,8 @@ __pycache__/
 .pytest_cache/
 .venv/
 venv/
+build/
+dist/
 
 # OS / editor noise
 .DS_Store

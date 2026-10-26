@@ -11,7 +11,7 @@ rules, and how to test them.
 | Source | Loaded from | Count (approx.) | Strengths |
 |---|---|---|---|
 | gitleaks | `rules/gitleaks.toml` | 220+ | Secrets, entropy, keywords, per-rule allowlists. |
-| Semgrep regex | `rules/semgrep_rules/*.yaml` | 60+ | Language-scoped regex SAST patterns. |
+| Semgrep regex | `rules/semgrep_rules/*.yaml` | 60+ | Language-scoped regex SAST patterns. Release-blocked: local development only, excluded from packages. |
 | Commit Guard native | `rules/custom_rules.yaml`, `rules/custom/**` | 28+ | Curated high-signal SAST/misconfiguration checks. |
 | Python AST taint | Built into `core/ast_taint.py` | 2 | Intraprocedural request/input-to-SQL and shell checks; no extra parser dependency. |
 | nuclei | `rules/nuclei_generic_key.yaml` | 2+ | Regex file templates for exposed credentials. |
@@ -346,3 +346,5 @@ changes.
 - Is there a positive test (finding detected) and a negative test (safe code
   not flagged)?
 - Does it compile on the minimum supported Python (3.11)?
+- Is its source, revision, license, retrieval date, and SHA-256 checksum
+  recorded in `rules/PROVENANCE.yaml`?

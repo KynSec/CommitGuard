@@ -1,0 +1,119 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install runtime dependency
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pyyaml
+
+      - name: Compile
+        run: >-
+          python -m py_compile
+          main.py install_hook.py gui_server.py gui_actions.py gui_page.py
+          core/*.py
+
+      - name: Rule corpus check
+        run: python main.py --check-rules
+
+      - name: Tests
+        run: python -m unittest discover -s tests -v
+
+  quality:
+    name: Lint, types, and package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install tooling
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pyyaml ruff mypy build twine
+
+      - name: Lint
+        run: >-
+          ruff check
+          main.py install_hook.py gui_server.py gui_actions.py gui_page.py
+          core tests
+
+      - name: Type check
+        run: >-
+          mypy
+          main.py install_hook.py gui_server.py gui_actions.py gui_page.py
+          core
+
+      - name: Build package
+        run: python -m build
+
+      - name: Check package metadata
+        run: python -m twine check dist/*
+
+      - name: Check release artifact contents
+        run: |
+          python - <<'PY'
+          import glob
+          import sys
+          import tarfile
+          import zipfile
+
+          wheels = glob.glob("dist/*.whl")
+          sdists = glob.glob("dist/*.tar.gz")
+          if len(wheels) != 1 or len(sdists) != 1:
+              sys.exit(f"expected one wheel and one sdist, got {wheels} and {sdists}")
+
+          with zipfile.ZipFile(wheels[0]) as archive:
+              wheel_names = archive.namelist()
+          with tarfile.open(sdists[0]) as archive:
+              sdist_names = archive.getnames()
+
+          for label, names in (("wheel", wheel_names), ("sdist", sdist_names)):
+              blocked = [name for name in names if "rules/semgrep_rules/" in name]
+              if blocked:
+                  sys.exit(f"{label} contains release-blocked Semgrep rules: {blocked[:3]}")
+              for required in ("LICENSE", "NOTICE", "THIRD_PARTY_NOTICES.md"):
+                  if not any(name.endswith(required) for name in names):
+                      sys.exit(f"{label} is missing {required}")
+          print("release artifacts exclude blocked rule packs and include license notices")
+          PY
+
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: commit-guard-dist
+          path: dist/

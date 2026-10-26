@@ -563,6 +563,10 @@ body.focus-mode #gitPopoutBtn{display:none}
         <p id="pageSubtitle">Run the same security checks as hooks and CI, then review findings in one place.</p>
       </div>
       <div class="page-actions">
+        <button type="button" class="btn" id="openGitTabBtn" title="Open Git studio in a new browser tab">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-8 8"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>
+          <span>Git tab</span>
+        </button>
         <button type="button" class="icon-btn" id="themeToggle" title="Toggle light/dark theme" aria-label="Toggle light/dark theme">
           <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
           <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11Z"/></svg>
@@ -2681,14 +2685,16 @@ $("#gitCommitActions").addEventListener("click", async (event) => {
 $("#gitFileSearch").addEventListener("input", () => {
   if(state.git && state.git.status) renderGitFiles(state.git.status.files);
 });
-$("#gitPopoutBtn").addEventListener("click", () => {
+function openGitStudioTab(){
   const url = new URL("/", location.href);
   url.searchParams.set("t", TOKEN);
   url.searchParams.set("focus", "1");
   if(state.repo) url.searchParams.set("repo", state.repo);
   url.hash = "git";
   window.open(url.toString(), "_blank", "noopener");
-});
+}
+$("#openGitTabBtn").addEventListener("click", openGitStudioTab);
+$("#gitPopoutBtn").addEventListener("click", openGitStudioTab);
 $("#gitLeftTabs").addEventListener("click", (event) => {
   const button = event.target.closest("[data-git-left]");
   if(button) showGitPanel(button.dataset.gitLeft);

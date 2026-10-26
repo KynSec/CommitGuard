@@ -182,7 +182,7 @@ class _TaintAnalyzer:
                 flagged_code=flagged,
                 redacted_code=flagged,
                 fingerprint=fingerprint,
-                tags=details["tags"],
+                tags=tuple(details["tags"]),
                 cwe=str(details["cwe"]),
             ),
             sink_line,

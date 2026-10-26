@@ -771,12 +771,12 @@ def scan_dependencies(
     vulnerabilities: list[Vulnerability] = []
     by_key = {package.key: package for package in packages}
     for key, raw_vulns in mapping.items():
-        package = by_key.get(key)
-        if package is None:
+        pkg = by_key.get(key)
+        if pkg is None:
             continue
         for raw in raw_vulns:
-            if _matches_package(raw, package):
-                vulnerabilities.append(_to_vulnerability(raw, package))
+            if _matches_package(raw, pkg):
+                vulnerabilities.append(_to_vulnerability(raw, pkg))
     unique: dict[tuple[str, str, str], Vulnerability] = {}
     for vulnerability in vulnerabilities:
         unique[(vulnerability.id, vulnerability.package_name, vulnerability.version)] = vulnerability

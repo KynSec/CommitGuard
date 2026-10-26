@@ -24,6 +24,7 @@ import sys
 import xml.etree.ElementTree as ET
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 from core import __version__
 from core.rule_loader import SEVERITY_ORDER
@@ -222,12 +223,12 @@ def build_sarif_report(
 ) -> str:
     """Renders a SARIF 2.1.0 document for GitHub/Azure code scanning."""
     rule_indexes: dict[str, int] = {}
-    rules: list[dict] = []
+    rules: list[dict[str, Any]] = []
     for finding in _sorted(findings):
         if finding.rule_id in rule_indexes:
             continue
         rule_indexes[finding.rule_id] = len(rules)
-        rule = {
+        rule: dict[str, Any] = {
             "id": finding.rule_id,
             "name": finding.rule_id,
             "shortDescription": {"text": finding.description},

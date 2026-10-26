@@ -629,6 +629,8 @@ def pull_request_context_from_environment() -> PullRequestContext:
 
 
 def _positive_int(value: object) -> int | None:
+    if isinstance(value, bool) or not isinstance(value, (int, str)):
+        return None
     try:
         parsed = int(value)
     except (TypeError, ValueError):

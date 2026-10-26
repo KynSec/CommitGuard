@@ -1258,7 +1258,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     target = Path(
-        getattr(args, "repo_opt", None) or getattr(args, "repo", ".")
+        str(getattr(args, "repo_opt", None) or getattr(args, "repo", "."))
     ).expanduser().resolve()
 
     try:

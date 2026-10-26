@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,6 +7,8 @@ name = "commit-guard"
 dynamic = ["version"]
 description = "Offline-first secret, SAST, dependency, and blast-radius scanner with zero telemetry."
 readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE", "THIRD_PARTY_NOTICES.md"]
 requires-python = ">=3.11"
 dependencies = ["PyYAML>=6.0"]
 keywords = ["security", "secrets", "sast", "sca", "pre-commit", "github-actions"]
@@ -42,3 +44,19 @@ version = {attr = "core.__version__"}
 
 [tool.setuptools.package-data]
 rules = ["*.toml", "*.yaml", "*.yml", "**/*.toml", "**/*.yaml", "**/*.yml"]
+
+[tool.setuptools.exclude-package-data]
+# Semgrep Rules License v1.0 forbids redistribution. The packs stay in the
+# source tree for local development only until the license review clears them.
+rules = ["semgrep_rules/*", "semgrep_rules/**/*"]
+
+[tool.ruff]
+target-version = "py311"
+
+[tool.mypy]
+python_version = "3.11"
+warn_unused_configs = true
+
+[[tool.mypy.overrides]]
+module = ["yaml"]
+ignore_missing_imports = true

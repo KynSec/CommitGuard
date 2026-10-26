@@ -95,8 +95,12 @@ def apply_fixes(
             if index < 0 or index >= len(lines):
                 continue
             before = lines[index]
+            fix_pattern = rule.fix_pattern
+            fix_replacement = rule.fix_replacement
+            if fix_pattern is None or fix_replacement is None:
+                continue
             try:
-                after = rule.fix_pattern.sub(rule.fix_replacement, before, count=1)
+                after = fix_pattern.sub(fix_replacement, before, count=1)
             except (re.error, IndexError) as exc:
                 raise AutoFixError(
                     f"Invalid replacement for '{finding.rule_id}' in '{relative}': {exc}"

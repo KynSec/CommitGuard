@@ -39,6 +39,7 @@ from __future__ import annotations
 import tomllib
 from dataclasses import dataclass, field, replace
 from pathlib import Path
+from typing import Any, cast
 
 from core.paths import DEFAULT_EXCLUDES
 
@@ -98,7 +99,7 @@ class Config:
         clean = {key: value for key, value in overrides.items() if value is not None}
         if not clean:
             return self
-        return replace(self, **clean)
+        return replace(self, **cast(Any, clean))
 
 
 def _as_str_tuple(value: object, key: str) -> tuple[str, ...]:

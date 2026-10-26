@@ -36,6 +36,29 @@ suite.
 
 ---
 
+## Licensing and provenance
+
+- CommitGuard uses Apache-2.0. By contributing, you agree that your work is
+  provided under the same license.
+- Sign off every commit with the Developer Certificate of Origin:
+
+  ```bash
+  git commit -s -m "your message"
+  ```
+
+  The project uses DCO sign-off (`Signed-off-by`) and does not require a CLA.
+- Add `SPDX-License-Identifier: Apache-2.0` to new source files. Do not churn
+  existing files solely to add headers.
+- Do not copy a third-party rule pack, rule corpus, or test fixture into the
+  repository unless its license allows redistribution. Record every source in
+  `rules/PROVENANCE.yaml` with the source URL, revision or commit, license,
+  retrieval date, and SHA-256 checksum of the local files.
+- A pack whose license has not been reviewed is `release-blocked`. It may stay
+  in the source tree for local reference only and must be excluded from built
+  artifacts. Do not list a blocked pack in a release note or upload it.
+- Report vulnerabilities in CommitGuard itself through the process in
+  [SECURITY.md](SECURITY.md), not in a public issue.
+
 ## Code style
 
 - Match the existing style: type hints, small pure functions, docstrings that
