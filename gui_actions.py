@@ -865,6 +865,436 @@ def git_delete_branch(
     }
 
 
+def _validate_rev(repo: Path, value: object) -> str:
+    ref = str(value or "").strip()
+    if not ref or ref.startswith("-") or "\n" in ref or "\r" in ref or "\x00" in ref:
+        raise ActionError("A valid git revision is required.")
+    if len(ref) > 200:
+        raise ActionError("The git revision is too long.")
+    result = _git(repo, "rev-parse", "--verify", "--quiet", f"{ref}^{{commit}}")
+    if result.returncode != 0:
+        raise ActionError(f"Unknown commit: {ref!r}")
+    return result.stdout.strip()
+
+
+def git_show(target: str | Path, ref: str) -> dict:
+    """Returns metadata and a patch for a single commit."""
+    repo = find_repo_root(target)
+    commit = _validate_rev(repo, ref)
+    meta = _git_output(
+        repo,
+        "show",
+        "-s",
+        "--format=%H%x1f%h%x1f%an%x1f%ae%x1f%aI%x1f%s",
+        commit,
+    ).strip()
+    fields = meta.split("\x1f", 5)
+    if len(fields) != 6:
+        raise ActionError("Could not read the commit metadata.")
+    diff = _tail(
+        _git_output(
+            repo,
+            "show",
+            "--no-color",
+            "--no-ext-diff",
+            "--patch",
+            "--format=",
+            commit,
+        ),
+        200000,
+    )
+    return {
+        "repo": str(repo),
+        "hash": fields[0],
+        "short": fields[1],
+        "author": fields[2],
+        "email": fields[3],
+        "date": fields[4],
+        "subject": fields[5],
+        "diff": _redact_git_text(diff),
+        "empty": not bool(diff.strip()),
+    }
+
+
+def git_restore(
+    target: str | Path,
+    paths: list[str] | None = None,
+    *,
+    all_files: bool = False,
+) -> dict:
+    """Discards working-tree changes for tracked files."""
+    repo = find_repo_root(target)
+    if all_files:
+        _git_output(repo, "restore", "--worktree", "--", ".")
+    else:
+        cleaned = [_validate_git_path(repo, item) for item in (paths or [])]
+        if not cleaned:
+            raise ActionError("Select at least one file to restore.")
+        _git_output(repo, "restore", "--worktree", "--", *cleaned)
+    return {"ok": True, "status": git_status(repo)}
+
+
+def git_clean(
+    target: str | Path,
+    paths: list[str] | None = None,
+    *,
+    confirm: str = "",
+) -> dict:
+    """Deletes untracked files after an explicit confirmation."""
+    repo = find_repo_root(target)
+    if confirm.strip() != "discard":
+        raise ActionError("Type 'discard' to confirm deleting untracked files.")
+    cleaned = [_validate_git_path(repo, item) for item in (paths or [])]
+    if not cleaned:
+        raise ActionError("Select at least one untracked file to delete.")
+    _git_output(repo, "clean", "-f", "--", *cleaned)
+    return {
+        "ok": True,
+        "deleted": cleaned,
+        "status": git_status(repo),
+    }
+
+
+def _stash_ref(index: object) -> str:
+    value = _as_int(index, 0)
+    if value is None or value < 0:
+        raise ActionError("Stash index must be zero or positive.")
+    return f"stash@{{{value}}}"
+
+
+def git_stash_list(target: str | Path) -> dict:
+    repo = find_repo_root(target)
+    result = _git(
+        repo,
+        "stash",
+        "list",
+        "--format=%gd%x1f%H%x1f%gs%x1f%ci",
+    )
+    stashes = []
+    if result.returncode == 0:
+        for line in result.stdout.splitlines():
+            fields = line.split("\x1f", 3)
+            if len(fields) != 4:
+                continue
+            stashes.append(
+                {
+                    "ref": fields[0],
+                    "hash": fields[1],
+                    "subject": fields[2],
+                    "date": fields[3],
+                }
+            )
+    return {"repo": str(repo), "stashes": stashes}
+
+
+def git_stash_push(
+    target: str | Path,
+    message: str = "",
+    *,
+    include_untracked: bool = False,
+    keep_index: bool = False,
+) -> dict:
+    repo = find_repo_root(target)
+    text = str(message or "").strip()
+    if len(text) > 2000 or "\x00" in text:
+        raise ActionError("The stash message is invalid.")
+    args = ["stash", "push"]
+    if include_untracked:
+        args.append("--include-untracked")
+    if keep_index:
+        args.append("--keep-index")
+    if text:
+        args.extend(["-m", text])
+    _git_output(repo, *args)
+    return {
+        "ok": True,
+        "output": "Stashed working changes.",
+        "status": git_status(repo),
+        "stashes": git_stash_list(repo)["stashes"],
+    }
+
+
+def git_stash_pop(target: str | Path, index: int = 0) -> dict:
+    repo = find_repo_root(target)
+    ref = _stash_ref(index)
+    _git_output(repo, "stash", "pop", ref)
+    return {
+        "ok": True,
+        "ref": ref,
+        "output": f"Applied {ref}.",
+        "status": git_status(repo),
+        "stashes": git_stash_list(repo)["stashes"],
+    }
+
+
+def git_stash_drop(target: str | Path, index: int = 0) -> dict:
+    repo = find_repo_root(target)
+    ref = _stash_ref(index)
+    _git_output(repo, "stash", "drop", ref)
+    return {
+        "ok": True,
+        "ref": ref,
+        "output": f"Dropped {ref}.",
+        "status": git_status(repo),
+        "stashes": git_stash_list(repo)["stashes"],
+    }
+
+
+PATCH_MAX_BYTES = 2 * 1024 * 1024
+
+
+def _validate_patch(repo: Path, patch: object) -> str:
+    text = str(patch or "")
+    if not text.strip():
+        raise ActionError("A patch is required.")
+    if len(text.encode("utf-8")) > PATCH_MAX_BYTES:
+        raise ActionError("The patch is too large.")
+    if "\x00" in text or "@@" not in text:
+        raise ActionError("The patch is invalid.")
+    if "GIT binary patch" in text or "Binary files" in text:
+        raise ActionError("Binary patches are not supported; stage the whole file instead.")
+    paths: set[str] = set()
+    for line in text.splitlines():
+        if line.startswith(("--- ", "+++ ")):
+            value = line[4:].split("\t", 1)[0].strip()
+        elif line.startswith(("rename from ", "rename to ", "copy from ", "copy to ")):
+            value = line.split(" ", 2)[2].strip()
+        else:
+            continue
+        if value == "/dev/null":
+            continue
+        if value.startswith('"'):
+            raise ActionError(
+                "Patches with quoted file paths are not supported; stage the whole file instead."
+            )
+        if value.startswith(("a/", "b/")):
+            value = value[2:]
+        paths.add(_validate_git_path(repo, value))
+    if not paths:
+        raise ActionError("The patch does not reference any repository files.")
+    return text if text.endswith("\n") else text + "\n"
+
+
+def git_apply_patch(
+    target: str | Path,
+    patch: str,
+    *,
+    cached: bool = False,
+    reverse: bool = False,
+) -> dict:
+    """Applies a hunk patch to the index or working tree."""
+    repo = find_repo_root(target)
+    data = _validate_patch(repo, patch)
+    args = ["apply", "--whitespace=nowarn"]
+    if cached:
+        args.append("--cached")
+    if reverse:
+        args.append("--reverse")
+    args.append("-")
+    try:
+        result = subprocess.run(
+            ["git", *args],
+            cwd=str(repo),
+            input=data,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=60,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise ActionError("The patch timed out.", status=504) from exc
+    if result.returncode != 0:
+        message = (result.stderr or result.stdout or "Could not apply the patch.").strip()
+        raise ActionError(_redact_git_text(message.splitlines()[-1]))
+    return {"ok": True, "status": git_status(repo)}
+
+
+def git_reset(
+    target: str | Path,
+    ref: str,
+    *,
+    mode: str = "mixed",
+    confirm: str = "",
+) -> dict:
+    repo = find_repo_root(target)
+    commit = _validate_rev(repo, ref)
+    reset_mode = str(mode or "mixed").strip().lower()
+    if reset_mode not in ("soft", "mixed", "hard"):
+        raise ActionError("Reset mode must be soft, mixed, or hard.")
+    if reset_mode == "hard" and confirm.strip() != "reset":
+        raise ActionError("Type 'reset' to confirm a hard reset.")
+    _git_output(repo, "reset", f"--{reset_mode}", commit)
+    return {
+        "ok": True,
+        "commit": commit,
+        "mode": reset_mode,
+        "output": f"Reset current branch to {commit[:12]} ({reset_mode}).",
+        "status": git_status(repo),
+    }
+
+
+def git_revert(target: str | Path, ref: str) -> dict:
+    repo = find_repo_root(target)
+    commit = _validate_rev(repo, ref)
+    result = _git(repo, "revert", "--no-edit", commit)
+    if result.returncode != 0:
+        message = (result.stderr or result.stdout or "Revert failed.").strip()
+        raise ActionError(_redact_git_text(message))
+    return {
+        "ok": True,
+        "commit": commit,
+        "output": _redact_git_text(_tail(f"{result.stdout}{result.stderr}")),
+        "status": git_status(repo),
+    }
+
+
+def git_cherry_pick(target: str | Path, ref: str) -> dict:
+    repo = find_repo_root(target)
+    commit = _validate_rev(repo, ref)
+    result = _git(repo, "cherry-pick", commit)
+    if result.returncode != 0:
+        message = (result.stderr or result.stdout or "Cherry-pick failed.").strip()
+        raise ActionError(_redact_git_text(message))
+    return {
+        "ok": True,
+        "commit": commit,
+        "output": _redact_git_text(_tail(f"{result.stdout}{result.stderr}")),
+        "status": git_status(repo),
+    }
+
+
+def _validate_tag_name(repo: Path, name: object) -> str:
+    value = str(name or "").strip()
+    if not value or value.startswith("-") or any(char in value for char in "\n\r\x00"):
+        raise ActionError("A valid tag name is required.")
+    if _git(repo, "check-ref-format", f"refs/tags/{value}").returncode != 0:
+        raise ActionError(f"Invalid tag name: {value!r}")
+    return value
+
+
+def git_tag_list(target: str | Path) -> dict:
+    repo = find_repo_root(target)
+    result = _git(
+        repo,
+        "for-each-ref",
+        "--format=%(refname:short)%00%(objectname:short)%00%(subject)",
+        "refs/tags",
+    )
+    tags = []
+    if result.returncode == 0:
+        for line in result.stdout.splitlines():
+            fields = line.split("\x00", 2)
+            if len(fields) != 3:
+                continue
+            tags.append({"name": fields[0], "commit": fields[1], "subject": fields[2]})
+    return {"repo": str(repo), "tags": tags}
+
+
+def git_tag_create(
+    target: str | Path,
+    name: str,
+    *,
+    ref: str = "",
+    message: str = "",
+) -> dict:
+    repo = find_repo_root(target)
+    tag = _validate_tag_name(repo, name)
+    commit = _validate_rev(repo, ref) if ref else ""
+    args = ["tag", tag]
+    text = str(message or "").strip()
+    if text:
+        args = ["tag", "-a", tag, "-m", text]
+    if commit:
+        args.append(commit)
+    _git_output(repo, *args)
+    return {
+        "ok": True,
+        "tag": tag,
+        "output": f"Created tag {tag}.",
+        "tags": git_tag_list(repo)["tags"],
+    }
+
+
+def git_tag_delete(target: str | Path, name: str) -> dict:
+    repo = find_repo_root(target)
+    tag = _validate_tag_name(repo, name)
+    _git_output(repo, "tag", "-d", tag)
+    return {
+        "ok": True,
+        "tag": tag,
+        "output": f"Deleted tag {tag}.",
+        "tags": git_tag_list(repo)["tags"],
+    }
+
+
+def git_merge(target: str | Path, branch: str, *, no_ff: bool = False) -> dict:
+    repo = find_repo_root(target)
+    name = _validate_branch_name(repo, branch)
+    result = _git(repo, "merge", "--no-ff" if no_ff else "--ff", "--no-edit", name)
+    if result.returncode != 0:
+        message = (result.stderr or result.stdout or "Merge failed.").strip()
+        raise ActionError(_redact_git_text(message))
+    return {
+        "ok": True,
+        "branch": name,
+        "output": _redact_git_text(_tail(f"{result.stdout}{result.stderr}")),
+        "status": git_status(repo),
+    }
+
+
+def git_rebase(target: str | Path, onto: str) -> dict:
+    repo = find_repo_root(target)
+    commit = _validate_rev(repo, onto)
+    result = _git(repo, "rebase", commit)
+    if result.returncode != 0:
+        message = (result.stderr or result.stdout or "Rebase failed.").strip()
+        raise ActionError(_redact_git_text(message))
+    return {
+        "ok": True,
+        "onto": onto,
+        "output": _redact_git_text(_tail(f"{result.stdout}{result.stderr}")),
+        "status": git_status(repo),
+    }
+
+
+def git_abort(target: str | Path) -> dict:
+    repo = find_repo_root(target)
+    operation = _git_operation(repo)
+    commands = {
+        "merge": ("merge", "--abort"),
+        "rebase": ("rebase", "--abort"),
+        "cherry-pick": ("cherry-pick", "--abort"),
+        "revert": ("revert", "--abort"),
+    }
+    command = commands.get(operation)
+    if not command:
+        raise ActionError("No merge, rebase, cherry-pick, or revert operation is in progress.")
+    _git_output(repo, *command)
+    return {
+        "ok": True,
+        "operation": operation,
+        "output": f"Aborted {operation}.",
+        "status": git_status(repo),
+    }
+
+
+def git_branch_rename(target: str | Path, old: str, new: str) -> dict:
+    repo = find_repo_root(target)
+    old_name = _validate_branch_name(repo, old, "Branch")
+    new_name = _validate_branch_name(repo, new, "Branch")
+    result = _git(repo, "branch", "-m", old_name, new_name)
+    if result.returncode != 0:
+        message = (result.stderr or result.stdout or "Could not rename the branch.").strip()
+        raise ActionError(_redact_git_text(message))
+    return {
+        "ok": True,
+        "old": old_name,
+        "new": new_name,
+        "output": _redact_git_text(_tail(f"{result.stdout}{result.stderr}")),
+        "status": git_status(repo),
+    }
+
+
 def dependency_graph(target: str | Path, options: dict | None = None) -> dict:
     """Builds (and optionally saves) the repository dependency graph."""
     repo = find_repo_root(target)

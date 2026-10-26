@@ -16,22 +16,23 @@ PAGE = r"""<!doctype html>
 <style>
 :root{
   color-scheme:dark;
-  --bg:#070b12;--bg-soft:#0b111c;--panel:#0f1624;--panel2:#0b1220;--panel3:#141d2e;
-  --line:rgba(148,163,184,.13);--line2:rgba(148,163,184,.23);
-  --text:#e8eef8;--muted:#92a3ba;--faint:#64748b;
-  --accent:#5ba7ff;--accent2:#8b5cf6;--accent-soft:rgba(91,167,255,.14);
-  --ok:#34d399;--warn:#fbbf24;--bad:#fb7185;--crit:#fb7185;
+  --bg:#05080e;--bg-soft:#080e18;--panel:#0a1320;--panel2:#070d16;--panel3:#0f1b2c;
+  --line:rgba(125,211,252,.10);--line2:rgba(148,163,184,.22);
+  --text:#e6f1ff;--muted:#8ba0b9;--faint:#5f7391;
+  --accent:#22d3ee;--accent2:#6366f1;--accent-soft:rgba(34,211,238,.13);
+  --ok:#2dd4bf;--warn:#fbbf24;--bad:#fb7185;--crit:#fb7185;
   --critical:#fb7185;--high:#fb923c;--medium:#facc15;--low:#38bdf8;--info:#94a3b8;
-  --shadow:0 22px 60px rgba(0,0,0,.38);--shadow-sm:0 8px 24px rgba(0,0,0,.2);
-  --radius:16px;--radius-sm:11px;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  --shadow:0 26px 70px rgba(0,0,0,.46);--shadow-sm:0 10px 28px rgba(0,0,0,.24);
+  --radius:14px;--radius-sm:10px;
 }
 html[data-theme="light"]{
   color-scheme:light;
-  --bg:#f3f6fb;--bg-soft:#eef2f9;--panel:#fff;--panel2:#f8fafc;--panel3:#f1f5fb;
-  --line:rgba(15,23,42,.09);--line2:rgba(15,23,42,.17);
-  --text:#142033;--muted:#5b6b82;--faint:#8492a6;
-  --accent:#2563eb;--accent2:#7c3aed;--accent-soft:rgba(37,99,235,.1);
-  --ok:#059669;--warn:#b45309;--bad:#dc2626;--crit:#dc2626;
+  --bg:#eef4f8;--bg-soft:#e7eff6;--panel:#fff;--panel2:#f6fafd;--panel3:#eaf2f8;
+  --line:rgba(8,47,73,.08);--line2:rgba(8,47,73,.16);
+  --text:#0b1a2a;--muted:#50677f;--faint:#7c8fa3;
+  --accent:#0891b2;--accent2:#4f46e5;--accent-soft:rgba(8,145,178,.1);
+  --ok:#0d9488;--warn:#b45309;--bad:#dc2626;--crit:#dc2626;
   --critical:#dc2626;--high:#ea580c;--medium:#ca8a04;--low:#0284c7;--info:#64748b;
   --shadow:0 22px 60px rgba(15,23,42,.1);--shadow-sm:0 8px 24px rgba(15,23,42,.06);
 }
@@ -39,8 +40,9 @@ html[data-theme="light"]{
 html,body{margin:0;min-height:100%}
 html{scroll-behavior:smooth}
 body{background:
-  radial-gradient(900px 520px at 8% -12%,rgba(91,167,255,.18),transparent 64%),
-  radial-gradient(760px 480px at 96% 0%,rgba(139,92,246,.14),transparent 60%),
+  radial-gradient(1000px 560px at 6% -14%,rgba(34,211,238,.15),transparent 62%),
+  radial-gradient(820px 520px at 98% 2%,rgba(99,102,241,.13),transparent 58%),
+  radial-gradient(1100px 700px at 60% 110%,rgba(14,116,144,.10),transparent 70%),
   var(--bg);
   color:var(--text);font:14px/1.55 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
   -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
@@ -256,6 +258,234 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none}
   html{scroll-behavior:auto}
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 }
+
+/* ---- SOC / SIEM visual layer ------------------------------------------- */
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;opacity:.5;
+  background:radial-gradient(1200px 320px at 50% -8%,rgba(34,211,238,.08),transparent 70%)}
+.page-head .eyebrow{display:inline-flex;align-items:center;gap:8px}
+.page-head .eyebrow::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--accent);
+  box-shadow:0 0 0 4px var(--accent-soft),0 0 16px var(--accent);animation:soc-pulse 2.4s ease-in-out infinite}
+@keyframes soc-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.72;transform:scale(.82)}}
+.soc-rail{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;padding:8px 10px;
+  border:1px solid var(--line);border-radius:11px;background:linear-gradient(90deg,var(--panel),var(--panel2));
+  box-shadow:var(--shadow-sm)}
+.soc-pill,.soc-metric,.soc-clock{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:800;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--faint);padding:3px 8px;border-radius:6px;
+  border:1px solid transparent;white-space:nowrap}
+.soc-pill{color:var(--ok);background:color-mix(in srgb,var(--ok) 9%,transparent);border-color:color-mix(in srgb,var(--ok) 26%,transparent)}
+.soc-pill i{width:6px;height:6px;border-radius:50%;background:var(--ok);box-shadow:0 0 10px var(--ok)}
+.soc-metric b{color:var(--text);font-family:var(--mono);font-size:10.5px;letter-spacing:.02em;text-transform:none}
+.soc-metric b.risk{color:var(--warn)}
+.soc-metric b.clean{color:var(--ok)}
+.soc-clock{margin-left:auto;font-family:var(--mono);letter-spacing:.1em;color:var(--muted);
+  border-color:var(--line);background:var(--bg-soft)}
+.card{transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease}
+.card:hover{border-color:color-mix(in srgb,var(--accent) 26%,var(--line));box-shadow:0 16px 44px rgba(0,0,0,.26)}
+.card::after{content:"";position:absolute;inset:0 18px auto;height:1px;pointer-events:none;
+  background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--accent) 32%,transparent),transparent)}
+.stat b{font-family:var(--mono)}
+.repo-bar{position:relative;overflow:hidden}
+.repo-bar::after{content:"";position:absolute;top:0;left:-45%;width:38%;height:1px;pointer-events:none;
+  background:linear-gradient(90deg,transparent,var(--accent),transparent);animation:sweep 7s linear infinite}
+@keyframes sweep{0%{left:-45%}100%{left:108%}}
+.btn{border-radius:9px}
+.chip{font-family:var(--mono);font-size:10px}
+.page-head h2{font-weight:900}
+.nav button.active{background:linear-gradient(90deg,var(--accent-soft),transparent 88%)}
+
+/* ---- Git studio (LazyGit-style) ---------------------------------------- */
+.git-studio{display:flex;flex-direction:column;border:1px solid var(--line2);border-radius:14px;overflow:hidden;
+  background:var(--panel2);box-shadow:var(--shadow);height:calc(100vh - 268px);min-height:620px}
+.git-top{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:11px 14px;
+  background:linear-gradient(180deg,var(--panel3),var(--panel));border-bottom:1px solid var(--line)}
+.git-repo-id{display:flex;align-items:center;gap:11px;min-width:0;flex:1}
+.git-badge{width:36px;height:36px;flex:0 0 36px;border-radius:10px;display:grid;place-items:center;color:#04141a;
+  background:linear-gradient(145deg,var(--accent),color-mix(in srgb,var(--accent2) 72%,var(--accent)));
+  box-shadow:0 8px 22px color-mix(in srgb,var(--accent) 28%,transparent),inset 0 1px 0 rgba(255,255,255,.4)}
+.git-badge svg{width:19px;height:19px}
+.git-repo-copy{min-width:0}
+.git-repo-line{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.git-repo-line b{font-size:14px;letter-spacing:-.02em}
+.git-upstream{font-family:var(--mono);font-size:10px;color:var(--muted);padding:2px 7px;border-radius:5px;
+  border:1px solid var(--line);background:var(--bg-soft);white-space:nowrap}
+.git-repo-path{display:block;font-family:var(--mono);font-size:10.5px;color:var(--faint);margin-top:2px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:420px}
+.git-sync{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.git-sync-cell{display:inline-flex;align-items:center;gap:6px;font-size:10px;color:var(--faint);
+  text-transform:uppercase;letter-spacing:.07em;font-weight:800;padding:4px 8px;border-radius:6px;
+  border:1px solid var(--line);background:var(--bg-soft);white-space:nowrap}
+.git-sync-cell b{font-family:var(--mono);font-size:11px;color:var(--text);letter-spacing:0}
+.git-sync-cell b.ahead{color:var(--ok)}.git-sync-cell b.behind{color:var(--warn)}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:var(--ok);box-shadow:0 0 9px var(--ok)}
+.sync-dot.dirty{background:var(--warn);box-shadow:0 0 9px var(--warn)}
+.git-toolbar{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+.git-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:31px;padding:5px 10px;
+  border:1px solid var(--line2);border-radius:7px;background:var(--panel3);color:var(--muted);
+  font-size:11px;font-weight:750;letter-spacing:.02em;transition:all .15s ease;white-space:nowrap}
+.git-btn:hover{color:var(--text);border-color:color-mix(in srgb,var(--accent) 50%,var(--line2));transform:translateY(-1px)}
+.git-btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));border-color:transparent;color:#fff;
+  box-shadow:0 7px 18px color-mix(in srgb,var(--accent) 22%,transparent)}
+.git-btn.primary:hover{filter:brightness(1.08)}
+.git-btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.git-btn svg{width:13px;height:13px}
+.git-remote-select{width:auto;min-height:31px;padding:4px 7px;font-size:10.5px;border-radius:7px;font-family:var(--mono)}
+.git-cmdline{display:flex;align-items:center;gap:9px;padding:7px 14px;border-bottom:1px solid var(--line);
+  background:var(--bg-soft)}
+.git-prompt{color:var(--accent);font-family:var(--mono);font-weight:900;font-size:14px;text-shadow:0 0 12px var(--accent)}
+#gitCommandInput{background:transparent;border:0;min-height:0;padding:4px 0;font-family:var(--mono);
+  font-size:12px;box-shadow:none;color:var(--text)}
+#gitCommandInput:focus{box-shadow:none;background:transparent}
+.git-cmd-hint{display:flex;gap:3px;flex:0 0 auto}
+.git-grid{display:grid;grid-template-columns:minmax(230px,292px) minmax(0,1fr) minmax(280px,346px);
+  flex:1;min-height:0;overflow:hidden}
+.git-panel{display:flex;flex-direction:column;min-height:0;min-width:0;background:var(--panel2)}
+.git-panel-left{border-right:1px solid var(--line)}
+.git-panel-right{border-left:1px solid var(--line);background:linear-gradient(180deg,var(--panel),var(--panel2))}
+.git-panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;
+  border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--panel3) 58%,transparent);min-height:44px;flex:0 0 auto}
+.git-panel-head h3{margin:0;font-size:10.5px;text-transform:uppercase;letter-spacing:.11em;color:var(--muted);font-weight:850}
+.git-panel-head h3::before{content:"//";color:var(--accent);margin-right:6px;opacity:.7}
+.git-sub{display:block;font-size:10px;color:var(--faint);margin-top:2px;font-family:var(--mono)}
+.git-tabs{display:flex;gap:3px;flex-wrap:wrap;width:100%}
+.git-tabs button{background:transparent;border:1px solid transparent;border-radius:6px;padding:5px 8px;
+  color:var(--muted);font-size:10.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;transition:all .15s ease}
+.git-tabs button span{font-family:var(--mono);color:var(--faint);margin-left:3px}
+.git-tabs button:hover{color:var(--text);background:var(--panel3)}
+.git-tabs button.active{color:var(--accent);background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent) 26%,transparent)}
+.git-panel-body{display:flex;flex-direction:column;min-height:0;flex:1;overflow:auto;padding:7px}
+.git-actionstrip{display:flex;gap:5px;flex-wrap:wrap;padding:1px 1px 7px;align-items:center;flex:0 0 auto}
+.git-actionstrip input{min-height:29px;font-size:11px;padding:5px 8px;border-radius:6px;flex:1;min-width:100px}
+.git-mini{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-height:24px;padding:3px 7px;
+  border:1px solid var(--line2);border-radius:5px;background:var(--panel);color:var(--muted);
+  font-size:10px;font-weight:800;letter-spacing:.03em;transition:all .15s ease;white-space:nowrap}
+.git-mini:hover{color:var(--text);border-color:color-mix(in srgb,var(--accent) 46%,var(--line2));background:var(--panel3)}
+.git-mini.danger:hover{color:var(--bad);border-color:color-mix(in srgb,var(--bad) 46%,var(--line2))}
+.git-filelist,.git-list{display:flex;flex-direction:column;gap:2px;overflow:auto;min-height:0;flex:1}
+.git-file{display:flex;align-items:center;gap:7px;padding:5px 6px;border-radius:6px;border:1px solid transparent;
+  cursor:pointer;transition:all .12s ease;min-width:0}
+.git-file:hover{background:color-mix(in srgb,var(--accent) 6%,transparent);border-color:var(--line)}
+.git-file.selected{background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent) 30%,transparent)}
+.git-file-code{width:19px;height:19px;flex:0 0 19px;display:grid;place-items:center;font-family:var(--mono);
+  font-size:9.5px;font-weight:900;border-radius:4px;background:var(--panel3);color:var(--muted)}
+.git-file-code.modified{color:var(--warn);background:color-mix(in srgb,var(--warn) 12%,transparent)}
+.git-file-code.added,.git-file-code.untracked{color:var(--ok);background:color-mix(in srgb,var(--ok) 12%,transparent)}
+.git-file-code.deleted{color:var(--bad);background:color-mix(in srgb,var(--bad) 12%,transparent)}
+.git-file-code.conflicted{color:var(--crit);background:color-mix(in srgb,var(--crit) 16%,transparent)}
+.git-file-code.renamed,.git-file-code.copied{color:var(--low);background:color-mix(in srgb,var(--low) 12%,transparent)}
+.git-file-main{min-width:0;flex:1}
+.git-file-path{display:block;font-family:var(--mono);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.git-file-origin{display:block;font-size:9.5px;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.git-file-actions{display:flex;gap:2px;opacity:0;transition:opacity .12s ease;flex:0 0 auto}
+.git-file:hover .git-file-actions,.git-file.selected .git-file-actions{opacity:1}
+.git-file-actions button{width:22px;height:22px;display:grid;place-items:center;border:1px solid var(--line);
+  border-radius:4px;background:var(--panel);color:var(--muted);font-size:11px;line-height:1}
+.git-file-actions button:hover{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 50%,var(--line))}
+.git-file-actions button.danger:hover{color:var(--bad);border-color:color-mix(in srgb,var(--bad) 50%,var(--line))}
+.git-empty{padding:18px 10px;text-align:center;color:var(--faint);font-size:11px;font-family:var(--mono)}
+.git-foot{padding:6px 2px 0;margin:0;font-size:10px;color:var(--faint);font-family:var(--mono);flex:0 0 auto}
+.git-list-item{display:flex;align-items:center;gap:7px;padding:6px 7px;border-radius:6px;border:1px solid transparent;
+  cursor:pointer;transition:all .12s ease;min-width:0}
+.git-list-item:hover{background:color-mix(in srgb,var(--accent) 6%,transparent);border-color:var(--line)}
+.git-list-item.current{background:color-mix(in srgb,var(--ok) 7%,transparent);border-color:color-mix(in srgb,var(--ok) 22%,transparent)}
+.git-list-main{min-width:0;flex:1}
+.git-list-main b{display:block;font-family:var(--mono);font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.git-list-main small{display:block;font-size:9.5px;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.git-list-meta{font-family:var(--mono);font-size:9px;color:var(--muted);display:flex;gap:4px;align-items:center;flex:0 0 auto}
+.git-list-meta .up{color:var(--ok)}.git-list-meta .down{color:var(--warn)}
+.git-list-actions{display:flex;gap:2px;opacity:0;transition:opacity .12s}
+.git-list-item:hover .git-list-actions{opacity:1}
+.git-list-actions button{width:20px;height:20px;border:1px solid var(--line);border-radius:4px;background:var(--panel);
+  color:var(--muted);font-size:10px;display:grid;place-items:center}
+.git-list-actions button:hover{color:var(--accent)}
+.git-list-actions button.danger:hover{color:var(--bad)}
+.git-diff-head{background:linear-gradient(90deg,var(--panel3),color-mix(in srgb,var(--panel3) 30%,transparent))}
+.git-diff-head h3::before{content:">";color:var(--accent)}
+.git-diff-actions{display:flex;gap:6px;align-items:center}
+.git-diff-stats{font-family:var(--mono);font-size:9.5px;color:var(--muted);white-space:nowrap}
+.git-diff{flex:1;margin:0;padding:12px 14px;overflow:auto;font-size:11.5px;line-height:1.55;
+  background:var(--bg-soft);white-space:pre;tab-size:2;font-family:var(--mono);color:var(--text)}
+.git-diff .d-add{display:block;color:#5eead4;background:rgba(45,212,191,.07)}
+.git-diff .d-del{display:block;color:#fda4af;background:rgba(251,113,133,.07)}
+.git-diff .d-hunk{display:block;color:var(--accent);background:color-mix(in srgb,var(--accent) 7%,transparent)}
+.git-diff .d-meta{display:block;color:var(--faint)}
+.git-diff .d-ctx{display:block;color:var(--muted)}
+.git-log{overflow:auto;padding:5px;flex:1;min-height:0}
+.git-log-item{display:flex;gap:7px;align-items:flex-start;width:100%;text-align:left;padding:6px 7px;
+  border:1px solid transparent;border-radius:6px;background:transparent;color:inherit;transition:all .12s ease;min-width:0}
+.git-log-item:hover{background:color-mix(in srgb,var(--accent) 6%,transparent);border-color:var(--line)}
+.git-log-item.selected{background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent) 30%,transparent)}
+.git-log-graph{color:var(--accent);font-family:var(--mono);font-size:10px;line-height:1.5;flex:0 0 auto;opacity:.8}
+.git-log-main{min-width:0;flex:1}
+.git-log-subject{display:block;font-size:11px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.git-log-meta{display:block;font-family:var(--mono);font-size:9.5px;color:var(--faint);margin-top:2px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.git-log-refs{display:flex;gap:3px;flex-wrap:wrap;margin-top:3px}
+.git-log-refs span{font-family:var(--mono);font-size:8.5px;color:var(--accent);border:1px solid color-mix(in srgb,var(--accent) 26%,transparent);
+  border-radius:4px;padding:1px 4px;background:var(--accent-soft)}
+.git-commit{border-top:1px solid var(--line);padding:9px 11px;background:color-mix(in srgb,var(--panel3) 40%,transparent);flex:0 0 auto}
+.git-commit .git-panel-head{padding:0 0 7px;border:0;background:transparent;min-height:0}
+.git-commit textarea{min-height:62px;max-height:112px;font-family:var(--mono);font-size:11px;
+  resize:vertical;padding:7px 9px;border-radius:6px;line-height:1.45}
+.git-commit-flags{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0}
+.git-check{font-size:10px;color:var(--muted);display:inline-flex;align-items:center;gap:5px;cursor:pointer}
+.git-commit-btn{width:100%;min-height:32px;margin-top:4px}
+.git-out{white-space:pre-wrap;word-break:break-word;background:var(--bg-soft);border:1px solid var(--line);
+  border-radius:6px;padding:7px;max-height:110px;overflow:auto;font-family:var(--mono);font-size:10px;margin:7px 0 0}
+.git-statusbar{display:flex;align-items:center;gap:10px;padding:6px 12px;border-top:1px solid var(--line);
+  background:var(--panel3);font-size:10px;color:var(--muted);flex-wrap:wrap;flex:0 0 auto}
+.git-status-message{font-family:var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:42ch}
+.git-keys{margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--faint);letter-spacing:.02em}
+.git-doctor{max-height:130px;overflow:auto;flex:0 0 auto}
+.git-doctor:not(:empty){padding:7px 12px;border-top:1px solid var(--line);background:var(--bg-soft)}
+.git-doctor .okbox,.git-doctor .notice{font-size:10.5px;padding:7px 9px;margin:0}
+@media(max-width:1240px){
+  .git-grid{grid-template-columns:minmax(220px,260px) minmax(0,1fr)}
+  .git-panel-right{grid-column:1/-1;border-left:0;border-top:1px solid var(--line);max-height:330px;flex-direction:row}
+  .git-panel-right>.git-panel-head{display:none}
+  .git-log{max-width:60%}
+  .git-commit{border-top:0;border-left:1px solid var(--line);width:40%}
+}
+@media(max-width:900px){
+  .git-studio{height:auto;min-height:0}
+  .git-grid{grid-template-columns:1fr;overflow:visible}
+  .git-panel-left,.git-panel-right{border:0;border-bottom:1px solid var(--line)}
+  .git-panel-left{max-height:380px}
+  .git-panel-center{min-height:320px}
+  .git-panel-right{display:flex;flex-direction:column;max-height:none}
+  .git-log{max-width:none;max-height:280px}
+  .git-commit{border-left:0;border-top:1px solid var(--line);width:auto}
+  .git-repo-path{max-width:60vw}
+  .git-keys{display:none}
+}
+
+/* ---- Git studio: focused browser tab, hunk actions, commit actions ----- */
+body.focus-mode .side,
+body.focus-mode .page-head,
+body.focus-mode .soc-rail,
+body.focus-mode .repo-bar,
+body.focus-mode .chips{display:none!important}
+body.focus-mode .app{grid-template-columns:minmax(0,1fr)}
+body.focus-mode .main{padding:10px;max-width:none}
+body.focus-mode .git-studio{height:calc(100vh - 20px);min-height:0;border-radius:10px;box-shadow:none}
+body.focus-mode #gitPopoutBtn{display:none}
+.git-commit-actions{display:flex;gap:3px;flex-wrap:wrap}
+.git-commit-actions:empty{display:none}
+.git-filter{min-height:27px!important;font-size:10.5px!important;padding:4px 8px!important;flex:1;min-width:100px}
+.diff-hunk{display:block;margin:7px 0;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--bg-soft)}
+.diff-hunk-bar{display:flex;align-items:center;gap:5px;padding:4px 7px;background:color-mix(in srgb,var(--panel3) 65%,transparent);
+  border-bottom:1px solid var(--line)}
+.diff-hunk-label{font-family:var(--mono);font-size:9.5px;color:var(--accent);flex:1;white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis;min-width:0}
+.diff-hunk-btn{border:1px solid var(--line2);border-radius:4px;background:var(--panel);color:var(--muted);
+  font-size:9px;font-weight:800;letter-spacing:.02em;padding:2px 6px;white-space:nowrap}
+.diff-hunk-btn:hover{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 50%,var(--line2))}
+.diff-hunk-btn.danger:hover{color:var(--bad);border-color:color-mix(in srgb,var(--bad) 50%,var(--line2))}
+.diff-hunk-body{display:block;padding:3px 0}
+@media(max-width:900px){
+  body.focus-mode .main{padding:7px}
+  body.focus-mode .git-studio{height:auto;min-height:100vh}
+  .git-commit-actions{width:100%}
+}
 </style>
 </head>
 <body>
@@ -275,9 +505,9 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none}
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
           <span class="nav-label-text">Scan</span>
         </button>
-        <button type="button" data-tab="git" title="Git workspace">
+        <button type="button" data-tab="git" title="Git studio">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.2"/><circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="8" r="2.2"/><path d="M6 8.2v7.6M8.2 6H14a4 4 0 0 1 4 4"/></svg>
-          <span class="nav-label-text">Git</span>
+          <span class="nav-label-text">Git studio</span>
         </button>
         <button type="button" data-tab="fixes" title="Fixes and suggestions">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6L12 3Z"/><path d="m5 15 .8 2.2L8 18l-2.2.8L5 21l-.8-2.2L2 18l2.2-.8L5 15Z"/></svg>
@@ -328,7 +558,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none}
   <main class="main" id="mainContent">
     <header class="page-head">
       <div>
-        <span class="eyebrow">Commit Guard workspace</span>
+        <span class="eyebrow">Local defense console</span>
         <h2 id="pageTitle">Scan</h2>
         <p id="pageSubtitle">Run the same security checks as hooks and CI, then review findings in one place.</p>
       </div>
@@ -339,6 +569,13 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none}
         </button>
       </div>
     </header>
+    <div class="soc-rail" aria-label="System status">
+      <span class="soc-pill"><i></i>Engine online</span>
+      <span class="soc-metric">Mode <b id="railMode">staged</b></span>
+      <span class="soc-metric">Signatures <b id="railRules">bundled</b></span>
+      <span class="soc-metric">Posture <b id="railPosture">standby</b></span>
+      <span class="soc-clock" id="railClock">--:--:--</span>
+    </div>
     <div class="repo-bar">
       <div class="field">
         <label for="repoPath">Repository</label>
@@ -483,88 +720,123 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none}
     </section>
 
     <section id="tab-git" class="hidden">
-      <div class="card">
-        <h2>Repository state</h2>
-        <p class="hint" id="gitSummary">Load a repository to inspect its working tree.</p>
-        <div id="gitOperation"></div>
-        <div class="stats" id="gitStats"></div>
-        <div class="row" style="margin:12px 0">
-          <button class="btn" id="gitRefreshBtn">Refresh</button>
-          <button class="btn" id="gitStageAllBtn">Stage all</button>
-          <button class="btn" id="gitUnstageAllBtn">Unstage all</button>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Path</th><th>Index</th><th>Worktree</th><th class="right">Actions</th></tr></thead>
-            <tbody id="gitFilesBody"></tbody>
-          </table>
-        </div>
-        <p class="hint" id="gitFilesHint" style="margin:10px 0 0"></p>
-      </div>
-
-      <div class="card hidden" id="gitDiffCard">
-        <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:8px">
-          <h2 id="gitDiffTitle" style="margin:0">Diff</h2>
-          <button class="btn small" id="gitDiffClose">Close</button>
-        </div>
-        <pre class="pre" id="gitDiffOut"></pre>
-      </div>
-
-      <div class="card">
-        <h2>Commit</h2>
-        <p class="hint">Commits staged changes with your configured Git identity. Enable “include tracked changes” to stage all modified tracked files first.</p>
-        <div class="field"><label for="gitCommitMsg">Commit message</label><input id="gitCommitMsg" placeholder="Describe the change..."></div>
-        <div class="row" style="margin-top:12px">
-          <label class="small"><input type="checkbox" id="gitCommitAll"> Include tracked changes (-a)</label>
-          <button class="btn primary" id="gitCommitBtn">Commit staged changes</button>
-        </div>
-        <pre class="pre hidden" id="gitCommitOut" style="margin-top:12px"></pre>
-      </div>
-
-      <div class="card">
-        <h2>Sync with remote</h2>
-        <p class="hint">Fetch updates, pull with fast-forward only, or push the current branch. Destructive operations require confirmation.</p>
-        <div class="grid g3">
-          <div class="field"><label for="gitRemote">Remote</label><select id="gitRemote"><option value="origin">origin</option></select></div>
-          <div class="field"><label>&nbsp;</label><button class="btn" id="gitFetchBtn">Fetch</button></div>
-          <div class="field"><label>&nbsp;</label><button class="btn" id="gitPullBtn">Pull (fast-forward)</button></div>
-          <div class="field"><label>&nbsp;</label><button class="btn primary" id="gitPushBtn">Push current branch</button></div>
-        </div>
-      </div>
-
-      <div class="card">
-        <h2>Branches</h2>
-        <p class="hint">Create, switch, or delete local branches. The current branch and remote branches are shown below.</p>
-        <div class="grid g3">
-          <div class="field"><label for="gitNewBranch">New branch name</label><input id="gitNewBranch" placeholder="feature/my-change"></div>
-          <div class="field"><label for="gitStartPoint">Start point (optional)</label><input id="gitStartPoint" placeholder="main"></div>
-          <div class="field"><label>&nbsp;</label>
-            <div class="row">
-              <button class="btn primary" id="gitCreateBranchBtn">Create &amp; switch</button>
-              <button class="btn" id="gitCreateOnlyBtn">Create only</button>
+      <div class="git-studio">
+        <div class="git-top">
+          <div class="git-repo-id">
+            <span class="git-badge" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.2"/><circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="8" r="2.2"/><path d="M6 8.2v7.6M8.2 6H14a4 4 0 0 1 4 4"/></svg>
+            </span>
+            <div class="git-repo-copy">
+              <div class="git-repo-line"><b id="gitBranchName">No branch</b><span class="git-upstream" id="gitUpstream">no upstream</span></div>
+              <code class="git-repo-path" id="gitRepoPath">Load a repository to inspect its working tree.</code>
             </div>
           </div>
+          <div class="git-sync" aria-label="Repository sync state">
+            <span class="git-sync-cell"><span class="sync-dot" id="gitCleanDot"></span><b id="gitCleanState">clean</b></span>
+            <span class="git-sync-cell">ahead <b id="gitAhead" class="ahead">0</b></span>
+            <span class="git-sync-cell">behind <b id="gitBehind" class="behind">0</b></span>
+          </div>
+          <div class="git-toolbar">
+            <select id="gitRemote" class="git-remote-select" aria-label="Git remote"><option value="origin">origin</option></select>
+            <button class="git-btn" id="gitRefreshBtn" title="Refresh (r)">Refresh</button>
+            <button class="git-btn" id="gitFetchBtn" title="Fetch from remote">Fetch</button>
+            <button class="git-btn" id="gitPullBtn" title="Fast-forward pull">Pull</button>
+            <button class="git-btn primary" id="gitPushBtn" title="Push current branch">Push</button>
+            <button class="git-btn" id="gitPopoutBtn" title="Open Git Studio in a new browser tab">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-8 8"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>
+              Pop out
+            </button>
+          </div>
         </div>
-        <div id="gitBranchesOut" style="margin-top:14px"></div>
-      </div>
 
-      <div class="card">
-        <h2>Recent commits</h2>
-        <div class="row" style="margin-bottom:12px">
-          <div class="field"><label for="gitLogLimit">Commit limit</label><input id="gitLogLimit" type="number" min="1" max="200" value="20"></div>
-          <button class="btn" id="gitLogBtn">Reload</button>
+        <div class="git-cmdline">
+          <span class="git-prompt">❯</span>
+          <input id="gitCommandInput" placeholder="git command: stage all, commit -m 'msg', branch feature/x, stash pop, help" autocomplete="off" spellcheck="false" aria-label="Git quick command">
+          <span class="git-cmd-hint"><span class="kbd">Ctrl</span><span class="kbd">K</span></span>
         </div>
-        <div id="gitLogOut"></div>
-      </div>
 
-      <div class="card">
-        <h2>History doctor</h2>
-        <p class="hint">Scan recent commit history and inspect the commits that introduced findings. Leave the limit at 0 to audit all history.</p>
-        <div class="row">
-          <div class="field"><label for="gitDoctorLimit">Commits to audit</label><input id="gitDoctorLimit" type="number" min="0" value="50"></div>
-          <button class="btn primary" id="gitDoctorBtn">Scan history</button>
+        <div class="git-grid">
+          <aside class="git-panel git-panel-left">
+            <div class="git-panel-head">
+              <div class="git-tabs" id="gitLeftTabs">
+                <button type="button" data-git-left="changes" class="active">Changes <span id="gitChangeCount">0</span></button>
+                <button type="button" data-git-left="branches">Branches</button>
+                <button type="button" data-git-left="stashes">Stashes</button>
+              </div>
+            </div>
+            <div class="git-panel-body" data-git-left-panel="changes">
+              <div class="git-actionstrip">
+                <input class="git-filter" id="gitFileSearch" placeholder="filter files..." aria-label="Filter changed files">
+              </div>
+              <div class="git-actionstrip">
+                <button class="git-mini" id="gitStageAllBtn">Stage all</button>
+                <button class="git-mini" id="gitUnstageAllBtn">Unstage all</button>
+                <button class="git-mini danger" id="gitDiscardAllBtn">Discard all</button>
+              </div>
+              <div class="git-filelist" id="gitFilesBody" role="listbox" aria-label="Changed files"></div>
+              <p class="git-foot" id="gitFilesHint">Working tree clean.</p>
+            </div>
+            <div class="git-panel-body hidden" data-git-left-panel="branches">
+              <div class="git-actionstrip">
+                <input id="gitNewBranch" placeholder="feature/my-change" aria-label="New branch name">
+                <button class="git-mini" id="gitCreateBranchBtn">Create &amp; switch</button>
+              </div>
+              <div class="git-list" id="gitBranchesOut"></div>
+            </div>
+            <div class="git-panel-body hidden" data-git-left-panel="stashes">
+              <div class="git-actionstrip">
+                <input id="gitStashMsg" placeholder="stash message (optional)" aria-label="Stash message">
+                <label class="git-check"><input type="checkbox" id="gitStashUntracked"> untracked</label>
+                <button class="git-mini" id="gitStashBtn">Stash</button>
+              </div>
+              <div class="git-list" id="gitStashesOut"></div>
+            </div>
+          </aside>
+
+          <section class="git-panel git-panel-center">
+            <div class="git-panel-head git-diff-head">
+              <div>
+                <h3 id="gitDiffTitle">Working tree</h3>
+                <span class="git-sub" id="gitDiffSub">Select a file to inspect its patch</span>
+              </div>
+              <div class="git-diff-actions">
+                <span class="git-commit-actions" id="gitCommitActions"></span>
+                <span class="git-diff-stats" id="gitDiffStats"></span>
+                <button class="git-mini" id="gitDiffClose" title="Clear diff">Clear</button>
+              </div>
+            </div>
+            <pre class="git-diff" id="gitDiffOut">Select a changed file in the left panel, or click a commit in history to inspect its patch.</pre>
+          </section>
+
+          <aside class="git-panel git-panel-right">
+            <div class="git-panel-head">
+              <div><h3>History</h3><span class="git-sub">click to inspect commit</span></div>
+              <button class="git-mini" id="gitLogBtn">Reload</button>
+            </div>
+            <div class="git-log" id="gitLogOut"></div>
+            <div class="git-commit">
+              <div class="git-panel-head">
+                <h3>Commit staged</h3>
+                <span class="git-sub" id="gitStagedSummary">0 staged</span>
+              </div>
+              <textarea id="gitCommitMsg" placeholder="Commit message... (Ctrl+Enter to commit)" spellcheck="false"></textarea>
+              <div class="git-commit-flags">
+                <label class="git-check"><input type="checkbox" id="gitCommitAll"> include tracked (-a)</label>
+                <label class="git-check"><input type="checkbox" id="gitCommitAmend"> amend previous</label>
+              </div>
+              <button class="git-btn primary git-commit-btn" id="gitCommitBtn">Commit staged changes</button>
+              <pre class="git-out hidden" id="gitCommitOut"></pre>
+            </div>
+          </aside>
         </div>
-        <div id="gitDoctorOut" style="margin-top:12px"></div>
+
+        <div class="git-statusbar">
+          <span class="git-status-message" id="gitStatusMsg">Ready.</span>
+          <button class="git-mini danger hidden" id="gitAbortBtn">Abort operation</button>
+          <span class="git-keys">j/k select · space stage · d diff · c commit · r refresh · ? help</span>
+          <button class="git-mini" id="gitDoctorBtn">Scan history</button>
+        </div>
+        <div id="gitDoctorOut" class="git-doctor"></div>
       </div>
     </section>
 
@@ -761,6 +1033,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none}
         <h2>What can I do here?</h2>
         <table>
           <tr><td><b>Scan</b></td><td>Run the same checks as <code>git commit</code>, CI, and <code>./commit-guard scan</code>.</td></tr>
+          <tr><td><b>Git studio</b></td><td>Keyboard-driven staging, diffs, commits, stashes, branches, and remotes in a LazyGit-style workspace.</td></tr>
           <tr><td><b>Fixes</b></td><td>Preview rule-provided fixes, apply only what you select, and stage the result.</td></tr>
           <tr><td><b>Pull requests</b></td><td>Publish a report PR or post inline fix suggestions to an existing PR.</td></tr>
           <tr><td><b>Baseline</b></td><td>Accept findings, add owner/expiry metadata, audit stale suppressions.</td></tr>
@@ -790,6 +1063,8 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none}
 "use strict";
 const TOKEN = "__TOKEN__";
 const INITIAL_REPO = "__REPO__";
+const FOCUS_MODE = new URLSearchParams(location.search).get("focus") === "1";
+if(FOCUS_MODE) document.body.classList.add("focus-mode");
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 const state = { repo: INITIAL_REPO, info: null, report: null, options: null, rules: [], lastFixes: [] };
@@ -840,7 +1115,7 @@ async function api(path, options){
 }
 const TAB_META = {
   scan: ["Scan", "Run the same security checks as hooks and CI, then review findings in one place."],
-  git: ["Git workspace", "Inspect changes, stage files, commit, sync remotes, and manage branches without leaving the page."],
+  git: ["Git studio", "A keyboard-driven LazyGit-style workspace for staging, diffing, committing, stashing, and syncing."],
   fixes: ["Fixes & suggestions", "Preview rule-provided fixes, apply only what you select, and inspect PR-ready suggestions."],
   pr: ["Pull requests", "Publish security reports and inline fix suggestions to GitHub with a session-only token."],
   baseline: ["Baseline & suppressions", "Accept known findings, attach ownership and expiry, and audit stale suppressions."],
@@ -861,6 +1136,31 @@ function applyTheme(theme){
     button.setAttribute("aria-label", label);
   }
 }
+function updateRail(){
+  const mode = $("#mode");
+  if(mode) $("#railMode").textContent = mode.value || "staged";
+  $("#railRules").textContent = state.rules && state.rules.length ? state.rules.length + " active" : "bundled";
+  const posture = $("#railPosture");
+  posture.className = "";
+  const report = state.report;
+  if(!report){ posture.textContent = "standby"; return; }
+  const summary = report.summary || {};
+  const total = Number(report.total || 0);
+  if(!total){ posture.textContent = "clean"; posture.className = "clean"; return; }
+  if(Number(summary.critical || 0) || Number(summary.high || 0)){
+    posture.textContent = Number(summary.critical || 0) ? "critical" : "high";
+    posture.className = "risk";
+  } else {
+    posture.textContent = total + " findings";
+    posture.className = "risk";
+  }
+}
+function tickClock(){
+  const clock = $("#railClock");
+  if(clock) clock.textContent = new Date().toLocaleTimeString([], {hour12:false});
+}
+setInterval(tickClock, 1000);
+tickClock();
 function showTab(name){
   $$("#nav button").forEach((b) => {
     const active = b.dataset.tab === name;
@@ -890,6 +1190,7 @@ window.addEventListener("hashchange", () => {
 $("#themeToggle").addEventListener("click", () => {
   applyTheme(document.documentElement.dataset.theme === "light" ? "dark" : "light");
 });
+$("#mode").addEventListener("change", updateRail);
 
 function setChips(){
   const info = state.info;
@@ -908,6 +1209,7 @@ function setChips(){
   $("#repoChips").innerHTML = chips.join("");
   $("#versionLine").textContent = "Commit Guard v" + (info.version || "");
   if(info.github && !$("#ghRepo").value) $("#ghRepo").value = info.github;
+  updateRail();
 }
 
 async function loadRepo(repo){
@@ -1137,10 +1439,11 @@ function renderFindings(){
 }
 
 function renderResults(){
-  if(!state.report){ $("#results").classList.add("hidden"); return; }
+  if(!state.report){ $("#results").classList.add("hidden"); updateRail(); return; }
   $("#results").classList.remove("hidden");
   summarize();
   renderFindings();
+  updateRail();
 }
 ["filterSeverity","filterText","filterFixable"].forEach((id) => {
   const el = document.getElementById(id);
@@ -1813,8 +2116,12 @@ $("#downloadGraphBtn").addEventListener("click", () => {
 });
 
 /* -------------------------------------------------------------------------
-   Git workspace
+   Git studio — LazyGit-style workspace
    ------------------------------------------------------------------------- */
+let gitSelection = null;
+let gitSelectedCommit = "";
+let gitDiffMode = "file";
+
 function gitTrack(branch){
   const parts = [];
   if(branch.upstream) parts.push("tracking " + branch.upstream);
@@ -1823,258 +2130,759 @@ function gitTrack(branch){
   if(branch.gone) parts.push("upstream gone");
   return parts.join(" · ");
 }
+function gitMsg(message, kind){
+  const el = $("#gitStatusMsg");
+  if(el) el.textContent = message;
+  if(kind) notify(message, kind);
+}
 function setGitRemoteOptions(remotes){
   const select = $("#gitRemote");
+  if(!select) return;
   const previous = select.value;
   select.innerHTML = (remotes || []).map((r) => '<option value="' + esc(r.name) + '">' + esc(r.name) + '</option>').join("") ||
     '<option value="origin">origin</option>';
   if(previous && Array.from(select.options).some((o) => o.value === previous)) select.value = previous;
 }
+function gitKind(f){
+  if(f.untracked) return "untracked";
+  const code = f.index_code !== " " ? f.index_code : f.worktree_code;
+  return {M:"modified",A:"added",D:"deleted",R:"renamed",C:"copied",U:"conflicted"}[code] || "modified";
+}
+function gitCode(f){
+  if(f.untracked) return "U";
+  if((f.index_code || "").trim()) return f.index_code.trim();
+  return (f.worktree_code || "").trim() || "?";
+}
+function diffStats(text){
+  let add = 0, del = 0;
+  (text || "").split("\n").forEach((line) => {
+    if(line.startsWith("+") && !line.startsWith("+++")) add++;
+    else if(line.startsWith("-") && !line.startsWith("---")) del++;
+  });
+  return (add || del) ? "+" + add + "  −" + del : "";
+}
+function diffLineClass(line){
+  if(line.startsWith("+++") || line.startsWith("---") || line.startsWith("diff ") || line.startsWith("index ") || line.startsWith("new file") || line.startsWith("deleted file")) return "d-meta";
+  if(line.startsWith("@@")) return "d-hunk";
+  if(line.startsWith("+")) return "d-add";
+  if(line.startsWith("-")) return "d-del";
+  return "d-ctx";
+}
+function renderDiffLines(lines){
+  return (lines || []).map((line) => '<span class="' + diffLineClass(line) + '">' + esc(line || " ") + '</span>').join("");
+}
+function diffHtml(text){
+  if(!text || !text.trim()) return '<span class="d-ctx">No differences.</span>';
+  return renderDiffLines(text.split("\n"));
+}
+let gitDiffContext = null;
+let gitDiffHunks = [];
+function buildDiffView(text){
+  if(!gitDiffContext || gitDiffContext.mode !== "file" || !text || !text.trim()){
+    gitDiffHunks = [];
+    return diffHtml(text);
+  }
+  const lines = text.split("\n");
+  const header = [];
+  const hunks = [];
+  let current = null;
+  for(const line of lines){
+    if(line.startsWith("@@")){
+      if(current) hunks.push(current);
+      current = {head: line, lines: [line]};
+    } else if(current){
+      current.lines.push(line);
+    } else {
+      header.push(line);
+    }
+  }
+  if(current) hunks.push(current);
+  if(!hunks.length){
+    gitDiffHunks = [];
+    return diffHtml(text);
+  }
+  const headerText = header.join("\n");
+  gitDiffHunks = hunks.map((hunk) => headerText + "\n" + hunk.lines.join("\n") + "\n");
+  const stageAction = gitDiffContext.staged ? "unstage" : "stage";
+  const stageLabel = gitDiffContext.staged ? "Unstage hunk" : "Stage hunk";
+  return renderDiffLines(header) + hunks.map((hunk, index) =>
+    '<span class="diff-hunk"><span class="diff-hunk-bar"><span class="diff-hunk-label">' + esc(hunk.head) + '</span>' +
+      '<button type="button" class="diff-hunk-btn" data-hunk-action="' + stageAction + '" data-hunk-index="' + index + '">' + stageLabel + '</button>' +
+      (gitDiffContext.staged ? '' : '<button type="button" class="diff-hunk-btn danger" data-hunk-action="discard" data-hunk-index="' + index + '">Discard hunk</button>') +
+    '</span><span class="diff-hunk-body">' + renderDiffLines(hunk.lines.slice(1)) + '</span></span>'
+  ).join("");
+}
+function gitSelectFile(index, show){
+  const status = state.git && state.git.status;
+  const f = status && status.files[Number(index)];
+  if(!f) return;
+  gitSelection = {path: f.path};
+  gitSelectedCommit = "";
+  gitDiffMode = "file";
+  $$("#gitFilesBody .git-file").forEach((el) => {
+    const active = Number(el.dataset.gitIndex) === Number(index);
+    el.classList.toggle("selected", active);
+    el.setAttribute("aria-selected", active ? "true" : "false");
+  });
+  $$("#gitLogOut .git-log-item").forEach((el) => el.classList.remove("selected"));
+  if(show !== false){
+    const staged = !!(f.staged && !f.unstaged);
+    gitDiff(f.path, staged, f.untracked ? "Untracked file" : (staged ? "Staged diff" : "Working tree diff"));
+  }
+}
+function renderGitFiles(files){
+  const body = $("#gitFilesBody");
+  if(!body) return;
+  if(!files.length){
+    body.innerHTML = '<div class="git-empty">Working tree clean — nothing to stage.</div>';
+    return;
+  }
+  const query = (($("#gitFileSearch") && $("#gitFileSearch").value) || "").trim().toLowerCase();
+  const rows = files.map((f, index) => ({f, index})).filter(({f}) => !query || f.path.toLowerCase().includes(query));
+  if(!rows.length){
+    body.innerHTML = '<div class="git-empty">No changed files match the filter.</div>';
+    return;
+  }
+  body.innerHTML = rows.map(({f, index}) => {
+    const selected = gitSelection && gitSelection.path === f.path;
+    const actions = [];
+    if(f.unstaged || f.untracked) actions.push('<button type="button" data-git-stage="' + index + '" title="Stage file">+</button>');
+    if(f.staged) actions.push('<button type="button" data-git-unstage="' + index + '" title="Unstage file">−</button>');
+    if(f.unstaged) actions.push('<button type="button" data-git-discard="' + index + '" title="Discard working changes" class="danger">↺</button>');
+    if(f.untracked) actions.push('<button type="button" data-git-delete="' + index + '" title="Delete untracked file" class="danger">×</button>');
+    return '<div class="git-file ' + (selected ? "selected" : "") + '" data-git-index="' + index + '" role="option" aria-selected="' + (selected ? "true" : "false") + '" tabindex="0">' +
+      '<span class="git-file-code ' + gitKind(f) + '">' + esc(gitCode(f)) + '</span>' +
+      '<span class="git-file-main"><span class="git-file-path">' + esc(f.path) + '</span>' +
+        (f.original_path ? '<span class="git-file-origin">from ' + esc(f.original_path) + '</span>' : '') +
+      '</span>' +
+      '<span class="git-file-actions">' + actions.join("") + '</span>' +
+    '</div>';
+  }).join("");
+}
 function renderGitStatus(){
   const status = state.git && state.git.status;
   if(!status) return;
   const branchLabel = status.detached ? "detached HEAD" : (status.branch || "no commits yet");
-  $("#gitSummary").innerHTML = '<code>' + esc(status.repo) + '</code> · ' +
-    '<b>' + esc(branchLabel) + '</b>' +
-    (status.upstream ? ' · <span class="muted">' + esc(status.upstream) + '</span>' : ' · <span class="muted">no upstream</span>') +
-    (status.ahead ? ' · <span class="chip ok">ahead ' + esc(status.ahead) + '</span>' : '') +
-    (status.behind ? ' · <span class="chip warn">behind ' + esc(status.behind) + '</span>' : '') +
-    (status.clean ? ' · <span class="chip ok">clean</span>' : ' · <span class="chip warn">changes</span>');
-  $("#gitStats").innerHTML =
-    '<div class="stat"><b>' + esc(status.staged_count) + '</b><span>staged</span></div>' +
-    '<div class="stat"><b>' + esc(status.unstaged_count) + '</b><span>unstaged</span></div>' +
-    '<div class="stat"><b>' + esc(status.untracked_count) + '</b><span>untracked</span></div>' +
-    '<div class="stat"><b>' + esc(status.ahead) + '</b><span>ahead</span></div>' +
-    '<div class="stat"><b>' + esc(status.behind) + '</b><span>behind</span></div>';
-  $("#gitOperation").innerHTML = status.operation
-    ? '<div class="notice">Git operation in progress: <b>' + esc(status.operation) + '</b>. Resolve it before committing or switching branches.</div>'
-    : "";
-  const body = $("#gitFilesBody");
-  if(!status.files.length){
-    body.innerHTML = '<tr><td colspan="4" class="muted">Working tree is clean.</td></tr>';
-  } else {
-    body.innerHTML = status.files.map((f, index) => {
-      const actions = [];
-      if(f.unstaged || f.untracked) actions.push('<button class="btn small" data-git-stage="' + index + '">Stage</button>');
-      if(f.staged) actions.push('<button class="btn small" data-git-unstage="' + index + '">Unstage</button>');
-      if(f.staged) actions.push('<button class="btn small" data-git-diff="' + index + '" data-staged="1">Staged diff</button>');
-      if(f.unstaged) actions.push('<button class="btn small" data-git-diff="' + index + '" data-staged="0">Diff</button>');
-      return '<tr><td><code>' + esc(f.path) + '</code>' + (f.original_path ? '<div class="small muted">from ' + esc(f.original_path) + '</div>' : '') + '</td>' +
-        '<td>' + esc(f.index) + '</td><td>' + esc(f.worktree) + '</td>' +
-        '<td class="right" style="white-space:nowrap">' + actions.join(" ") + '</td></tr>';
-    }).join("");
+  $("#gitBranchName").textContent = branchLabel;
+  $("#gitUpstream").textContent = status.upstream || "no upstream";
+  $("#gitRepoPath").textContent = status.repo;
+  $("#gitCleanState").textContent = status.operation || (status.clean ? "clean" : "changes");
+  $("#gitCleanDot").classList.toggle("dirty", !status.clean || !!status.operation);
+  $("#gitAhead").textContent = status.ahead || 0;
+  $("#gitBehind").textContent = status.behind || 0;
+  $("#gitChangeCount").textContent = status.files.length;
+  $("#gitStagedSummary").textContent = status.staged_count + " staged";
+  $("#gitStageAllBtn").disabled = !status.files.length;
+  $("#gitUnstageAllBtn").disabled = !status.staged_count;
+  $("#gitDiscardAllBtn").disabled = !status.unstaged_count;
+  $("#gitAbortBtn").classList.toggle("hidden", !status.operation);
+  if(status.operation){
+    gitMsg("Git operation in progress: " + status.operation + ". Resolve it or abort before committing.", "warn");
+  } else if(gitDiffMode === "file" && !gitSelection){
+    gitMsg("Ready.");
   }
-  $("#gitFilesHint").textContent = status.files.length + " changed path(s). Remote operations use the selected remote.";
+  const files = status.files || [];
+  if(gitSelection && !files.some((f) => f.path === gitSelection.path)) gitSelection = null;
+  if(!gitSelection && files.length) gitSelection = {path: files[0].path};
+  renderGitFiles(files);
+  $("#gitFilesHint").textContent = files.length
+    ? files.length + " changed path(s) · " + status.staged_count + " staged · " + status.unstaged_count + " unstaged"
+    : "Working tree clean.";
   setGitRemoteOptions(state.git.remotes);
 }
 function renderGitBranches(){
   const branches = state.git && state.git.branches;
-  if(!branches) return;
+  const out = $("#gitBranchesOut");
+  if(!branches || !out) return;
   const local = branches.local || [];
-  const rows = local.map((b) => {
-    const track = gitTrack(b);
-    return '<tr><td>' + (b.current ? '<span class="chip ok">current</span> ' : '') + '<code>' + esc(b.name) + '</code></td>' +
-      '<td class="small muted">' + esc(track || b.commit) + '</td><td class="small">' + esc(b.subject) + '</td>' +
-      '<td class="right" style="white-space:nowrap">' +
-        (!b.current ? '<button class="btn small" data-branch-switch="' + esc(b.name) + '">Switch</button> ' : '') +
-        (!b.current ? '<button class="btn small danger" data-branch-delete="' + esc(b.name) + '">Delete</button>' : '') +
-      '</td></tr>';
-  }).join("") || '<tr><td colspan="4" class="muted">No local branches yet.</td></tr>';
-  const remote = (branches.remote || []).map((b) => '<span class="chip">' + esc(b.name) + '</span>').join(" ") || '<span class="muted small">none</span>';
-  $("#gitBranchesOut").innerHTML = '<div class="table-wrap"><table><thead><tr><th>Local branch</th><th>Tracking</th><th>Last commit</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
-    '<div class="small muted" style="margin-top:10px">Remote branches: ' + remote + '</div>';
+  if(!local.length){
+    out.innerHTML = '<div class="git-empty">No local branches yet.</div>';
+    return;
+  }
+  out.innerHTML = local.map((b) => {
+    const meta = [];
+    if(b.ahead) meta.push('<span class="up">↑' + esc(b.ahead) + '</span>');
+    if(b.behind) meta.push('<span class="down">↓' + esc(b.behind) + '</span>');
+    return '<div class="git-list-item ' + (b.current ? "current" : "") + '" data-branch-switch="' + esc(b.name) + '" title="Switch to ' + esc(b.name) + '">' +
+      '<span class="git-file-code ' + (b.current ? "added" : "modified") + '">' + (b.current ? "●" : "○") + '</span>' +
+      '<span class="git-list-main"><b>' + esc(b.name) + '</b><small>' + esc(b.subject || b.commit) + '</small></span>' +
+      '<span class="git-list-meta">' + (meta.join(" ") || "") + '</span>' +
+      '<span class="git-list-actions">' +
+        (!b.current ? '<button type="button" data-branch-merge="' + esc(b.name) + '" title="Merge into current branch">⇄</button>' : '') +
+        (!b.current ? '<button type="button" data-branch-rebase="' + esc(b.name) + '" title="Rebase current branch onto this">⤴</button>' : '') +
+        '<button type="button" data-branch-rename="' + esc(b.name) + '" title="Rename branch">✎</button>' +
+        (!b.current ? '<button type="button" class="danger" data-branch-delete="' + esc(b.name) + '" title="Delete branch">×</button>' : '') +
+      '</span>' +
+    '</div>';
+  }).join("") + '<div class="git-foot">' + (branches.remote || []).length + ' remote branch(es)</div>';
 }
-function commitRows(commits){
-  if(!commits || !commits.length) return '<tr><td colspan="5" class="muted">No commits found.</td></tr>';
-  return commits.map((c) =>
-    '<tr><td><code>' + esc(c.short) + '</code></td><td>' + esc(c.author) + '</td><td class="small muted">' + esc(c.date) + '</td>' +
-    '<td>' + esc(c.subject) + '</td><td>' + (c.refs||[]).map((r) => '<span class="chip">' + esc(r) + '</span>').join(" ") + '</td></tr>'
+function renderGitStashes(){
+  const stashes = (state.git && state.git.stashes) || [];
+  const out = $("#gitStashesOut");
+  if(!out) return;
+  if(!stashes.length){
+    out.innerHTML = '<div class="git-empty">No stashes saved.</div>';
+    return;
+  }
+  out.innerHTML = stashes.map((s, index) =>
+    '<div class="git-list-item">' +
+      '<span class="git-file-code modified">⌁</span>' +
+      '<span class="git-list-main"><b>' + esc(s.ref) + '</b><small>' + esc(s.subject || s.hash) + '</small></span>' +
+      '<span class="git-list-actions">' +
+        '<button type="button" data-stash-pop="' + index + '" title="Pop stash">↑</button>' +
+        '<button type="button" class="danger" data-stash-drop="' + index + '" title="Drop stash">×</button>' +
+      '</span>' +
+    '</div>'
   ).join("");
 }
 function renderGitLog(commits){
-  $("#gitLogOut").innerHTML = '<div class="table-wrap"><table><thead><tr><th>Commit</th><th>Author</th><th>Date</th><th>Subject</th><th>Refs</th></tr></thead><tbody>' +
-    commitRows(commits) + '</tbody></table></div>';
+  const out = $("#gitLogOut");
+  if(!out) return;
+  if(!commits || !commits.length){
+    out.innerHTML = '<div class="git-empty">No commits found.</div>';
+    return;
+  }
+  out.innerHTML = commits.map((c) =>
+    '<button type="button" class="git-log-item ' + (gitSelectedCommit === c.hash ? "selected" : "") + '" data-commit-ref="' + esc(c.hash) + '">' +
+      '<span class="git-log-graph">●</span>' +
+      '<span class="git-log-main"><span class="git-log-subject">' + esc(c.subject) + '</span>' +
+        '<span class="git-log-meta">' + esc(c.short) + ' · ' + esc(c.author) + ' · ' + esc(c.date) + '</span>' +
+        ((c.refs || []).length ? '<span class="git-log-refs">' + c.refs.map((r) => '<span>' + esc(r) + '</span>').join("") + '</span>' : '') +
+      '</span>' +
+    '</button>'
+  ).join("");
 }
-async function loadGit(){
-  if(!state.repo){ notify("Load a repository first.", "warn"); return; }
+async function loadGit(options){
+  const opts = options || {};
+  if(!state.repo){ gitMsg("Load a repository first.", "warn"); return; }
+  if(!opts.silent) gitMsg("Refreshing repository...");
   const repo = encodeURIComponent(state.repo);
-  const limit = $("#gitLogLimit").value || 20;
-  const [status, branches, log, remotes] = await Promise.all([
+  const [status, branches, log, remotes, stashes] = await Promise.all([
     api("/api/git/status?repo=" + repo),
     api("/api/git/branches?repo=" + repo),
-    api("/api/git/log?repo=" + repo + "&limit=" + encodeURIComponent(limit)),
-    api("/api/git/remotes?repo=" + repo)
+    api("/api/git/log?repo=" + repo + "&limit=40"),
+    api("/api/git/remotes?repo=" + repo),
+    api("/api/git/stashes?repo=" + repo)
   ]);
-  state.git = {status, branches, remotes:remotes.remotes || [], commits:log.commits || []};
+  state.git = {
+    status,
+    branches,
+    remotes: remotes.remotes || [],
+    commits: log.commits || [],
+    stashes: stashes.stashes || []
+  };
   renderGitStatus();
   renderGitBranches();
+  renderGitStashes();
   renderGitLog(state.git.commits);
+  if(gitDiffMode === "file" && gitSelection){
+    const f = status.files.find((item) => item.path === gitSelection.path);
+    if(f) gitDiff(
+      f.path,
+      !!(f.staged && !f.unstaged),
+      f.untracked ? "Untracked file" : ((f.staged && !f.unstaged) ? "Staged diff" : "Working tree diff")
+    );
+  } else if(gitDiffMode === "file" && !gitSelection){
+    $("#gitDiffTitle").textContent = "Working tree";
+    $("#gitDiffSub").textContent = "Working tree clean";
+    $("#gitDiffStats").textContent = "";
+    $("#gitDiffOut").innerHTML = '<span class="d-meta">Nothing to show — the working tree is clean.</span>';
+  }
+  if(!opts.silent) gitMsg("Repository refreshed.");
 }
 async function reloadGitAfter(data, message){
-  if(data && data.status) state.git.status = data.status;
-  await loadGit();
-  if(message) notify(message, "ok");
+  if(data && data.status && state.git) state.git.status = data.status;
+  await loadGit({silent:true});
+  if(message) gitMsg(message, "ok");
 }
 async function gitDiff(path, staged, title){
-  $("#gitDiffCard").classList.remove("hidden");
   $("#gitDiffTitle").textContent = title || ("Diff · " + (path || "working tree"));
-  $("#gitDiffOut").textContent = "Loading...";
+  $("#gitDiffSub").textContent = (path || "working tree") + (staged ? " · staged" : " · working tree");
+  $("#gitDiffStats").textContent = "loading";
+  $("#gitCommitActions").innerHTML = "";
+  gitDiffContext = {mode:"file", staged:!!staged, path:path || ""};
+  gitDiffHunks = [];
+  $("#gitDiffOut").innerHTML = '<span class="d-meta">Loading diff...</span>';
   try{
     const data = await api("/api/git/diff?repo=" + encodeURIComponent(state.repo) +
       "&staged=" + (staged ? "1" : "0") + "&path=" + encodeURIComponent(path || ""));
-    $("#gitDiffOut").textContent = data.empty ? "No differences." : data.diff;
-    $("#gitDiffCard").scrollIntoView({behavior:"smooth", block:"start"});
+    $("#gitDiffOut").innerHTML = buildDiffView(data.diff);
+    $("#gitDiffStats").textContent = data.empty ? "no changes" : diffStats(data.diff);
+    if(data.empty && title && /untracked/i.test(title)){
+      $("#gitDiffOut").innerHTML = '<span class="d-meta">Untracked file — stage it to preview the diff.</span>';
+    }
   }catch(err){
-    $("#gitDiffOut").textContent = err.message;
+    $("#gitDiffOut").innerHTML = '<span class="d-del">' + esc(err.message) + '</span>';
+    $("#gitDiffStats").textContent = "";
     notify(err.message, "bad");
   }
 }
-$("#gitDiffClose").addEventListener("click", () => $("#gitDiffCard").classList.add("hidden"));
-$("#gitRefreshBtn").addEventListener("click", () => loadGit().catch((e) => notify(e.message, "bad")));
-$("#gitStageAllBtn").addEventListener("click", async () => {
+function renderCommitActions(){
+  const box = $("#gitCommitActions");
+  if(!box || !gitSelectedCommit){ if(box) box.innerHTML = ""; return; }
+  box.innerHTML =
+    '<button type="button" class="git-mini" data-commit-action="branch" title="Create a branch at this commit">Branch</button>' +
+    '<button type="button" class="git-mini" data-commit-action="reset" title="Reset current branch to this commit">Reset</button>' +
+    '<button type="button" class="git-mini" data-commit-action="revert" title="Revert this commit">Revert</button>' +
+    '<button type="button" class="git-mini" data-commit-action="cherry-pick" title="Cherry-pick this commit onto the current branch">Cherry-pick</button>' +
+    '<button type="button" class="git-mini" data-commit-action="tag" title="Create a tag at this commit">Tag</button>' +
+    '<button type="button" class="git-mini" data-commit-action="copy" title="Copy full commit hash">Copy SHA</button>';
+}
+async function gitShow(ref){
+  if(!ref) return;
+  gitDiffMode = "commit";
+  gitSelectedCommit = ref;
+  gitSelection = null;
+  gitDiffContext = {mode:"commit"};
+  gitDiffHunks = [];
+  $$("#gitFilesBody .git-file").forEach((el) => { el.classList.remove("selected"); el.setAttribute("aria-selected", "false"); });
+  $$("#gitLogOut .git-log-item").forEach((el) => el.classList.toggle("selected", el.dataset.commitRef === ref));
+  renderCommitActions();
+  $("#gitDiffTitle").textContent = "Commit";
+  $("#gitDiffSub").textContent = ref.slice(0, 12);
+  $("#gitDiffStats").textContent = "loading";
+  $("#gitDiffOut").innerHTML = '<span class="d-meta">Loading commit...</span>';
   try{
-    const data = await api("/api/git/add", {method:"POST", body:{repo:state.repo, all:true}});
-    await reloadGitAfter(data, "Staged all changes.");
-  }catch(err){ notify(err.message, "bad"); }
-});
-$("#gitUnstageAllBtn").addEventListener("click", async () => {
-  try{
-    const data = await api("/api/git/unstage", {method:"POST", body:{repo:state.repo, all:true}});
-    await reloadGitAfter(data, "Unstaged all changes.");
-  }catch(err){ notify(err.message, "bad"); }
-});
-$("#gitFilesBody").addEventListener("click", async (event) => {
-  const stage = event.target.closest("[data-git-stage]");
-  const unstage = event.target.closest("[data-git-unstage]");
-  const diff = event.target.closest("[data-git-diff]");
-  if(stage){
-    const f = state.git.status.files[Number(stage.dataset.gitStage)];
-    if(!f) return;
-    try{
-      const data = await api("/api/git/add", {method:"POST", body:{repo:state.repo, paths:[f.path]}});
-      await reloadGitAfter(data, "Staged " + f.path);
-    }catch(err){ notify(err.message, "bad"); }
-  } else if(unstage){
-    const f = state.git.status.files[Number(unstage.dataset.gitUnstage)];
-    if(!f) return;
-    try{
-      const data = await api("/api/git/unstage", {method:"POST", body:{repo:state.repo, paths:[f.path]}});
-      await reloadGitAfter(data, "Unstaged " + f.path);
-    }catch(err){ notify(err.message, "bad"); }
-  } else if(diff){
-    const f = state.git.status.files[Number(diff.dataset.gitDiff)];
-    if(f) gitDiff(f.path, diff.dataset.staged === "1", (diff.dataset.staged === "1" ? "Staged diff · " : "Diff · ") + f.path);
+    const data = await api("/api/git/show?repo=" + encodeURIComponent(state.repo) + "&ref=" + encodeURIComponent(ref));
+    gitSelectedCommit = data.hash;
+    renderCommitActions();
+    $("#gitDiffTitle").textContent = data.short + " · " + data.subject;
+    $("#gitDiffSub").textContent = data.author + " · " + data.date;
+    $("#gitDiffStats").textContent = diffStats(data.diff);
+    $("#gitDiffOut").innerHTML = diffHtml(data.diff);
+  }catch(err){
+    $("#gitDiffOut").innerHTML = '<span class="d-del">' + esc(err.message) + '</span>';
+    $("#gitDiffStats").textContent = "";
+    notify(err.message, "bad");
   }
-});
-$("#gitCommitBtn").addEventListener("click", async () => {
+}
+function moveGitSelection(delta){
+  const files = state.git && state.git.status.files;
+  if(!files || !files.length) return;
+  const current = gitSelection ? files.findIndex((f) => f.path === gitSelection.path) : -1;
+  const next = Math.max(0, Math.min(files.length - 1, current + delta));
+  gitSelectFile(next, true);
+  const row = $$("#gitFilesBody .git-file").find((el) => Number(el.dataset.gitIndex) === next);
+  if(row) row.scrollIntoView({block:"nearest"});
+}
+function toggleGitSelection(){
+  const status = state.git && state.git.status;
+  const f = status && gitSelection && status.files.find((item) => item.path === gitSelection.path);
+  if(!f) return;
+  if(f.staged && !f.unstaged && !f.untracked){
+    gitAction("/api/git/unstage", {paths:[f.path]}, "Unstaged " + f.path);
+  } else {
+    gitAction("/api/git/add", {paths:[f.path]}, "Staged " + f.path);
+  }
+}
+async function gitAction(path, body, message){
+  try{
+    const data = await api(path, {method:"POST", body:Object.assign({repo:state.repo}, body)});
+    await reloadGitAfter(data, message);
+  }catch(err){ gitMsg(err.message, "bad"); }
+}
+async function createGitBranch(){
+  const input = $("#gitNewBranch");
+  const name = input.value.trim();
+  if(!name){ gitMsg("Enter a branch name.", "warn"); return; }
+  try{
+    const data = await api("/api/git/branches/create", {method:"POST", body:{
+      repo:state.repo, name, checkout:true
+    }});
+    input.value = "";
+    await reloadGitAfter(data, "Created and switched to " + name + ".");
+  }catch(err){ gitMsg(err.message, "bad"); }
+}
+async function commitGitStaged(){
   const message = $("#gitCommitMsg").value.trim();
-  if(!message){ notify("Enter a commit message.", "warn"); return; }
-  if(!confirm("Commit staged changes?\n\n" + message)) return;
+  if(!message){ gitMsg("Enter a commit message.", "warn"); $("#gitCommitMsg").focus(); return; }
+  const amend = $("#gitCommitAmend").checked;
+  if(amend && !confirm("Amend the previous commit with these staged changes?\n\n" + message)) return;
   $("#gitCommitBtn").disabled = true;
   try{
     const data = await api("/api/git/commit", {method:"POST", body:{
-      repo:state.repo, message, all_tracked:$("#gitCommitAll").checked
+      repo:state.repo, message, all_tracked:$("#gitCommitAll").checked,
+      amend, confirm: amend ? "amend" : ""
     }});
     $("#gitCommitOut").textContent = data.output || ("Committed " + data.commit);
     $("#gitCommitOut").classList.remove("hidden");
     $("#gitCommitMsg").value = "";
-    await reloadGitAfter(data, "Committed changes.");
-  }catch(err){ notify(err.message, "bad"); }
+    $("#gitCommitAmend").checked = false;
+    await reloadGitAfter(data, amend ? "Commit amended." : "Committed staged changes.");
+  }catch(err){ gitMsg(err.message, "bad"); }
   finally{ $("#gitCommitBtn").disabled = false; }
+}
+function gitHelp(){
+  modal("Git studio shortcuts", '<div style="display:grid;gap:8px;font-size:13px">' +
+    '<div><span class="kbd">j</span> / <span class="kbd">k</span> move file selection</div>' +
+    '<div><span class="kbd">space</span> stage or unstage the selected file</div>' +
+    '<div><span class="kbd">d</span> inspect the selected diff</div>' +
+    '<div><span class="kbd">c</span> focus the commit message</div>' +
+    '<div><span class="kbd">r</span> refresh repository state</div>' +
+    '<div><span class="kbd">Ctrl</span> + <span class="kbd">K</span> focus the command bar</div>' +
+    '<div><span class="kbd">?</span> show this help · <span class="kbd">/</span> command bar</div>' +
+    '<h3 style="margin-top:10px">Command bar</h3>' +
+    '<pre class="pre" style="max-height:200px">status | refresh | log\nstage all | unstage all\ndiff &lt;path&gt;\ncommit -m "message"\nfetch | pull | push\nbranch &lt;name&gt; | switch &lt;name&gt;\nmerge &lt;branch&gt; | rebase &lt;branch&gt;\nrevert &lt;commit&gt; | cherry-pick &lt;commit&gt;\ntag &lt;name&gt; [message]\nstash | stash pop | stash drop</pre>' +
+    '<h3 style="margin-top:10px">Hunks</h3><p class="small muted" style="margin:0">Each hunk in a file diff has Stage/Unstage and Discard controls. Select a commit in History for reset, revert, cherry-pick, tag, and branch actions.</p></div>');
+}
+async function runGitCommand(raw){
+  const text = String(raw || "").trim();
+  if(!text) return;
+  const parts = text.split(/\s+/);
+  const cmd = parts.shift().toLowerCase();
+  const rest = parts.join(" ");
+  try{
+    if(cmd === "help" || cmd === "?"){ gitHelp(); }
+    else if(cmd === "status" || cmd === "refresh" || cmd === "r"){ await loadGit(); }
+    else if(cmd === "stage"){
+      if(rest === "all" || rest === "-A" || rest === "a") await gitAction("/api/git/add", {all:true}, "Staged all changes.");
+      else if(rest) await gitAction("/api/git/add", {paths:[rest]}, "Staged " + rest + ".");
+      else toggleGitSelection();
+    }
+    else if(cmd === "unstage"){
+      if(rest === "all" || rest === "a") await gitAction("/api/git/unstage", {all:true}, "Unstaged all changes.");
+      else if(rest) await gitAction("/api/git/unstage", {paths:[rest]}, "Unstaged " + rest + ".");
+    }
+    else if(cmd === "commit"){
+      const match = text.match(/(?:-m|--message)\s+["']?([\s\S]+?)["']?$/);
+      const message = match ? match[1] : "";
+      if(!message){ $("#gitCommitMsg").focus(); gitMsg("Add a commit message: commit -m 'message'", "warn"); return; }
+      $("#gitCommitMsg").value = message;
+      await commitGitStaged();
+    }
+    else if(cmd === "diff"){
+      if(!rest){ toggleGitSelection(); return; }
+      const f = state.git && state.git.status.files.find((item) => item.path === rest);
+      gitSelection = {path: rest};
+      await gitDiff(rest, !!(f && f.staged && !f.unstaged), "Working tree diff");
+    }
+    else if(cmd === "fetch"){ await $("#gitFetchBtn").click(); }
+    else if(cmd === "pull"){ $("#gitPullBtn").click(); }
+    else if(cmd === "push"){ $("#gitPushBtn").click(); }
+    else if(cmd === "branch"){
+      if(!rest){ showGitPanel("branches"); return; }
+      $("#gitNewBranch").value = rest;
+      await createGitBranch();
+    }
+    else if(cmd === "switch" || cmd === "checkout"){
+      if(!rest){ showGitPanel("branches"); return; }
+      await gitAction("/api/git/branches/switch", {name:rest}, "Switched to " + rest + ".");
+    }
+    else if(cmd === "merge"){
+      if(!rest){ showGitPanel("branches"); return; }
+      await gitAction("/api/git/merge", {branch:rest}, "Merged " + rest + ".");
+    }
+    else if(cmd === "rebase"){
+      if(!rest){ showGitPanel("branches"); return; }
+      if(!confirm("Rebase the current branch onto " + rest + "? This rewrites local history.")) return;
+      await gitAction("/api/git/rebase", {onto:rest}, "Rebased onto " + rest + ".");
+    }
+    else if(cmd === "revert"){
+      if(!rest){ gitSelectedCommit && await gitAction("/api/git/revert", {ref:gitSelectedCommit}, "Reverted commit."); return; }
+      await gitAction("/api/git/revert", {ref:rest}, "Reverted " + rest + ".");
+    }
+    else if(cmd === "cherry-pick" || cmd === "pick"){
+      if(!rest){ gitMsg("Usage: cherry-pick <commit>", "warn"); return; }
+      await gitAction("/api/git/cherry-pick", {ref:rest}, "Cherry-picked " + rest + ".");
+    }
+    else if(cmd === "tag"){
+      if(!rest){ gitMsg("Usage: tag <name> [message]", "warn"); return; }
+      const tagParts = rest.split(" ");
+      await gitAction("/api/git/tags/create", {name:tagParts[0], ref:gitSelectedCommit || "HEAD", message:tagParts.slice(1).join(" ")}, "Created tag " + tagParts[0] + ".");
+    }
+    else if(cmd === "stash"){
+      if(rest === "pop"){ $("#gitStashBtn").dataset.mode = ""; const s = $("#gitStashesOut [data-stash-pop]"); if(s) s.click(); else gitMsg("No stash to pop.", "warn"); }
+      else if(rest === "drop"){ const s = $("#gitStashesOut [data-stash-drop]"); if(s) s.click(); else gitMsg("No stash to drop.", "warn"); }
+      else { $("#gitStashMsg").value = rest; $("#gitStashBtn").click(); }
+    }
+    else if(cmd === "log"){ showGitPanel("changes"); await loadGit(); }
+    else { gitMsg("Unknown command: " + cmd + ". Type help for the command list.", "warn"); }
+  }catch(err){ gitMsg(err.message, "bad"); }
+}
+function showGitPanel(name){
+  $$("#gitLeftTabs button").forEach((b) => b.classList.toggle("active", b.dataset.gitLeft === name));
+  $$("[data-git-left-panel]").forEach((panel) => panel.classList.toggle("hidden", panel.dataset.gitLeftPanel !== name));
+}
+
+$("#gitDiffClose").addEventListener("click", () => {
+  gitDiffMode = "";
+  gitDiffContext = null;
+  gitDiffHunks = [];
+  gitSelectedCommit = "";
+  $("#gitCommitActions").innerHTML = "";
+  $$("#gitLogOut .git-log-item").forEach((el) => el.classList.remove("selected"));
+  $("#gitDiffTitle").textContent = "Working tree";
+  $("#gitDiffSub").textContent = "Select a file to inspect its patch";
+  $("#gitDiffStats").textContent = "";
+  $("#gitDiffOut").innerHTML = "Select a changed file in the left panel, or click a commit in history to inspect its patch.";
+});
+$("#gitDiffOut").addEventListener("click", async (event) => {
+  const button = event.target.closest("[data-hunk-action]");
+  if(!button) return;
+  const patch = gitDiffHunks[Number(button.dataset.hunkIndex)];
+  if(!patch) return;
+  const action = button.dataset.hunkAction;
+  if(action === "discard" && !confirm("Discard this hunk from the working tree?")) return;
+  const cached = action !== "discard";
+  const reverse = action === "unstage" || action === "discard";
+  const message = action === "stage" ? "Staged hunk." : action === "unstage" ? "Unstaged hunk." : "Discarded hunk.";
+  await gitAction("/api/git/apply", {patch, cached, reverse}, message);
+});
+$("#gitCommitActions").addEventListener("click", async (event) => {
+  const button = event.target.closest("[data-commit-action]");
+  const ref = gitSelectedCommit;
+  if(!button || !ref) return;
+  const action = button.dataset.commitAction;
+  if(action === "copy"){
+    try{
+      await navigator.clipboard.writeText(ref);
+      gitMsg("Copied " + ref.slice(0, 12) + ".", "ok");
+    }catch(err){
+      const area = document.createElement("textarea");
+      area.value = ref;
+      document.body.appendChild(area);
+      area.select();
+      document.execCommand("copy");
+      area.remove();
+      gitMsg("Copied " + ref.slice(0, 12) + ".", "ok");
+    }
+    return;
+  }
+  if(action === "branch"){
+    const name = prompt("Create a branch at " + ref.slice(0, 12) + ":", "feature/from-" + ref.slice(0, 7));
+    if(!name) return;
+    await gitAction("/api/git/branches/create", {name, start_point:ref, checkout:true}, "Created and switched to " + name + ".");
+    return;
+  }
+  if(action === "reset"){
+    const mode = (prompt("Reset current branch to " + ref.slice(0, 12) + ". Mode: soft, mixed, or hard", "mixed") || "").trim().toLowerCase();
+    if(!["soft", "mixed", "hard"].includes(mode)) return;
+    if(mode === "hard" && !confirm("Hard reset discards working tree changes. Continue?")) return;
+    await gitAction("/api/git/reset", {ref, mode, confirm: mode === "hard" ? "reset" : ""}, "Reset to " + ref.slice(0, 12) + " (" + mode + ").");
+    return;
+  }
+  if(action === "revert"){
+    if(!confirm("Create a revert commit for " + ref.slice(0, 12) + "?")) return;
+    await gitAction("/api/git/revert", {ref}, "Reverted " + ref.slice(0, 12) + ".");
+    return;
+  }
+  if(action === "cherry-pick"){
+    if(!confirm("Cherry-pick " + ref.slice(0, 12) + " onto the current branch?")) return;
+    await gitAction("/api/git/cherry-pick", {ref}, "Cherry-picked " + ref.slice(0, 12) + ".");
+    return;
+  }
+  if(action === "tag"){
+    const name = prompt("Tag name for " + ref.slice(0, 12) + ":");
+    if(!name) return;
+    const message = prompt("Tag message (optional):", "") || "";
+    await gitAction("/api/git/tags/create", {name, ref, message}, "Created tag " + name + ".");
+  }
+});
+$("#gitFileSearch").addEventListener("input", () => {
+  if(state.git && state.git.status) renderGitFiles(state.git.status.files);
+});
+$("#gitPopoutBtn").addEventListener("click", () => {
+  const url = new URL("/", location.href);
+  url.searchParams.set("t", TOKEN);
+  url.searchParams.set("focus", "1");
+  if(state.repo) url.searchParams.set("repo", state.repo);
+  url.hash = "git";
+  window.open(url.toString(), "_blank", "noopener");
+});
+$("#gitLeftTabs").addEventListener("click", (event) => {
+  const button = event.target.closest("[data-git-left]");
+  if(button) showGitPanel(button.dataset.gitLeft);
+});
+$("#gitRefreshBtn").addEventListener("click", () => loadGit().catch((e) => gitMsg(e.message, "bad")));
+$("#gitAbortBtn").addEventListener("click", async () => {
+  if(!confirm("Abort the in-progress git operation?")) return;
+  await gitAction("/api/git/abort", {}, "Aborted in-progress operation.");
+});
+$("#gitStageAllBtn").addEventListener("click", () => gitAction("/api/git/add", {all:true}, "Staged all changes."));
+$("#gitUnstageAllBtn").addEventListener("click", () => gitAction("/api/git/unstage", {all:true}, "Unstaged all changes."));
+$("#gitDiscardAllBtn").addEventListener("click", async () => {
+  if(!confirm("Discard all unstaged changes to tracked files? Untracked files are kept.")) return;
+  await gitAction("/api/git/restore", {all:true}, "Discarded unstaged changes.");
+});
+$("#gitFilesBody").addEventListener("click", async (event) => {
+  const stage = event.target.closest("[data-git-stage]");
+  const unstage = event.target.closest("[data-git-unstage]");
+  const discard = event.target.closest("[data-git-discard]");
+  const remove = event.target.closest("[data-git-delete]");
+  const row = event.target.closest("[data-git-index]");
+  if(stage || unstage || discard || remove){
+    event.stopPropagation();
+    const status = state.git && state.git.status;
+    const index = Number((stage || unstage || discard || remove).dataset.gitStage || (stage || unstage || discard || remove).dataset.gitUnstage || (stage || unstage || discard || remove).dataset.gitDiscard || (stage || unstage || discard || remove).dataset.gitDelete);
+    const f = status && status.files[index];
+    if(!f) return;
+    if(stage) await gitAction("/api/git/add", {paths:[f.path]}, "Staged " + f.path);
+    else if(unstage) await gitAction("/api/git/unstage", {paths:[f.path]}, "Unstaged " + f.path);
+    else if(discard){
+      if(confirm("Discard working changes in " + f.path + "?")) await gitAction("/api/git/restore", {paths:[f.path]}, "Discarded changes in " + f.path);
+    } else if(remove){
+      if(confirm("Delete untracked file " + f.path + "?")) await gitAction("/api/git/clean", {paths:[f.path], confirm:"discard"}, "Deleted " + f.path);
+    }
+    return;
+  }
+  if(row) gitSelectFile(Number(row.dataset.gitIndex), true);
+});
+$("#gitFilesBody").addEventListener("dblclick", (event) => {
+  const row = event.target.closest("[data-git-index]");
+  if(row) gitSelectFile(Number(row.dataset.gitIndex), true);
+});
+$("#gitCommitBtn").addEventListener("click", commitGitStaged);
+$("#gitCommitMsg").addEventListener("keydown", (event) => {
+  if((event.ctrlKey || event.metaKey) && event.key === "Enter"){
+    event.preventDefault();
+    commitGitStaged();
+  }
 });
 $("#gitFetchBtn").addEventListener("click", async () => {
   const remote = $("#gitRemote").value || "origin";
-  const button = $("#gitFetchBtn");
-  button.disabled = true;
+  $("#gitFetchBtn").disabled = true;
   try{
     const data = await api("/api/git/fetch", {method:"POST", body:{repo:state.repo, remote}});
     await reloadGitAfter(data, "Fetched " + remote + ".");
     if(data.output) modal("Fetch output", "<pre class='pre'>" + esc(data.output) + "</pre>");
-  }catch(err){ notify(err.message, "bad"); }
-  finally{ button.disabled = false; }
+  }catch(err){ gitMsg(err.message, "bad"); }
+  finally{ $("#gitFetchBtn").disabled = false; }
 });
 $("#gitPullBtn").addEventListener("click", async () => {
   const remote = $("#gitRemote").value || "origin";
   if(!confirm("Pull from " + remote + " using fast-forward only?")) return;
-  const button = $("#gitPullBtn");
-  button.disabled = true;
+  $("#gitPullBtn").disabled = true;
   try{
     const data = await api("/api/git/pull", {method:"POST", body:{repo:state.repo, remote}});
     await reloadGitAfter(data, "Pulled " + remote + ".");
     if(data.output) modal("Pull output", "<pre class='pre'>" + esc(data.output) + "</pre>");
-  }catch(err){ notify(err.message, "bad"); }
-  finally{ button.disabled = false; }
+  }catch(err){ gitMsg(err.message, "bad"); }
+  finally{ $("#gitPullBtn").disabled = false; }
 });
 $("#gitPushBtn").addEventListener("click", async () => {
   const status = state.git && state.git.status;
-  if(!status || !status.branch){ notify("Cannot push from a detached HEAD.", "warn"); return; }
+  if(!status || !status.branch){ gitMsg("Cannot push from a detached HEAD.", "warn"); return; }
   const remote = $("#gitRemote").value || "origin";
   const target = remote + "/" + status.branch;
   if(!confirm("Push " + status.branch + " to " + target + "?")) return;
-  const button = $("#gitPushBtn");
-  button.disabled = true;
+  $("#gitPushBtn").disabled = true;
   try{
     const data = await api("/api/git/push", {method:"POST", body:{
       repo:state.repo, remote, branch:status.branch, set_upstream:!status.upstream
     }});
     await reloadGitAfter(data, "Pushed to " + target + ".");
     if(data.output) modal("Push output", "<pre class='pre'>" + esc(data.output) + "</pre>");
-  }catch(err){ notify(err.message, "bad"); }
-  finally{ button.disabled = false; }
+  }catch(err){ gitMsg(err.message, "bad"); }
+  finally{ $("#gitPushBtn").disabled = false; }
 });
-async function createGitBranch(checkout){
-  const name = $("#gitNewBranch").value.trim();
-  if(!name){ notify("Enter a branch name.", "warn"); return; }
-  try{
-    const data = await api("/api/git/branches/create", {method:"POST", body:{
-      repo:state.repo, name, start_point:$("#gitStartPoint").value.trim(), checkout:!!checkout
-    }});
-    $("#gitNewBranch").value = "";
-    await reloadGitAfter(data, (checkout ? "Created and switched to " : "Created ") + name + ".");
-  }catch(err){ notify(err.message, "bad"); }
-}
-$("#gitCreateBranchBtn").addEventListener("click", () => createGitBranch(true));
-$("#gitCreateOnlyBtn").addEventListener("click", () => createGitBranch(false));
+$("#gitCreateBranchBtn").addEventListener("click", createGitBranch);
+$("#gitNewBranch").addEventListener("keydown", (event) => { if(event.key === "Enter") createGitBranch(); });
 $("#gitBranchesOut").addEventListener("click", async (event) => {
-  const switchBtn = event.target.closest("[data-branch-switch]");
   const deleteBtn = event.target.closest("[data-branch-delete]");
+  const mergeBtn = event.target.closest("[data-branch-merge]");
+  const rebaseBtn = event.target.closest("[data-branch-rebase]");
+  const renameBtn = event.target.closest("[data-branch-rename]");
+  const switchBtn = event.target.closest("[data-branch-switch]");
+  if(deleteBtn){
+    event.stopPropagation();
+    const name = deleteBtn.dataset.branchDelete;
+    if(!confirm("Delete local branch " + name + "?")) return;
+    try{
+      const data = await api("/api/git/branches/delete", {method:"POST", body:{repo:state.repo, name}});
+      await reloadGitAfter(data, "Deleted branch " + name + ".");
+    }catch(err){
+      if(!/not fully merged/i.test(err.message)){ gitMsg(err.message, "bad"); return; }
+      const typed = prompt("Branch " + name + " is not fully merged. Type the branch name to force-delete it:");
+      if(typed !== name){ gitMsg("Delete cancelled.", "warn"); return; }
+      try{
+        const data = await api("/api/git/branches/delete", {method:"POST", body:{repo:state.repo, name, force:true, confirm:name}});
+        await reloadGitAfter(data, "Force-deleted branch " + name + ".");
+      }catch(forceErr){ gitMsg(forceErr.message, "bad"); }
+    }
+    return;
+  }
+  if(mergeBtn || rebaseBtn || renameBtn){
+    event.stopPropagation();
+    if(mergeBtn){
+      const name = mergeBtn.dataset.branchMerge;
+      if(!confirm("Merge branch " + name + " into the current branch?")) return;
+      await gitAction("/api/git/merge", {branch:name}, "Merged " + name + " into the current branch.");
+    } else if(rebaseBtn){
+      const name = rebaseBtn.dataset.branchRebase;
+      if(!confirm("Rebase the current branch onto " + name + "? This rewrites local history.")) return;
+      await gitAction("/api/git/rebase", {onto:name}, "Rebased onto " + name + ".");
+    } else if(renameBtn){
+      const name = renameBtn.dataset.branchRename;
+      const next = prompt("Rename branch " + name + " to:", name);
+      if(!next || next.trim() === name) return;
+      await gitAction("/api/git/branches/rename", {old:name, new:next.trim()}, "Renamed " + name + " to " + next.trim() + ".");
+    }
+    return;
+  }
   if(switchBtn){
     const name = switchBtn.dataset.branchSwitch;
     if(state.git.status.clean === false && !confirm("The working tree has changes. Switch to " + name + " anyway?")) return;
     try{
       const data = await api("/api/git/branches/switch", {method:"POST", body:{repo:state.repo, name}});
       await reloadGitAfter(data, "Switched to " + name + ".");
-    }catch(err){ notify(err.message, "bad"); }
-  } else if(deleteBtn){
-    const name = deleteBtn.dataset.branchDelete;
-    if(!confirm("Delete merged local branch " + name + "?")) return;
-    try{
-      const data = await api("/api/git/branches/delete", {method:"POST", body:{repo:state.repo, name}});
-      await reloadGitAfter(data, "Deleted branch " + name + ".");
-    }catch(err){
-      if(!/not fully merged/i.test(err.message)){ notify(err.message, "bad"); return; }
-      const typed = prompt("Branch " + name + " is not fully merged. Type the branch name to force-delete it:");
-      if(typed !== name){ notify("Delete cancelled.", "warn"); return; }
-      try{
-        const data = await api("/api/git/branches/delete", {method:"POST", body:{repo:state.repo, name, force:true, confirm:name}});
-        await reloadGitAfter(data, "Force-deleted branch " + name + ".");
-      }catch(forceErr){ notify(forceErr.message, "bad"); }
-    }
+    }catch(err){ gitMsg(err.message, "bad"); }
   }
+});
+$("#gitStashBtn").addEventListener("click", async () => {
+  const message = $("#gitStashMsg").value.trim();
+  try{
+    const data = await api("/api/git/stash", {method:"POST", body:{
+      repo:state.repo, message, include_untracked:$("#gitStashUntracked").checked
+    }});
+    $("#gitStashMsg").value = "";
+    await reloadGitAfter(data, "Stashed working changes.");
+  }catch(err){ gitMsg(err.message, "bad"); }
+});
+$("#gitStashMsg").addEventListener("keydown", (event) => { if(event.key === "Enter") $("#gitStashBtn").click(); });
+$("#gitStashesOut").addEventListener("click", async (event) => {
+  const pop = event.target.closest("[data-stash-pop]");
+  const drop = event.target.closest("[data-stash-drop]");
+  const target = pop || drop;
+  if(!target) return;
+  event.stopPropagation();
+  const index = Number(pop ? pop.dataset.stashPop : drop.dataset.stashDrop);
+  if(drop && !confirm("Drop this stash permanently?")) return;
+  try{
+    const data = await api(drop ? "/api/git/stash/drop" : "/api/git/stash/pop", {method:"POST", body:{repo:state.repo, index}});
+    await reloadGitAfter(data, drop ? "Stash dropped." : "Stash applied.");
+  }catch(err){ gitMsg(err.message, "bad"); }
+});
+$("#gitLogOut").addEventListener("click", (event) => {
+  const item = event.target.closest("[data-commit-ref]");
+  if(item) gitShow(item.dataset.commitRef);
 });
 $("#gitLogBtn").addEventListener("click", async () => {
   try{
-    const data = await api("/api/git/log?repo=" + encodeURIComponent(state.repo) + "&limit=" + encodeURIComponent($("#gitLogLimit").value || 20));
-    renderGitLog(data.commits || []);
+    const data = await api("/api/git/log?repo=" + encodeURIComponent(state.repo) + "&limit=40");
     if(state.git) state.git.commits = data.commits || [];
-  }catch(err){ notify(err.message, "bad"); }
+    renderGitLog(state.git.commits);
+    gitMsg("History refreshed.");
+  }catch(err){ gitMsg(err.message, "bad"); }
+});
+$("#gitCommandInput").addEventListener("keydown", (event) => {
+  if(event.key === "Enter"){
+    event.preventDefault();
+    const value = event.currentTarget.value;
+    event.currentTarget.value = "";
+    runGitCommand(value);
+  } else if(event.key === "Escape"){
+    event.currentTarget.value = "";
+    event.currentTarget.blur();
+  }
 });
 $("#gitDoctorBtn").addEventListener("click", async () => {
-  const limit = Number($("#gitDoctorLimit").value || 0);
-  if(limit < 0){ notify("History limit must be zero or positive.", "warn"); return; }
+  const raw = prompt("Commits to audit (0 = all history):", "50");
+  if(raw === null) return;
+  const limit = Number(raw || 0);
+  if(Number.isNaN(limit) || limit < 0){ gitMsg("History limit must be zero or positive.", "warn"); return; }
   const button = $("#gitDoctorBtn");
   button.disabled = true;
-  $("#gitDoctorOut").innerHTML = '<div class="small muted"><span class="spinner"></span> Scanning the last ' + (limit || "all") + ' commit(s)...</div>';
+  $("#gitDoctorOut").innerHTML = '<div class="okbox"><span class="spinner"></span> Scanning the last ' + (limit || "all") + ' commit(s)...</div>';
   try{
     const data = await api("/api/history/doctor", {method:"POST", body:{
       repo:state.repo, limit, options:gatherOptions()
@@ -2083,20 +2891,37 @@ $("#gitDoctorBtn").addEventListener("click", async () => {
     state.options = data.options || Object.assign(gatherOptions(), {mode:"history", history:limit});
     renderResults();
     const summary = data.report.summary || {};
-    const commits = (data.history && data.history.commits) || [];
     $("#gitDoctorOut").innerHTML =
       '<div class="okbox">Scanned <b>' + esc(limit || "all") + '</b> commit(s) of <b>' + esc(data.history.total_commits) + '</b> total · ' +
       esc(data.report.total || 0) + ' finding(s) · ' + esc(summary.critical || 0) + ' critical · ' + esc(summary.high || 0) + ' high · exit ' + esc(data.exit_code) +
-      ' <button class="btn small" id="gitDoctorOpenFindings" style="margin-left:8px">Open findings</button></div>' +
-      '<div class="table-wrap" style="margin-top:10px"><table><thead><tr><th>Commit</th><th>Author</th><th>Date</th><th>Subject</th><th>Refs</th></tr></thead><tbody>' +
-      commitRows(commits) + '</tbody></table></div>';
+      ' <button class="git-mini" id="gitDoctorOpenFindings" style="margin-left:8px">Open findings</button></div>';
     const openBtn = $("#gitDoctorOpenFindings");
     if(openBtn) openBtn.addEventListener("click", () => showTab("scan"));
-    notify("History doctor finished: " + (data.report.total || 0) + " finding(s).", data.report.total ? "warn" : "ok");
+    gitMsg("History doctor finished: " + (data.report.total || 0) + " finding(s).", data.report.total ? "warn" : "ok");
   }catch(err){
     $("#gitDoctorOut").innerHTML = '<div class="notice">' + esc(err.message) + '</div>';
-    notify(err.message, "bad");
+    gitMsg(err.message, "bad");
   }finally{ button.disabled = false; }
+});
+document.addEventListener("keydown", (event) => {
+  if($("#tab-git").classList.contains("hidden")) return;
+  if($("#modal").classList.contains("show")) return;
+  const tag = (document.activeElement && document.activeElement.tagName) || "";
+  if((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k"){
+    event.preventDefault();
+    $("#gitCommandInput").focus();
+    return;
+  }
+  if(["INPUT","TEXTAREA","SELECT"].includes(tag)) return;
+  if(tag === "BUTTON" && (event.key === " " || event.key === "Enter")) return;
+  if(event.key === "j" || event.key === "ArrowDown"){ event.preventDefault(); moveGitSelection(1); }
+  else if(event.key === "k" || event.key === "ArrowUp"){ event.preventDefault(); moveGitSelection(-1); }
+  else if(event.key === " "){ event.preventDefault(); toggleGitSelection(); }
+  else if(event.key === "d"){ event.preventDefault(); if(gitSelection) gitSelectFile(state.git.status.files.findIndex((f) => f.path === gitSelection.path), true); }
+  else if(event.key === "c"){ event.preventDefault(); $("#gitCommitMsg").focus(); }
+  else if(event.key === "r"){ event.preventDefault(); loadGit(); }
+  else if(event.key === "?"){ event.preventDefault(); gitHelp(); }
+  else if(event.key === "/"){ event.preventDefault(); $("#gitCommandInput").focus(); }
 });
 $("#optFixApply").addEventListener("change", () => { if($("#optFixApply").checked) $("#optFixDryRun").checked = false; });
 $("#optFixDryRun").addEventListener("change", () => { if($("#optFixDryRun").checked) $("#optFixApply").checked = false; });
@@ -2111,7 +2936,7 @@ $("#optFixDryRun").addEventListener("change", () => { if($("#optFixDryRun").chec
   const target = saved || INITIAL_REPO;
   if(target){ $("#repoPath").value = target; loadRepo(target).catch(() => {}); }
   else { $("#repoPath").focus(); }
-  const initialTab = location.hash.slice(1);
+  const initialTab = location.hash.slice(1) || (FOCUS_MODE ? "git" : "");
   if(TAB_META[initialTab]) showTab(initialTab);
 })();
 </script>

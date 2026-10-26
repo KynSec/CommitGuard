@@ -253,6 +253,25 @@ def _make_handler(state: AppState, token: str):
                         )
                     )
                     return
+                if path == "/api/git/show":
+                    ref = query.get("ref") or ""
+                    if not ref:
+                        self._send_error_json("A commit reference is required.", 400)
+                        return
+                    self._send_json(
+                        actions.git_show(query.get("repo") or state.repo or "", ref)
+                    )
+                    return
+                if path == "/api/git/stashes":
+                    self._send_json(
+                        actions.git_stash_list(query.get("repo") or state.repo or "")
+                    )
+                    return
+                if path == "/api/git/tags":
+                    self._send_json(
+                        actions.git_tag_list(query.get("repo") or state.repo or "")
+                    )
+                    return
                 self._send_error_json("Not found.", 404)
             except actions.ActionError as exc:
                 self._send_error_json(str(exc), exc.status, exc.detail)
@@ -605,6 +624,82 @@ def _make_handler(state: AppState, token: str):
                     result = actions.git_unstage(
                         repo, paths, all_files=bool(payload.get("all"))
                     )
+                elif path == "/api/git/restore":
+                    result = actions.git_restore(
+                        repo, paths, all_files=bool(payload.get("all"))
+                    )
+                elif path == "/api/git/clean":
+                    result = actions.git_clean(
+                        repo,
+                        paths,
+                        confirm=str(payload.get("confirm") or ""),
+                    )
+                elif path == "/api/git/stash":
+                    result = actions.git_stash_push(
+                        repo,
+                        str(payload.get("message") or ""),
+                        include_untracked=bool(payload.get("include_untracked")),
+                        keep_index=bool(payload.get("keep_index")),
+                    )
+                elif path == "/api/git/stash/pop":
+                    result = actions.git_stash_pop(
+                        repo, payload.get("index") or 0
+                    )
+                elif path == "/api/git/stash/drop":
+                    result = actions.git_stash_drop(
+                        repo, payload.get("index") or 0
+                    )
+                elif path == "/api/git/apply":
+                    result = actions.git_apply_patch(
+                        repo,
+                        str(payload.get("patch") or ""),
+                        cached=bool(payload.get("cached")),
+                        reverse=bool(payload.get("reverse")),
+                    )
+                elif path == "/api/git/reset":
+                    result = actions.git_reset(
+                        repo,
+                        str(payload.get("ref") or ""),
+                        mode=str(payload.get("mode") or "mixed"),
+                        confirm=str(payload.get("confirm") or ""),
+                    )
+                elif path == "/api/git/revert":
+                    result = actions.git_revert(
+                        repo, str(payload.get("ref") or "")
+                    )
+                elif path == "/api/git/cherry-pick":
+                    result = actions.git_cherry_pick(
+                        repo, str(payload.get("ref") or "")
+                    )
+                elif path == "/api/git/tags/create":
+                    result = actions.git_tag_create(
+                        repo,
+                        str(payload.get("name") or ""),
+                        ref=str(payload.get("ref") or ""),
+                        message=str(payload.get("message") or ""),
+                    )
+                elif path == "/api/git/tags/delete":
+                    result = actions.git_tag_delete(
+                        repo, str(payload.get("name") or "")
+                    )
+                elif path == "/api/git/merge":
+                    result = actions.git_merge(
+                        repo,
+                        str(payload.get("branch") or ""),
+                        no_ff=bool(payload.get("no_ff")),
+                    )
+                elif path == "/api/git/rebase":
+                    result = actions.git_rebase(
+                        repo, str(payload.get("onto") or "")
+                    )
+                elif path == "/api/git/branches/rename":
+                    result = actions.git_branch_rename(
+                        repo,
+                        str(payload.get("old") or ""),
+                        str(payload.get("new") or ""),
+                    )
+                elif path == "/api/git/abort":
+                    result = actions.git_abort(repo)
                 elif path == "/api/git/commit":
                     result = actions.git_commit(
                         repo,
