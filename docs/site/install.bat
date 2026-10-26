@@ -1,7 +1,7 @@
 @echo off
 REM ==============================================================================
 REM CommitGuard — Universal Offline Installer for Windows Batch
-REM Repository: https://github.com/AmrEldhshan/CommitGuard
+REM Repository: https://github.com/CommitGuard-Sec/CommitGuard
 REM ==============================================================================
 
 echo ================================================================

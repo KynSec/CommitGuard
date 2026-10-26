@@ -8,7 +8,7 @@
 # Then add this hook to .pre-commit-config.yaml:
 #
 #   repos:
-#     - repo: https://github.com/AmrEldhshan/CommitGuard
+#     - repo: https://github.com/CommitGuard-Sec/CommitGuard
 #       rev: v2.1.0
 #       hooks:
 #         - id: commit-guard

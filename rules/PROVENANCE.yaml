@@ -142,11 +142,11 @@ sources:
     kind: project-authored
     status: cleared
     project: CommitGuard
-    source_url: https://github.com/AmrEldhshan/CommitGuard
+    source_url: https://github.com/CommitGuard-Sec/CommitGuard
     revision: project working tree
     retrieved: 2026-10-26
     license: Apache-2.0
-    license_url: https://github.com/AmrEldhshan/CommitGuard/blob/main/LICENSE
+    license_url: https://github.com/CommitGuard-Sec/CommitGuard/blob/main/LICENSE
     redistribution: allowed
     bundled_default: true
     files:

@@ -55,7 +55,7 @@ CI runners cannot host the local GUI, but the same self-contained HTML dashboard
 can be uploaded as a build artifact and opened by anyone with access to the run:
 
 ```yaml
-- uses: AmrEldhshan/CommitGuard@main
+- uses: CommitGuard-Sec/CommitGuard@main
   with:
     format: html
     scan-mode: all
@@ -162,7 +162,7 @@ jobs:
       - name: Check out Commit Guard
         uses: actions/checkout@v4
         with:
-          repository: AmrEldhshan/CommitGuard
+          repository: CommitGuard-Sec/CommitGuard
           path: commitguard
 
       - uses: actions/setup-python@v5
@@ -217,7 +217,7 @@ python install_hook.py install . --no-hook
 ```yaml
 # .pre-commit-config.yaml
 repos:
-  - repo: https://github.com/AmrEldhshan/CommitGuard
+  - repo: https://github.com/CommitGuard-Sec/CommitGuard
     rev: v2.1.0
     hooks:
       - id: commit-guard

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # CommitGuard — Universal Offline Installer for Linux & macOS
-# Repository: https://github.com/AmrEldhshan/CommitGuard
+# Repository: https://github.com/CommitGuard-Sec/CommitGuard
 # ==============================================================================
 set -euo pipefail
 
@@ -103,7 +103,7 @@ if [ -n "$SOURCE_DIR" ] && [ -f "${SOURCE_DIR}/install_hook.py" ]; then
 else
     echo -e "${BLUE}▶ Downloading latest CommitGuard toolkit from GitHub...${NC}"
     TEMP_DIR="$(mktemp -d -t commitguard-install-XXXXXX)"
-    ARCHIVE_URL="https://github.com/AmrEldhshan/CommitGuard/archive/refs/heads/main.tar.gz"
+    ARCHIVE_URL="https://github.com/CommitGuard-Sec/CommitGuard/archive/refs/heads/main.tar.gz"
 
     if command -v curl >/dev/null 2>&1; then
         curl -fsSL "$ARCHIVE_URL" -o "${TEMP_DIR}/commitguard.tar.gz"

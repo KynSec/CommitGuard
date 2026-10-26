@@ -5,13 +5,14 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "commit-guard"
 dynamic = ["version"]
-description = "Offline-first secret, SAST, dependency, and blast-radius scanner with zero telemetry."
+description = "Fast, offline-first local security control plane for secrets, SAST, dependencies, and policy gating."
 readme = "README.md"
 license = "Apache-2.0"
 license-files = ["LICENSE", "NOTICE", "THIRD_PARTY_NOTICES.md"]
 requires-python = ">=3.11"
 dependencies = ["PyYAML>=6.0"]
-keywords = ["security", "secrets", "sast", "sca", "pre-commit", "github-actions"]
+authors = [{name = "Amr Khaled Ahmed", email = "amr171516@gmail.com"}]
+keywords = ["security", "appsec", "secrets", "sast", "sca", "offline-first", "sarif", "policy-as-code", "pre-commit", "github-actions"]
 classifiers = [
   "Development Status :: 5 - Production/Stable",
   "Environment :: Console",
@@ -31,8 +32,12 @@ commit-guard-scan = "main:main"
 commit-guard-gui = "gui_server:main"
 
 [project.urls]
-Documentation = "https://github.com/AmrEldhshan/CommitGuard#readme"
-Source = "https://github.com/AmrEldhshan/CommitGuard"
+Homepage = "https://github.com/CommitGuard-Sec/CommitGuard"
+Documentation = "https://github.com/CommitGuard-Sec/CommitGuard#readme"
+Repository = "https://github.com/CommitGuard-Sec/CommitGuard"
+Issues = "https://github.com/CommitGuard-Sec/CommitGuard/issues"
+Changelog = "https://github.com/CommitGuard-Sec/CommitGuard/blob/main/CHANGELOG.md"
+Security = "https://github.com/CommitGuard-Sec/CommitGuard/security/policy"
 
 [tool.setuptools]
 py-modules = ["main", "install_hook", "gui_server", "gui_actions", "gui_page"]

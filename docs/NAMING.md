@@ -55,7 +55,7 @@ public launch that relies on the name.
 | Explicit ignore list | `.commit_guard_ignore` |
 | Environment variables | `COMMIT_GUARD_*` |
 | Inline suppression | `commit-guard-ignore` |
-| GitHub Action | `AmrEldhshan/commit-guard-action@v1` (target) |
+| GitHub Action | `CommitGuard-Sec/CommitGuard@v1` (target) |
 | Report paths | `commit_guard_report.*` or an explicitly configured path |
 
 Do not add rename detection, dual-read configuration, or legacy-name aliases.

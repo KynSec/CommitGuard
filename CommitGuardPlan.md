@@ -192,7 +192,7 @@ Required work:
 | Baseline | `.commit_guard_baseline` (the project may also support `.commit_guard_ignore` as an explicit ignore-list file, not as a legacy alias). |
 | Environment variables | `COMMIT_GUARD_*` |
 | Inline suppression | `commit-guard-ignore` |
-| GitHub Action | `AmrEldhshan/commit-guard-action@v1` |
+| GitHub Action | `CommitGuard-Sec/CommitGuard@v1` |
 | Reports | `commit_guard_report.*` or an explicitly configured output path. |
 
 Use these names consistently in examples, generated files, documentation, tests, and release artifacts. Do not add rename-detection code, dual-read configuration, or a compatibility mapper.
@@ -575,7 +575,7 @@ Do not optimize for, report as success, or use in marketing:
 | `gui_server.py` / `gui_actions.py` / `gui_page.py` | Existing local control center | Extend and harden |
 | `main.py` | CLI entry point and subcommands | Extend |
 | `install_hook.py` | Installer and hook management | Extend |
-| `action.yml` | `AmrEldhshan/commit-guard-action@v1` GitHub Action | Extend |
+| `action.yml` | `CommitGuard-Sec/CommitGuard@v1` GitHub Action | Extend |
 | `bench/` | Datasets, scorer, regression gate | New |
 | `rules/taint/` | Taint packs by language | New |
 | `rules/compliance/` | CWE/OWASP/ASVS/PCI mappings | New |
@@ -1952,7 +1952,7 @@ If any answer is no, the claim is not ready.
 - [ ] Domain and social handles reserved only after clearance.
 - [ ] Distribution name and CLI name documented.
 - [ ] `commit-guard` primary CLI and `cg` shorthand are documented and tested.
-- [ ] `AmrEldhshan/commit-guard-action@v1` is documented and tested.
+- [ ] `CommitGuard-Sec/CommitGuard@v1` is documented and tested.
 - [ ] License and notices audited for every bundled rule pack.
 - [ ] Security policy and disclosure channel live.
 - [ ] Signed artifacts and SBOM generated.

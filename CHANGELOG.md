@@ -60,6 +60,11 @@
 
 ### Changed
 
+- Rebuilt the README around the fast, offline-first Local Security Control
+  Plane workflow: pipx quickstart, feature matrix, policy/analyzer model,
+  architecture diagram, privacy model, and maintainer credits.
+- Migrated canonical repository, Action, pre-commit, Pages, release, and
+  security links to the `CommitGuard-Sec` organization.
 - JSON reports now use `schema_version: 3`; SARIF remains 2.1.0 with additional
   fix/code-flow properties. See `docs/UPGRADE-2.x-to-3.x.md`.
 - GitHub Action gains `gate`, `policy-file`, and `policy-profile` inputs.

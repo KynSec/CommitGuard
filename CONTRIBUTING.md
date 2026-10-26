@@ -1,15 +1,17 @@
 # Contributing
 
-Thanks for helping make Commit Guard better. The project has a deliberately
+Thanks for helping make CommitGuard better. The project has a deliberately
 small dependency footprint and a strong preference for predictable, testable
 behavior.
+
+Official repository: <https://github.com/CommitGuard-Sec/CommitGuard>
 
 ---
 
 ## Development setup
 
 ```bash
-git clone <your-fork>
+git clone https://github.com/CommitGuard-Sec/CommitGuard.git
 cd CommitGuard
 python -m pip install pyyaml
 python -m unittest discover -s tests -v

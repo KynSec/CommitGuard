@@ -20,7 +20,7 @@ six months after a major release unless this table says otherwise.
 
 Use **GitHub private vulnerability reporting** if it is available:
 
-<https://github.com/AmrEldhshan/CommitGuard/security/advisories/new>
+<https://github.com/CommitGuard-Sec/CommitGuard/security/advisories/new>
 
 If private reporting is unavailable, email **amr171516@gmail.com** with the
 subject line `CommitGuard security report`.

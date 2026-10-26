@@ -1,6 +1,6 @@
 name: CommitGuard Security Scan
-description: Offline-first secret, SAST, dependency, and blast-radius scanning with optional report PRs.
-author: CommitGuard
+description: Fast, offline-first local security gate for secrets, SAST, dependencies, and CI reports.
+author: CommitGuard Security (@CommitGuard-Sec)
 
 branding:
   icon: shield
