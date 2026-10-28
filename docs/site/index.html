@@ -6,6 +6,36 @@
 <meta name="theme-color" content="#080c14">
 <title>CommitGuard — Fast, Offline Pre-Commit Security &amp; Static Analysis</title>
 <meta name="description" content="Next-Gen local security scanner: secrets, AST taint flows, dependency blast-radius graph, and automated 1-click fixes. 100% offline, zero telemetry.">
+<meta name="color-scheme" content="dark">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://kynsec.github.io/CommitGuard/">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230b1220'/%3E%3Cpath d='M32 10l17 6v13c0 11-7 19-17 23-10-4-17-12-17-23V16z' fill='%2338bdf8'/%3E%3Cpath d='M24 31l6 6 11-12' fill='none' stroke='%2308101c' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="CommitGuard">
+<meta property="og:title" content="CommitGuard — Offline Pre-Commit Security">
+<meta property="og:description" content="Scan staged diffs for secrets, taint flows, and vulnerable dependencies. 1-click fixes, zero telemetry, no source code leaves your machine.">
+<meta property="og:url" content="https://kynsec.github.io/CommitGuard/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="CommitGuard — Offline Pre-Commit Security">
+<meta name="twitter:description" content="Scan staged diffs for secrets, taint flows, and vulnerable dependencies. 1-click fixes, zero telemetry, no source code leaves your machine.">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "CommitGuard",
+  "applicationCategory": "DeveloperApplication",
+  "operatingSystem": "Linux, macOS, Windows",
+  "description": "Offline pre-commit security and static analysis for secrets, AST taint flows, vulnerable dependencies, and dependency blast radius.",
+  "url": "https://kynsec.github.io/CommitGuard/",
+  "codeRepository": "https://github.com/KynSec/CommitGuard",
+  "license": "https://opensource.org/licenses/MIT",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  }
+}
+</script>
 <style>
 :root {
   --bg: #080c14;
@@ -557,7 +587,12 @@ body.nav-open .drawer {
 .gui-mock-table td code { white-space: nowrap; font-size: 12px; }
 .gui-mock-table th:first-child, .gui-mock-table td:first-child { width: 40px; }
 .row-actions { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: nowrap; }
-.gui-command { margin-top: 20px; text-align: center; }
+.gui-command {
+  margin-top: 20px;
+  display: flex; justify-content: center; align-items: center;
+  gap: 10px; flex-wrap: wrap;
+  text-align: center;
+}
 .gui-command code {
   display: inline-block; background: #070b12; padding: 9px 16px;
   border-radius: 8px; border: 1px solid var(--line);
@@ -612,6 +647,221 @@ body.nav-open .drawer {
 }
 .code-copy { position: absolute; top: 15px; right: 18px; }
 .cli-empty { text-align: center; color: var(--muted); font-size: 14px; padding: 24px 0 0; }
+
+/* Pipeline + interactive preview */
+.pipeline {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  max-width: 1000px;
+  margin: 0 auto clamp(24px, 4vw, 36px);
+  padding: 0;
+}
+.pipeline-step {
+  display: flex; align-items: flex-start; gap: 10px;
+  background: linear-gradient(180deg, #101827 0%, #0b1220 100%);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 13px 14px;
+  min-width: 0;
+}
+.pipeline-num {
+  flex: 0 0 auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 10.5px; font-weight: 800; line-height: 1.4;
+  color: #7dd3fc; background: rgba(56, 189, 248, .08);
+  border: 1px solid rgba(56, 189, 248, .22);
+  border-radius: 6px; padding: 2px 6px; margin-top: 1px;
+}
+.pipeline-step strong { display: block; color: #fff; font-size: 13.5px; line-height: 1.3; }
+.pipeline-step div span { display: block; color: var(--muted); font-size: 12px; line-height: 1.45; margin-top: 3px; }
+
+.demo-shell {
+  max-width: 1000px; margin: 0 auto;
+  background: #0b111c;
+  border: 1px solid var(--line2);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: 0 25px 70px rgba(0, 0, 0, .62);
+}
+.demo-head {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 10px;
+  padding: 10px 14px;
+  background: #0f1726;
+  border-bottom: 1px solid var(--line);
+}
+.demo-filename { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; color: var(--muted); }
+.demo-sim {
+  margin-left: auto;
+  font-size: 10.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+  color: #7dd3fc; background: rgba(56, 189, 248, .08);
+  border: 1px solid rgba(56, 189, 248, .25);
+  padding: 3px 8px; border-radius: 999px; white-space: nowrap;
+}
+.demo-tabs {
+  display: flex; gap: 4px;
+  padding: 8px 12px;
+  background: #080e18;
+  border-bottom: 1px solid var(--line);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.demo-tabs::-webkit-scrollbar { display: none; }
+.demo-tab-btn {
+  background: transparent; border: 0; color: var(--muted);
+  padding: 7px 12px; border-radius: 6px;
+  font-weight: 700; font-size: 12.5px;
+  cursor: pointer; white-space: nowrap; min-height: 34px;
+  font-family: inherit;
+  transition: background .15s, color .15s;
+}
+.demo-tab-btn:hover { color: #fff; }
+.demo-tab-btn.active { background: #1e293b; color: #38bdf8; }
+.demo-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); }
+.demo-code-panel {
+  min-width: 0;
+  border-right: 1px solid var(--line);
+  background: var(--code-bg);
+}
+.demo-code-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--line);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px; color: var(--muted);
+}
+.demo-lang { text-transform: uppercase; letter-spacing: .08em; font-size: 10px; color: #7dd3fc; }
+.demo-code {
+  margin: 0;
+  padding: 14px 0;
+  overflow: auto;
+  font-size: 12.5px;
+  line-height: 1.75;
+  max-height: 340px;
+  scrollbar-width: thin;
+}
+.demo-line {
+  display: grid;
+  grid-template-columns: 3.2em minmax(0, 1fr);
+  padding: 0 14px 0 0;
+  white-space: pre;
+  border-left: 3px solid transparent;
+}
+.demo-num {
+  color: #465a75;
+  text-align: right;
+  padding-right: 12px;
+  user-select: none;
+}
+.demo-line.vuln { background: rgba(248, 113, 113, .07); border-left-color: rgba(248, 113, 113, .45); }
+.demo-line.vuln.found {
+  background: rgba(248, 113, 113, .15);
+  border-left-color: var(--bad);
+  animation: vulnPulse .7s ease;
+}
+.demo-line.found .demo-num { color: #fca5a5; }
+@keyframes vulnPulse {
+  0% { background: rgba(248, 113, 113, .28); }
+  100% { background: rgba(248, 113, 113, .15); }
+}
+.demo-result {
+  display: flex; flex-direction: column;
+  min-width: 0; min-height: 320px;
+  padding: 18px;
+}
+.demo-empty {
+  margin: auto; text-align: center; color: var(--muted);
+  max-width: 280px; padding: 24px 0;
+}
+.demo-empty svg { color: #3b5277; margin-bottom: 10px; }
+.demo-empty p { margin: 0; font-size: 13px; line-height: 1.6; }
+.demo-result-body {
+  opacity: 0; transform: translateY(6px);
+  transition: opacity .3s ease, transform .3s ease;
+}
+.demo-result-body.is-visible { opacity: 1; transform: translateY(0); }
+.demo-result-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.demo-result h3 { font-size: 15.5px; margin: 0 0 5px; color: #fff; letter-spacing: -.01em; }
+.demo-rule {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11.5px; color: #a5d8ff; margin: 0 0 6px;
+  overflow-wrap: anywhere;
+}
+.demo-loc {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11.5px; color: var(--muted);
+}
+.demo-why { font-size: 13px; color: var(--muted); line-height: 1.55; margin: 0 0 14px; }
+.demo-result .diff { max-height: 210px; font-size: 11.8px; }
+.demo-result-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+.demo-foot {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 12px;
+  padding: 14px;
+  border-top: 1px solid var(--line);
+  background: #0d1422;
+}
+.demo-hint { font-size: 12px; color: var(--muted); }
+
+/* FAQ */
+.faq-list { max-width: 820px; margin: 0 auto; display: grid; gap: 10px; }
+.faq-item {
+  background: linear-gradient(180deg, #111a2b 0%, #0b1220 100%);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0 18px;
+  transition: border-color .2s;
+}
+.faq-item[open] { border-color: var(--line2); }
+.faq-item summary {
+  list-style: none;
+  position: relative;
+  padding: 16px 30px 16px 0;
+  cursor: pointer;
+  color: #fff; font-weight: 700; font-size: 14.5px;
+}
+.faq-item summary::-webkit-details-marker { display: none; }
+.faq-item summary::after {
+  content: "+";
+  position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+  color: var(--accent); font-size: 20px; font-weight: 500; line-height: 1;
+}
+.faq-item[open] summary::after { content: "\2212"; }
+.faq-item p { margin: 0 0 16px; color: var(--muted); font-size: 13.5px; line-height: 1.65; }
+.faq-item p code { font-size: 12px; }
+
+/* Closing CTA */
+.cta-section { padding: 0 0 clamp(48px, 7vw, 74px); }
+.cta-band {
+  max-width: 1000px; margin: 0 auto;
+  display: grid; grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center; gap: 24px;
+  padding: clamp(24px, 4vw, 40px);
+  background:
+    radial-gradient(600px 220px at 0% 0%, rgba(56, 189, 248, .14), transparent 70%),
+    linear-gradient(135deg, #101a2b 0%, #0c1422 100%);
+  border: 1px solid var(--line2);
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, .4);
+}
+.cta-band .eyebrow { margin-bottom: 8px; }
+.cta-band h2 { margin: 0 0 8px; font-size: clamp(22px, 3vw, 30px); line-height: 1.2; letter-spacing: -.02em; color: #fff; }
+.cta-band p { margin: 0; color: var(--muted); font-size: 14px; }
+.cta-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+/* Back to top */
+.to-top {
+  position: fixed; right: 18px; bottom: calc(18px + env(safe-area-inset-bottom));
+  z-index: 110;
+  width: 42px; height: 42px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: #162033; border: 1px solid var(--line2);
+  color: #cfe3ff; cursor: pointer;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .45);
+  transition: background .2s, border-color .2s, transform .2s;
+}
+.to-top:hover { background: #1f2d47; border-color: #3b5277; transform: translateY(-2px); }
+.to-top svg { width: 18px; height: 18px; }
 
 /* Fix modal */
 .fix-modal {
@@ -678,7 +928,7 @@ body.nav-open .drawer {
 
 /* Toast */
 .toast-notice {
-  position: fixed; bottom: 24px; right: 24px; z-index: 120;
+  position: fixed; bottom: calc(76px + env(safe-area-inset-bottom)); right: 24px; z-index: 120;
   display: flex; align-items: center; gap: 8px;
   background: #162033; border: 1px solid var(--accent);
   color: #fff; padding: 12px 18px; border-radius: 9px;
@@ -777,7 +1027,8 @@ footer {
   .quick-row .os-tag { order: 1; }
   .quick-row .copy-btn { order: 2; margin-left: auto; }
   .toast-notice {
-    left: 16px; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom));
+    left: 16px; right: 16px;
+    bottom: calc(76px + env(safe-area-inset-bottom));
     justify-content: center; max-width: none;
   }
   .gui-actions { width: 100%; }
@@ -796,6 +1047,41 @@ footer {
   .tab-btn { padding: 7px 9px; font-size: 11.5px; }
   .tab-group { gap: 3px; }
 }
+
+/* Responsive additions */
+@media (max-width: 900px) {
+  .pipeline { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 860px) {
+  .demo-grid { grid-template-columns: 1fr; }
+  .demo-code-panel { border-right: 0; border-bottom: 1px solid var(--line); }
+  .demo-code { max-height: 280px; }
+  .demo-result { min-height: 0; }
+  .cta-band { grid-template-columns: 1fr; align-items: start; }
+  .cta-actions .btn { flex: 1 1 auto; }
+}
+@media (max-width: 640px) {
+  .demo-head { align-items: flex-start; }
+  .demo-sim { margin-left: 0; }
+  .demo-foot .btn { flex: 1 1 auto; }
+  .demo-result-actions .btn { flex: 1 1 auto; }
+  .faq-item { padding: 0 15px; }
+  .faq-item summary { font-size: 13.5px; padding-right: 26px; }
+}
+@media (max-width: 560px) {
+  .pipeline { grid-template-columns: 1fr; }
+  .demo-code { font-size: 12px; overflow-x: hidden; }
+  .demo-line {
+    grid-template-columns: 2.4em minmax(0, 1fr);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    padding-right: 10px;
+  }
+  .demo-num { padding-right: 9px; }
+  .diff { overflow-x: hidden; }
+  .diff-line { white-space: pre-wrap; overflow-wrap: anywhere; }
+  .diff-line > span:last-child { min-width: 0; overflow-wrap: anywhere; }
+}
 </style>
 </head>
 <body>
@@ -811,6 +1097,7 @@ footer {
     </a>
     <nav class="nav-links" aria-label="Primary">
       <a href="#install" data-nav="install">Install</a>
+      <a href="#demo" data-nav="demo">Demo</a>
       <a href="#features" data-nav="features">Features</a>
       <a href="#control-center" data-nav="control-center">Control Center</a>
       <a href="#cli" data-nav="cli">CLI Reference</a>
@@ -833,9 +1120,11 @@ footer {
   </div>
   <nav class="drawer-actions" aria-label="Mobile">
     <a href="#install" class="drawer-link" data-nav="install">Install <span aria-hidden="true">&rarr;</span></a>
+    <a href="#demo" class="drawer-link" data-nav="demo">Demo <span aria-hidden="true">&rarr;</span></a>
     <a href="#features" class="drawer-link" data-nav="features">Features <span aria-hidden="true">&rarr;</span></a>
     <a href="#control-center" class="drawer-link" data-nav="control-center">Control Center <span aria-hidden="true">&rarr;</span></a>
     <a href="#cli" class="drawer-link" data-nav="cli">CLI Reference <span aria-hidden="true">&rarr;</span></a>
+    <a href="#faq" class="drawer-link" data-nav="faq">FAQ <span aria-hidden="true">&rarr;</span></a>
   </nav>
   <div class="drawer-actions">
     <a href="#install" class="btn primary">Install to your repo</a>
@@ -900,7 +1189,7 @@ footer {
         <div class="quick-row">
           <span class="os-tag">macOS / Linux</span>
           <code>curl -fsSL https://raw.githubusercontent.com/CommitGuard-Sec/CommitGuard/main/docs/site/install.sh -o install.sh &amp;&amp; bash install.sh</code>
-          <button class="copy-btn" type="button" data-copy="curl -fsSL https://raw.githubusercontent.com/CommitGuard-Sec/CommitGuard/main/docs/site/install.sh -o install.sh &amp;&amp; bash install.sh" aria-label="Copy macOS and Linux install command">
+          <button class="copy-btn" type="button" data-copy="curl -fsSL https://raw.githubusercontent.com/CommitGuard-Sec/CommitGuard/main/docs/site/install.sh -o install.sh &amp;&amp; bash install.sh" data-copy-message="Install command copied" aria-label="Copy macOS and Linux install command">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
             <span data-label>Copy</span>
           </button>
@@ -908,7 +1197,7 @@ footer {
         <div class="quick-row">
           <span class="os-tag">Windows</span>
           <code>iwr -useb https://raw.githubusercontent.com/CommitGuard-Sec/CommitGuard/main/docs/site/install.ps1 -OutFile install.ps1; powershell -NoProfile -ExecutionPolicy Bypass -File ./install.ps1</code>
-          <button class="copy-btn" type="button" data-copy="iwr -useb https://raw.githubusercontent.com/CommitGuard-Sec/CommitGuard/main/docs/site/install.ps1 -OutFile install.ps1; powershell -NoProfile -ExecutionPolicy Bypass -File ./install.ps1" aria-label="Copy Windows PowerShell install command">
+          <button class="copy-btn" type="button" data-copy="iwr -useb https://raw.githubusercontent.com/CommitGuard-Sec/CommitGuard/main/docs/site/install.ps1 -OutFile install.ps1; powershell -NoProfile -ExecutionPolicy Bypass -File ./install.ps1" data-copy-message="Install command copied" aria-label="Copy Windows PowerShell install command">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
             <span data-label>Copy</span>
           </button>
@@ -1015,11 +1304,98 @@ footer {
   </div>
 </section>
 
+<!-- Interactive Preview -->
+<section id="demo" class="section">
+  <div class="container">
+    <div class="section-header">
+      <span class="eyebrow">03 &middot; Live Preview</span>
+      <h2>See How a Finding Unfolds</h2>
+      <p>Choose a scenario to preview the vulnerable line, the rule that catches it, and the remediation CommitGuard suggests.</p>
+    </div>
+
+    <ol class="pipeline" aria-label="How CommitGuard works">
+      <li class="pipeline-step">
+        <span class="pipeline-num">01</span>
+        <div><strong>Stage</strong><span>Read only the added diff lines.</span></div>
+      </li>
+      <li class="pipeline-step">
+        <span class="pipeline-num">02</span>
+        <div><strong>Detect</strong><span>Secrets, AST taint, and dependency risk.</span></div>
+      </li>
+      <li class="pipeline-step">
+        <span class="pipeline-num">03</span>
+        <div><strong>Explain</strong><span>Severity, location, and blast radius.</span></div>
+      </li>
+      <li class="pipeline-step">
+        <span class="pipeline-num">04</span>
+        <div><strong>Fix or gate</strong><span>Apply the patch or block the commit.</span></div>
+      </li>
+    </ol>
+
+    <div class="demo-shell">
+      <div class="demo-head">
+        <div class="terminal-dots" aria-hidden="true">
+          <span class="dot red"></span>
+          <span class="dot yellow"></span>
+          <span class="dot green"></span>
+        </div>
+        <span class="demo-filename" id="demoFileName">src/aws.py</span>
+        <span class="demo-sim">Interactive preview</span>
+      </div>
+
+      <div class="demo-tabs" role="tablist" aria-label="Preview scenarios">
+        <button class="demo-tab-btn active" type="button" role="tab" id="demo-tab-secret" data-scenario="secret" aria-selected="true" aria-controls="demoPanel">Hardcoded secret</button>
+        <button class="demo-tab-btn" type="button" role="tab" id="demo-tab-taint" data-scenario="taint" aria-selected="false" aria-controls="demoPanel" tabindex="-1">Taint flow</button>
+        <button class="demo-tab-btn" type="button" role="tab" id="demo-tab-dep" data-scenario="dep" aria-selected="false" aria-controls="demoPanel" tabindex="-1">Dependency</button>
+      </div>
+
+      <div class="demo-grid">
+        <div class="demo-code-panel" id="demoPanel" role="tabpanel" aria-labelledby="demo-tab-secret">
+          <div class="demo-code-head">
+            <span id="demoCodePath">src/aws.py</span>
+            <span class="demo-lang" id="demoLang">python</span>
+          </div>
+          <pre class="demo-code" aria-label="Vulnerable code sample"><code id="demoCode"></code></pre>
+        </div>
+
+        <div class="demo-result">
+          <div class="demo-empty" id="demoEmpty">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+            <p>Reveal the finding to inspect the rule, severity, and the exact patch.</p>
+          </div>
+          <div class="demo-result-body" id="demoBody" hidden aria-live="polite">
+            <div class="demo-result-top">
+              <span class="badge high" id="demoSeverity">high</span>
+              <span class="demo-loc" id="demoLoc">src/aws.py:4</span>
+            </div>
+            <h3 id="demoTitle">Finding title</h3>
+            <p class="demo-rule" id="demoRule"></p>
+            <p class="demo-why" id="demoWhy"></p>
+            <div class="diff" id="demoDiff" aria-label="Suggested patch"></div>
+            <div class="demo-result-actions">
+              <a href="#install" class="btn primary small">Protect my repo</a>
+              <button class="btn small" id="demoReset" type="button">Reset</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="demo-foot">
+        <button class="btn primary" id="demoRun" type="button">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+          <span id="demoRunLabel">Reveal finding</span>
+        </button>
+        <span class="demo-hint">Illustrative output. The real engine scans your staged diff locally.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- Control Center GUI Section -->
 <section id="control-center" class="section">
   <div class="container">
     <div class="section-header">
-      <span class="eyebrow">03 &middot; Control Center</span>
+      <span class="eyebrow">04 &middot; Control Center</span>
       <h2>Web Control Center &amp; Suggestion Engine</h2>
       <p>Launch a modern, dark-themed local GUI on <code>127.0.0.1</code> with a single command.</p>
     </div>
@@ -1095,6 +1471,10 @@ footer {
 
         <div class="gui-command">
           <code>$ ./commit-guard gui</code>
+          <button class="copy-btn" type="button" data-copy="./commit-guard gui" data-copy-message="GUI command copied" aria-label="Copy GUI command">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <span data-label>Copy</span>
+          </button>
         </div>
       </div>
     </div>
@@ -1105,7 +1485,7 @@ footer {
 <section id="cli" class="section">
   <div class="container">
     <div class="section-header">
-      <span class="eyebrow">04 &middot; CLI Reference</span>
+      <span class="eyebrow">05 &middot; CLI Reference</span>
       <h2>Command-Line Reference</h2>
       <p>Use the lightweight <code>./commit-guard</code> wrapper or invoke <code>main.py</code> directly.</p>
     </div>
@@ -1114,7 +1494,7 @@ footer {
       <label class="search">
         <span class="visually-hidden">Filter CLI commands</span>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-        <input type="search" id="cliSearch" placeholder="Filter commands&hellip; try &ldquo;fix&rdquo;, &ldquo;gui&rdquo;, &ldquo;pr&rdquo;" autocomplete="off">
+        <input type="search" id="cliSearch" placeholder="Filter commands&hellip; (press /)" aria-keyshortcuts="/" autocomplete="off">
       </label>
     </div>
 
@@ -1153,6 +1533,61 @@ footer {
     <p class="cli-empty" id="cliEmpty" hidden>No commands match that filter.</p>
   </div>
 </section>
+
+<!-- FAQ -->
+<section id="faq" class="section">
+  <div class="container">
+    <div class="section-header">
+      <span class="eyebrow">06 &middot; FAQ</span>
+      <h2>Questions, Answered</h2>
+      <p>What to expect before running CommitGuard on a real repository.</p>
+    </div>
+
+    <div class="faq-list">
+      <details class="faq-item" open>
+        <summary>Does my code leave my machine?</summary>
+        <p>No. The scanner runs locally, has no telemetry, and never uploads source files. Only the staged diff is read, and findings stay on your machine unless you choose to export them.</p>
+      </details>
+      <details class="faq-item">
+        <summary>What exactly gets scanned?</summary>
+        <p>By default CommitGuard inspects lines added to the staged diff, which keeps pre-commit checks fast and focused. The Control Center and CLI also surface dependency manifests and project-wide blast-radius views.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Which languages are covered?</summary>
+        <p>Secret rules are language-agnostic. AST taint analysis and import parsing cover Python, JavaScript/TypeScript, Go, Rust, Java, and more &mdash; 7+ languages in total.</p>
+      </details>
+      <details class="faq-item">
+        <summary>How do I stop a finding from blocking a commit?</summary>
+        <p>Use the Control Center&rsquo;s Suppress action for a reviewed exception, or tune the gate with <code>./commit-guard scan --threshold medium</code>. Both options keep the decision explicit instead of silently ignoring a finding.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Can I preview a fix before applying it?</summary>
+        <p>Yes. Run <code>./commit-guard scan --fix --dry-run</code> to inspect the patch. Running <code>./commit-guard scan --fix</code> applies the change and stages it, so you can review the diff before committing.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Does it work in CI?</summary>
+        <p>The same CLI runs in GitHub Actions, emits SARIF for code scanning, and can annotate pull requests or open fix PRs with <code>--create-pr</code> and <code>--review-pr</code>.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- Closing CTA -->
+<section class="cta-section" aria-labelledby="ctaTitle">
+  <div class="container">
+    <div class="cta-band">
+      <div>
+        <span class="eyebrow">Start local</span>
+        <h2 id="ctaTitle">Catch the leak before it becomes a commit.</h2>
+        <p>Install in under a minute. No account, no API key, and no source code leaves your machine.</p>
+      </div>
+      <div class="cta-actions">
+        <a href="#install" class="btn primary">Install CommitGuard</a>
+        <a href="https://github.com/CommitGuard-Sec/CommitGuard" target="_blank" rel="noopener noreferrer" class="btn">Star on GitHub</a>
+      </div>
+    </div>
+  </div>
+</section>
 </main>
 
 <!-- Footer -->
@@ -1160,9 +1595,11 @@ footer {
   <div class="container">
     <nav class="footer-links" aria-label="Footer">
       <a href="#install">Install</a>
+      <a href="#demo">Demo</a>
       <a href="#features">Features</a>
       <a href="#control-center">Control Center</a>
       <a href="#cli">CLI Reference</a>
+      <a href="#faq">FAQ</a>
       <a href="https://github.com/CommitGuard-Sec/CommitGuard" target="_blank" rel="noopener noreferrer">GitHub</a>
     </nav>
     <p style="margin:0">
@@ -1172,6 +1609,10 @@ footer {
     <p class="footer-sign">Have a nice life far from hacking developer&nbsp;bro&nbsp;:)&nbsp;&#128522;</p>
   </div>
 </footer>
+
+<button class="to-top" id="toTop" type="button" aria-label="Back to top" title="Back to top" hidden>
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 15-6-6-6 6"/></svg>
+</button>
 
 <div class="toast-notice" id="copyToast" role="status" aria-live="polite"></div>
 
@@ -1536,7 +1977,11 @@ Object.keys(scripts).forEach((key) => {
 /* Quick install copy buttons */
 $$('[data-copy]').forEach((button) => {
   button.addEventListener('click', () => {
-    copyWithFeedback(button, button.getAttribute('data-copy'), 'Install command copied');
+    copyWithFeedback(
+      button,
+      button.getAttribute('data-copy'),
+      button.dataset.copyMessage || 'Copied to clipboard'
+    );
   });
 });
 
@@ -1663,6 +2108,239 @@ searchInput.addEventListener('input', () => {
   });
   cliEmpty.hidden = visible > 0;
 });
+
+searchInput.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape') {
+    searchInput.value = '';
+    searchInput.dispatchEvent(new Event('input'));
+    searchInput.blur();
+  }
+});
+
+document.addEventListener('keydown', (event) => {
+  const target = event.target;
+  const tag = target && target.tagName ? target.tagName.toLowerCase() : '';
+  const typing = tag === 'input' || tag === 'textarea' || tag === 'select' || (target && target.isContentEditable);
+  if (event.key === '/' && !typing && !event.metaKey && !event.ctrlKey && !event.altKey) {
+    event.preventDefault();
+    searchInput.focus();
+    searchInput.scrollIntoView({
+      block: 'center',
+      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
+    });
+  }
+});
+
+/* Back to top */
+const toTop = $('#toTop');
+if (toTop) {
+  const toggleToTop = () => { toTop.hidden = window.scrollY < 640; };
+  window.addEventListener('scroll', toggleToTop, { passive: true });
+  toggleToTop();
+  toTop.addEventListener('click', () => {
+    window.scrollTo({
+      top: 0,
+      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
+    });
+  });
+}
+
+/* Interactive finding preview */
+const previews = {
+  secret: {
+    file: 'src/aws.py',
+    lang: 'python',
+    severity: 'critical',
+    title: 'Hardcoded AWS access key',
+    rule: 'gitleaks-aws-access-key',
+    location: 'src/aws.py:4',
+    why: 'A live cloud credential is embedded in source. Rotate the key, then load it from the environment instead of committing it.',
+    vuln: 3,
+    code: [
+      'import boto3',
+      '',
+      'def upload(bucket, body):',
+      '    key = "AKIAIOSFODNN7EXAMPLE"',
+      '    s3 = boto3.client("s3", aws_access_key_id=key)',
+      '    return s3.put_object(Bucket=bucket, Key="backup", Body=body)'
+    ],
+    lines: [
+      { k: 'ctx', t: '3  def upload(bucket, body):' },
+      { k: 'del', t: '4      key = "AKIAIOSFODNN7EXAMPLE"' },
+      { k: 'add', t: '4      key = os.environ["AWS_ACCESS_KEY_ID"]' },
+      { k: 'ctx', t: '5      s3 = boto3.client("s3", aws_access_key_id=key)' }
+    ]
+  },
+  taint: {
+    file: 'app/views.py',
+    lang: 'python',
+    severity: 'high',
+    title: 'SQL injection via cross-line taint',
+    rule: 'python-sql-injection',
+    location: 'app/views.py:4-7',
+    why: 'Untrusted input from request.args is concatenated into a SQL string and passed to cursor.execute(). Parameterized queries keep data and SQL separate.',
+    vuln: 4,
+    code: [
+      'from flask import request',
+      '',
+      'def search(db):',
+      '    term = request.args.get("q", "")',
+      `    sql = "SELECT * FROM items WHERE name = '" + term + "'"`,
+      '    cursor = db.cursor()',
+      '    cursor.execute(sql)',
+      '    return cursor.fetchall()'
+    ],
+    lines: [
+      { k: 'ctx', t: '4      term = request.args.get("q", "")' },
+      { k: 'del', t: `5      sql = "SELECT * FROM items WHERE name = '" + term + "'"` },
+      { k: 'del', t: '6      cursor = db.cursor()' },
+      { k: 'del', t: '7      cursor.execute(sql)' },
+      { k: 'add', t: '5      cursor = db.cursor()' },
+      { k: 'add', t: '6      cursor.execute("SELECT * FROM items WHERE name = %s", (term,))' }
+    ]
+  },
+  dep: {
+    file: 'requirements.txt',
+    lang: 'text',
+    severity: 'high',
+    title: 'Vulnerable dependency in manifest',
+    rule: 'sca-known-vulnerability',
+    location: 'requirements.txt:3',
+    why: 'A pinned package version is affected by a known vulnerability. Upgrade to a patched release, then re-run the scan to confirm the blast radius is clear.',
+    vuln: 2,
+    code: [
+      'flask==3.0.3',
+      'requests==2.31.0',
+      'urllib3==1.24.1',
+      'boto3==1.34.0'
+    ],
+    lines: [
+      { k: 'ctx', t: '1  flask==3.0.3' },
+      { k: 'ctx', t: '2  requests==2.31.0' },
+      { k: 'del', t: '3  urllib3==1.24.1' },
+      { k: 'add', t: '3  urllib3>=2.2.2' }
+    ]
+  }
+};
+
+const demoTabs = $$('.demo-tab-btn');
+const demoCode = $('#demoCode');
+const demoBody = $('#demoBody');
+const demoEmpty = $('#demoEmpty');
+const demoRun = $('#demoRun');
+const demoRunLabel = $('#demoRunLabel');
+let activePreview = 'secret';
+
+function resetPreview() {
+  demoBody.hidden = true;
+  demoBody.classList.remove('is-visible');
+  demoEmpty.hidden = false;
+  demoRunLabel.textContent = 'Reveal finding';
+  $$('.demo-line.found', demoCode).forEach((line) => line.classList.remove('found'));
+}
+
+function renderPreview(key) {
+  const data = previews[key];
+  if (!data) return;
+  activePreview = key;
+  demoTabs.forEach((tab) => {
+    const selected = tab.dataset.scenario === key;
+    tab.classList.toggle('active', selected);
+    tab.setAttribute('aria-selected', selected ? 'true' : 'false');
+    tab.tabIndex = selected ? 0 : -1;
+  });
+  $('#demoFileName').textContent = data.file;
+  $('#demoCodePath').textContent = data.file;
+  $('#demoLang').textContent = data.lang;
+  $('#demoPanel').setAttribute('aria-labelledby', 'demo-tab-' + key);
+  demoCode.replaceChildren();
+  data.code.forEach((line, index) => {
+    const row = document.createElement('span');
+    row.className = 'demo-line' + (index === data.vuln ? ' vuln' : '');
+    const num = document.createElement('span');
+    num.className = 'demo-num';
+    num.textContent = String(index + 1).padStart(2, '0');
+    num.setAttribute('aria-hidden', 'true');
+    const text = document.createElement('span');
+    text.className = 'demo-code-text';
+    text.textContent = line;
+    row.append(num, text);
+    demoCode.appendChild(row);
+  });
+  resetPreview();
+}
+
+function revealPreview() {
+  const data = previews[activePreview];
+  if (!data) return;
+  const severity = $('#demoSeverity');
+  severity.textContent = data.severity;
+  severity.className = 'badge ' + (data.severity === 'critical' ? 'crit' : 'high');
+  $('#demoTitle').textContent = data.title;
+  $('#demoRule').textContent = data.rule;
+  $('#demoLoc').textContent = data.location;
+  $('#demoWhy').textContent = data.why;
+
+  const diff = $('#demoDiff');
+  diff.replaceChildren();
+  data.lines.forEach((line) => {
+    const row = document.createElement('div');
+    row.className = 'diff-line ' + line.k;
+    const sign = document.createElement('span');
+    sign.className = 'sign';
+    sign.textContent = line.k === 'del' ? '-' : line.k === 'add' ? '+' : ' ';
+    const text = document.createElement('span');
+    text.textContent = line.t;
+    row.append(sign, text);
+    diff.appendChild(row);
+  });
+
+  demoEmpty.hidden = true;
+  demoBody.hidden = false;
+  demoBody.classList.remove('is-visible');
+  void demoBody.offsetWidth;
+  requestAnimationFrame(() => demoBody.classList.add('is-visible'));
+
+  const vulnLine = demoCode.querySelector('.demo-line.vuln');
+  if (vulnLine) {
+    vulnLine.classList.remove('found');
+    void vulnLine.offsetWidth;
+    vulnLine.classList.add('found');
+  }
+
+  demoRunLabel.textContent = 'Re-run preview';
+  if (window.matchMedia('(max-width: 860px)').matches) {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    demoBody.scrollIntoView({ block: 'nearest', behavior: reduce ? 'auto' : 'smooth' });
+  }
+}
+
+demoTabs.forEach((button, index) => {
+  button.addEventListener('click', () => renderPreview(button.dataset.scenario));
+  button.addEventListener('keydown', (event) => {
+    const pressed = event.key;
+    if (!['ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(pressed)) return;
+    event.preventDefault();
+    let next = index;
+    switch (pressed) {
+      case 'ArrowRight': next = (index + 1) % demoTabs.length; break;
+      case 'ArrowLeft': next = (index - 1 + demoTabs.length) % demoTabs.length; break;
+      case 'Home': next = 0; break;
+      case 'End': next = demoTabs.length - 1; break;
+      default: break;
+    }
+    demoTabs[next].focus();
+    renderPreview(demoTabs[next].dataset.scenario);
+  });
+});
+
+demoRun.addEventListener('click', revealPreview);
+$('#demoReset').addEventListener('click', () => {
+  resetPreview();
+  demoRun.focus();
+});
+
+renderPreview('secret');
 
 /* Fix preview modal */
 const fixes = {
