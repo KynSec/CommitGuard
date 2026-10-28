@@ -3,68 +3,158 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>CommitGuard — Fast, Offline Pre-Commit Security & Static Analysis</title>
+<meta name="theme-color" content="#080c14">
+<title>CommitGuard — Fast, Offline Pre-Commit Security &amp; Static Analysis</title>
 <meta name="description" content="Next-Gen local security scanner: secrets, AST taint flows, dependency blast-radius graph, and automated 1-click fixes. 100% offline, zero telemetry.">
 <style>
 :root {
-  --bg: #0b0f17;
-  --panel: #111827;
-  --panel2: #0d1422;
-  --line: #222f46;
-  --line2: #2f405d;
-  --text: #f0f4fc;
-  --muted: #94a3b8;
+  --bg: #080c14;
+  --panel: #0f1725;
+  --line: #1e2b40;
+  --line2: #2b3d58;
+  --text: #eef4ff;
+  --muted: #93a4bd;
   --accent: #38bdf8;
   --accent-glow: rgba(56, 189, 248, 0.25);
   --accent2: #818cf8;
   --ok: #34d399;
-  --warn: #fbbf24;
   --bad: #f87171;
-  --code-bg: #070b12;
+  --code-bg: #060a11;
+  --maxw: 1200px;
+  --radius: 16px;
 }
-* { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
+
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+}
+
 body {
   margin: 0;
-  background: radial-gradient(1200px 700px at 20% -10%, #162544 0%, var(--bg) 60%) no-repeat, var(--bg);
+  background:
+    radial-gradient(1100px 640px at 18% -8%, #142440 0%, transparent 60%),
+    radial-gradient(900px 500px at 92% 0%, #1a1b42 0%, transparent 55%),
+    var(--bg);
   color: var(--text);
-  font: 15px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  font: 15px/1.65 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   overflow-x: hidden;
 }
+body.nav-open { overflow: hidden; }
+
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
 code, pre, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+:not(pre) > code {
+  background: #0c1421;
+  border: 1px solid var(--line);
+  padding: .12em .4em;
+  border-radius: 5px;
+  font-size: .9em;
+  color: #a5d8ff;
+  white-space: nowrap;
+}
+[hidden] { display: none !important; }
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 5px;
+}
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+.scroll-progress {
+  position: fixed; top: 0; left: 0; z-index: 90;
+  height: 2px; width: 0;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  transition: width .1s linear;
+}
+
+.skip-link {
+  position: fixed; top: 10px; left: 10px; z-index: 200;
+  transform: translateY(-160%);
+  background: var(--accent); color: #04101c;
+  padding: 10px 16px; border-radius: 8px;
+  font-weight: 800; font-size: 14px;
+  transition: transform .18s ease;
+}
+.skip-link:focus { transform: translateY(0); text-decoration: none; }
 
 /* Navigation */
 .nav-wrap {
-  position: sticky; top: 0; z-index: 50;
-  background: rgba(11, 15, 23, 0.85);
-  backdrop-filter: blur(12px);
+  position: sticky; top: 0; z-index: 60;
+  background: rgba(8, 12, 20, 0.78);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--line);
+  transition: box-shadow .2s ease;
 }
+.nav-wrap.scrolled { box-shadow: 0 10px 34px rgba(0, 0, 0, .4); }
 .nav {
-  max-width: 1200px; margin: 0 auto;
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 24px;
+  max-width: var(--maxw); margin: 0 auto;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 12px clamp(16px, 4vw, 24px);
 }
-.brand { display: flex; align-items: center; gap: 12px; font-weight: 800; font-size: 18px; color: #fff; }
+.brand {
+  display: inline-flex; align-items: center; gap: 12px;
+  font-weight: 800; font-size: 18px; color: #fff;
+  white-space: nowrap;
+}
+.brand:hover { text-decoration: none; }
 .logo-icon {
-  width: 36px; height: 36px; border-radius: 10px;
+  width: 38px; height: 38px; border-radius: 11px;
   background: linear-gradient(135deg, #38bdf8, #818cf8);
-  display: grid; place-items: center; color: #08101c; font-weight: 900; font-size: 16px;
+  display: grid; place-items: center;
+  color: #08101c; font-weight: 900; font-size: 15px;
   box-shadow: 0 0 16px var(--accent-glow);
+  flex: 0 0 auto;
 }
-.nav-links { display: flex; gap: 24px; align-items: center; }
-.nav-links a { color: var(--muted); font-weight: 600; font-size: 14px; transition: color .2s; }
+.nav-links { display: flex; gap: 22px; align-items: center; }
+.nav-links a {
+  position: relative;
+  color: var(--muted); font-weight: 600; font-size: 14px;
+  transition: color .2s;
+}
 .nav-links a:hover { color: #fff; text-decoration: none; }
+.nav-links a.active { color: #fff; }
+.nav-links a.active::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: -7px; height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+}
+.menu-btn {
+  display: none; align-items: center; justify-content: center;
+  width: 44px; height: 44px;
+  background: #121c2c; border: 1px solid var(--line2);
+  color: #fff; border-radius: 10px; cursor: pointer;
+  transition: background .2s, border-color .2s;
+  flex: 0 0 auto;
+}
+.menu-btn:hover { background: #1a273c; border-color: #3b5277; }
+.menu-btn svg { width: 20px; height: 20px; }
+
+/* Buttons */
 .btn {
-  display: inline-flex; align-items: center; gap: 8px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   border: 1px solid var(--line2); background: #162033;
-  color: #fff; border-radius: 9px; padding: 9px 16px;
-  font-weight: 700; font-size: 14px; cursor: pointer;
-  transition: all .2s ease; text-decoration: none!important;
+  color: #fff; border-radius: 9px; padding: 10px 16px;
+  font-weight: 700; font-size: 14px; line-height: 1.2; cursor: pointer;
+  transition: background .2s ease, border-color .2s ease, transform .2s ease, box-shadow .2s ease;
+  text-decoration: none !important;
+  min-height: 42px;
+  font-family: inherit;
 }
 .btn:hover { background: #1f2d47; border-color: #3b5277; transform: translateY(-1px); }
+.btn:active { transform: translateY(0); }
 .btn.primary {
   background: linear-gradient(135deg, #0284c7, #6366f1);
   border-color: transparent;
@@ -77,212 +167,727 @@ code, pre, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, m
   box-shadow: 0 4px 16px rgba(16, 185, 129, 0.35);
 }
 .btn.success:hover { filter: brightness(1.12); box-shadow: 0 6px 22px rgba(16, 185, 129, 0.5); }
-.btn.small { padding: 6px 12px; font-size: 12.5px; border-radius: 7px; }
+.btn.small { padding: 7px 12px; font-size: 12.5px; border-radius: 8px; min-height: 36px; }
+.btn svg { flex: 0 0 auto; }
+
+.copy-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  border: 1px solid var(--line2); background: #132033;
+  color: #cfe3ff; border-radius: 8px; padding: 8px 11px;
+  font-size: 12px; font-weight: 700; cursor: pointer;
+  min-height: 36px;
+  transition: background .18s, border-color .18s, color .18s;
+  font-family: inherit; white-space: nowrap;
+}
+.copy-btn:hover { background: #1c2b43; border-color: #3b5277; color: #fff; }
+.copy-btn.copied { color: #6ee7b7; border-color: #1f6b43; background: #0e301e; }
+.copy-btn svg { flex: 0 0 auto; }
+
+/* Mobile drawer */
+.drawer-backdrop {
+  position: fixed; inset: 0; z-index: 70;
+  background: rgba(3, 6, 12, 0.62);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  opacity: 0; pointer-events: none;
+  transition: opacity .25s ease;
+}
+body.nav-open .drawer-backdrop { opacity: 1; pointer-events: auto; }
+.drawer {
+  position: fixed; top: 0; right: 0; z-index: 80;
+  height: 100%; width: min(340px, 86vw);
+  background: #0b111c;
+  border-left: 1px solid var(--line);
+  display: flex; flex-direction: column; gap: 6px;
+  padding: calc(18px + env(safe-area-inset-top)) 18px calc(18px + env(safe-area-inset-bottom));
+  transform: translateX(102%);
+  visibility: hidden;
+  transition: transform .3s cubic-bezier(.4, 0, .2, 1), visibility 0s linear .3s;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+body.nav-open .drawer {
+  transform: translateX(0);
+  visibility: visible;
+  transition: transform .3s cubic-bezier(.4, 0, .2, 1);
+}
+.drawer-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; padding-bottom: 14px; margin-bottom: 6px;
+  border-bottom: 1px solid var(--line);
+}
+.drawer-head .brand { font-size: 16px; }
+.icon-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px;
+  background: #121c2c; border: 1px solid var(--line2);
+  color: #fff; border-radius: 10px; cursor: pointer;
+  font-size: 20px; line-height: 1; font-family: inherit;
+}
+.icon-btn:hover { background: #1a273c; }
+.drawer-link {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 13px 12px; border-radius: 10px;
+  color: var(--muted); font-weight: 600; font-size: 14.5px;
+  min-height: 46px;
+  transition: background .18s, color .18s;
+}
+.drawer-link:hover, .drawer-link.active { background: #121c2c; color: #fff; text-decoration: none; }
+.drawer-link.active { box-shadow: inset 3px 0 0 var(--accent); }
+.drawer-actions { display: grid; gap: 10px; margin-top: 12px; }
+.drawer-actions .btn { width: 100%; min-height: 46px; }
 
 /* Container */
-.container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+.container { max-width: var(--maxw); margin: 0 auto; padding: 0 clamp(16px, 4vw, 24px); }
 
 /* Hero */
-.hero { padding: 80px 0 60px; text-align: center; }
+.hero {
+  position: relative; overflow: hidden;
+  padding: clamp(48px, 9vw, 88px) 0 clamp(42px, 7vw, 64px);
+  text-align: center;
+}
+.hero::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(56, 189, 248, .045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56, 189, 248, .045) 1px, transparent 1px);
+  background-size: 56px 56px;
+  -webkit-mask-image: radial-gradient(ellipse at 50% 0%, #000 0%, transparent 72%);
+  mask-image: radial-gradient(ellipse at 50% 0%, #000 0%, transparent 72%);
+}
+.hero .blob {
+  position: absolute; border-radius: 50%;
+  filter: blur(90px); opacity: .38; pointer-events: none;
+  animation: float 14s ease-in-out infinite alternate;
+}
+.hero .blob.one { width: 340px; height: 340px; background: #0ea5e9; top: -120px; left: -80px; }
+.hero .blob.two { width: 380px; height: 380px; background: #6366f1; top: -140px; right: -100px; animation-delay: -6s; }
+@keyframes float {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(24px, 26px, 0) scale(1.08); }
+}
+.hero > .container { position: relative; z-index: 1; }
+
 .pill-badge {
   display: inline-flex; align-items: center; gap: 8px;
-  background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.3);
-  padding: 5px 14px; border-radius: 999px; font-size: 12.5px; font-weight: 700;
-  color: #7dd3fc; margin-bottom: 24px;
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  padding: 6px 14px; border-radius: 999px;
+  font-size: 12.5px; font-weight: 700; color: #7dd3fc;
+  margin-bottom: clamp(18px, 3vw, 24px);
+  max-width: 100%;
 }
+.pill-badge svg { flex: 0 0 auto; }
 .hero h1 {
-  font-size: clamp(34px, 5.5vw, 60px); font-weight: 900;
-  line-height: 1.15; margin: 0 0 20px;
-  background: linear-gradient(180deg, #ffffff 40%, #94a3b8 100%);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  font-size: clamp(32px, 5.4vw, 62px); font-weight: 900;
+  line-height: 1.12; letter-spacing: -.03em;
+  margin: 0 auto clamp(16px, 2.5vw, 22px);
+  max-width: 15ch;
+  background: linear-gradient(180deg, #ffffff 38%, #94a3b8 100%);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
 }
 .hero p {
-  max-width: 740px; margin: 0 auto 32px;
-  font-size: clamp(16px, 2vw, 19px); color: var(--muted); line-height: 1.6;
+  max-width: 760px; margin: 0 auto clamp(26px, 4vw, 32px);
+  font-size: clamp(15px, 1.6vw, 18.5px); color: var(--muted); line-height: 1.65;
 }
-.hero-actions { display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; margin-bottom: 40px; }
+.hero-actions {
+  display: flex; justify-content: center; align-items: center;
+  gap: 12px; flex-wrap: wrap;
+}
+.hero-actions .btn { min-height: 46px; padding: 12px 20px; }
 
-/* Section Titles */
-.section { padding: 60px 0; border-top: 1px solid var(--line); }
-.section-header { text-align: center; margin-bottom: 46px; }
-.section-header h2 { font-size: 32px; font-weight: 800; margin: 0 0 12px; color: #fff; }
-.section-header p { font-size: 16px; color: var(--muted); max-width: 650px; margin: 0 auto; }
+.metrics {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px; max-width: 920px;
+  margin: clamp(32px, 5vw, 48px) auto 0;
+  text-align: left;
+}
+.metric {
+  background: linear-gradient(180deg, #111a2b 0%, #0b1220 100%);
+  border: 1px solid var(--line);
+  border-radius: 14px; padding: 16px 14px;
+}
+.metric b {
+  display: block; font-size: clamp(19px, 2.6vw, 25px);
+  line-height: 1.15; color: #fff; letter-spacing: -.02em;
+}
+.metric span { display: block; margin-top: 4px; font-size: 12.5px; color: var(--muted); line-height: 1.4; }
 
-/* Install Box */
+/* Sections */
+.section {
+  position: relative;
+  padding: clamp(48px, 7vw, 74px) 0;
+  border-top: 1px solid var(--line);
+  scroll-margin-top: 82px;
+}
+.section-header {
+  text-align: center; max-width: 720px;
+  margin: 0 auto clamp(30px, 4.5vw, 46px);
+}
+.eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 11.5px; font-weight: 800; letter-spacing: .14em;
+  text-transform: uppercase; color: #7dd3fc;
+  margin-bottom: 12px;
+}
+.eyebrow::before {
+  content: ""; width: 18px; height: 2px; border-radius: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+}
+.section-header h2 {
+  font-size: clamp(24px, 3.6vw, 34px); font-weight: 850;
+  line-height: 1.2; letter-spacing: -.02em;
+  margin: 0 0 12px; color: #fff;
+}
+.section-header p { font-size: clamp(14.5px, 1.5vw, 16px); color: var(--muted); margin: 0 auto; }
+
+/* Terminal */
+.terminal-shell { max-width: 980px; margin: 0 auto; }
+.quick-install { display: grid; gap: 10px; margin-bottom: 18px; }
+.quick-row {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--code-bg);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 8px 8px 8px 14px;
+  min-width: 0;
+}
+.os-tag {
+  flex: 0 0 auto; font-size: 11px; font-weight: 800;
+  letter-spacing: .05em; text-transform: uppercase;
+  color: #7dd3fc; background: rgba(56, 189, 248, .09);
+  border: 1px solid rgba(56, 189, 248, .25);
+  padding: 4px 9px; border-radius: 999px;
+}
+.quick-row code {
+  flex: 1 1 auto; min-width: 0;
+  overflow-x: auto; white-space: nowrap;
+  font-size: 12.5px; color: #cfe3ff;
+  scrollbar-width: thin;
+  padding: 6px 0;
+}
+.quick-row .copy-btn { flex: 0 0 auto; }
+.quick-note { margin: 4px 2px 0; font-size: 12.5px; color: var(--muted); }
+
 .terminal-window {
   background: var(--code-bg);
   border: 1px solid var(--line2);
   border-radius: 14px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
   overflow: hidden;
-  margin: 0 auto 30px;
-  max-width: 950px;
+  margin: 0 auto 26px;
 }
 .terminal-top {
   background: #0f1726;
   border-bottom: 1px solid var(--line);
-  padding: 12px 18px;
-  display: flex; align-items: center; justify-content: space-between;
-  flex-wrap: wrap; gap: 12px;
+  padding: 10px 14px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas: "dots actions" "tabs tabs";
+  align-items: center;
+  gap: 10px 12px;
 }
-.terminal-dots { display: flex; gap: 7px; align-items: center; }
-.dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+.terminal-dots { grid-area: dots; display: flex; gap: 7px; align-items: center; min-width: 0; }
+.dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; flex: 0 0 auto; }
 .dot.red { background: #f87171; }
 .dot.yellow { background: #fbbf24; }
 .dot.green { background: #34d399; }
-.tab-group { display: flex; gap: 6px; background: #070c14; padding: 4px; border-radius: 8px; border: 1px solid var(--line); }
+.filename {
+  font-size: 12px; color: var(--muted);
+  margin-left: 8px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.tab-group {
+  grid-area: tabs; justify-self: start;
+  display: flex; gap: 4px; background: #070c14; padding: 4px;
+  border-radius: 9px; border: 1px solid var(--line);
+  max-width: 100%; overflow-x: auto;
+  scrollbar-width: none;
+}
+.tab-group::-webkit-scrollbar { display: none; }
 .tab-btn {
   background: transparent; border: 0; color: var(--muted);
-  padding: 6px 14px; border-radius: 6px; font-weight: 700; font-size: 13px;
-  cursor: pointer; transition: all .15s;
+  padding: 7px 13px; border-radius: 6px;
+  font-weight: 700; font-size: 12.5px;
+  cursor: pointer; transition: background .15s, color .15s;
+  white-space: nowrap; min-height: 34px;
+  font-family: inherit;
 }
 .tab-btn:hover { color: #fff; }
 .tab-btn.active { background: #1e293b; color: #38bdf8; }
-
-.terminal-actions { display: flex; gap: 8px; }
+.terminal-actions { grid-area: actions; justify-self: end; display: flex; gap: 8px; flex-wrap: wrap; }
 .terminal-body {
-  padding: 20px 24px;
-  max-height: 480px;
-  overflow-y: auto;
-  font-size: 13.5px;
+  padding: 16px clamp(14px, 3vw, 24px);
+  max-height: min(460px, 62vh);
+  overflow: auto;
+  font-size: 12.8px;
   line-height: 1.6;
+  scrollbar-width: thin;
+  scrollbar-color: #2b3d58 transparent;
 }
-.terminal-body pre { margin: 0; color: #e2e8f0; }
+.terminal-body pre { margin: 0; color: #dbe7f7; tab-size: 2; white-space: pre; }
+.terminal-body::-webkit-scrollbar,
+.code-wrap pre::-webkit-scrollbar,
+.table-scroll::-webkit-scrollbar,
+.quick-row code::-webkit-scrollbar,
+.diff::-webkit-scrollbar { height: 8px; width: 8px; }
+.terminal-body::-webkit-scrollbar-thumb,
+.code-wrap pre::-webkit-scrollbar-thumb,
+.table-scroll::-webkit-scrollbar-thumb,
+.quick-row code::-webkit-scrollbar-thumb,
+.diff::-webkit-scrollbar-thumb { background: #2b3d58; border-radius: 8px; }
+.terminal-body::-webkit-scrollbar-track,
+.code-wrap pre::-webkit-scrollbar-track,
+.table-scroll::-webkit-scrollbar-track { background: transparent; }
 
+/* Callout */
 .callout-box {
   background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(56, 189, 248, 0.08));
   border: 1px solid rgba(16, 185, 129, 0.3);
   border-radius: 12px;
   padding: 16px 20px;
-  display: flex; align-items: center; justify-content: space-between;
-  max-width: 950px; margin: 0 auto; gap: 16px; flex-wrap: wrap;
+  display: grid; grid-template-columns: 1fr auto;
+  align-items: center; gap: 16px;
+  max-width: 980px; margin: 0 auto;
 }
+.callout-box > * { min-width: 0; }
 .callout-box strong { color: #6ee7b7; font-size: 15px; }
+.callout-copy { font-size: 13.5px; color: var(--muted); }
+.callout-sign {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  background: #061a12; border: 1px solid #10b981;
+  padding: 9px 14px; border-radius: 8px;
+  color: #6ee7b7; font-weight: 700; font-size: 13px;
+  max-width: 100%; overflow-x: auto; white-space: nowrap;
+}
 
-/* Grid Features */
+/* Features */
 .features-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  gap: clamp(14px, 2vw, 20px);
 }
 .feature-card {
   background: linear-gradient(180deg, #121927 0%, #0d131f 100%);
   border: 1px solid var(--line);
   border-radius: 14px;
   padding: 24px;
-  transition: transform .2s, border-color .2s;
+  transition: transform .2s, border-color .2s, box-shadow .2s;
+  min-width: 0;
 }
-.feature-card:hover { transform: translateY(-3px); border-color: var(--line2); }
+@media (hover: hover) {
+  .feature-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--line2);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, .35);
+  }
+}
 .feature-icon {
-  width: 44px; height: 44px; border-radius: 11px;
+  width: 46px; height: 46px; border-radius: 12px;
   background: #182337; border: 1px solid var(--line2);
-  display: grid; place-items: center; font-size: 22px;
+  display: grid; place-items: center;
   margin-bottom: 16px;
+  color: var(--icon, var(--accent));
 }
-.feature-card h3 { font-size: 18px; margin: 0 0 8px; color: #fff; }
-.feature-card p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.55; }
+.feature-icon svg { width: 22px; height: 22px; }
+.feature-card h3 { font-size: 18px; margin: 0 0 8px; color: #fff; letter-spacing: -.01em; }
+.feature-card p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.6; }
+.feature-card p code { font-size: 12.5px; }
 
-/* Control Center Highlight */
+/* Control center */
 .gui-preview {
+  max-width: 1000px; margin: 0 auto;
   background: #0f1725;
   border: 1px solid var(--line2);
-  border-radius: 16px;
+  border-radius: var(--radius);
   overflow: hidden;
-  box-shadow: 0 25px 70px rgba(0,0,0,0.7);
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.7);
 }
 .gui-header {
   background: #141e30;
   border-bottom: 1px solid var(--line);
-  padding: 12px 20px;
+  padding: 12px clamp(14px, 3vw, 20px);
   display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; flex-wrap: wrap;
 }
-.gui-content { padding: 24px; }
-.gui-mock-table { width: 100%; border-collapse: collapse; margin-top: 14px; }
-.gui-mock-table th, .gui-mock-table td { padding: 10px 12px; border-bottom: 1px solid var(--line); text-align: left; }
-.gui-mock-table th { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
-.badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 10.5px; font-weight: 800; text-transform: uppercase; }
+.gui-title {
+  font-size: 13px; font-weight: 700; color: #fff;
+  margin-left: 10px; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.gui-header .terminal-dots { flex: 1 1 auto; min-width: 0; }
+.gui-content { padding: clamp(14px, 3vw, 24px); }
+.gui-toolbar {
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 12px; margin-bottom: 16px;
+}
+.gui-toolbar-title { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.gui-count { font-size: 18px; font-weight: 800; color: #fff; }
+.gui-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.badge {
+  display: inline-block; padding: 3px 9px; border-radius: 999px;
+  font-size: 11px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: .02em; white-space: nowrap;
+}
 .badge.crit { background: #3d1419; color: #ff9a9a; border: 1px solid #75202a; }
 .badge.high { background: #3d2314; color: #ffbd8a; border: 1px solid #753d20; }
 .badge.fix { background: #0e301e; color: #86efac; border: 1px solid #1f6b43; }
 
+.table-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.gui-mock-table { width: 100%; min-width: 760px; border-collapse: collapse; }
+.gui-mock-table th, .gui-mock-table td {
+  padding: 11px 12px; border-bottom: 1px solid var(--line);
+  text-align: left; vertical-align: middle;
+}
+.gui-mock-table tbody tr:last-child td { border-bottom: 0; }
+.gui-mock-table th {
+  color: var(--muted); font-size: 10.5px; text-transform: uppercase;
+  letter-spacing: .07em; font-weight: 800;
+  background: #0d1522; white-space: nowrap;
+}
+.gui-mock-table td { font-size: 13px; }
+.gui-mock-table td code { white-space: nowrap; font-size: 12px; }
+.gui-mock-table th:first-child, .gui-mock-table td:first-child { width: 40px; }
+.row-actions { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: nowrap; }
+.gui-command { margin-top: 20px; text-align: center; }
+.gui-command code {
+  display: inline-block; background: #070b12; padding: 9px 16px;
+  border-radius: 8px; border: 1px solid var(--line);
+  color: #38bdf8; font-size: 13px; max-width: 100%; overflow-x: auto;
+}
+
+/* CLI */
+.cli-tools { display: flex; justify-content: center; margin-bottom: 22px; }
+.search { position: relative; width: min(460px, 100%); }
+.search svg {
+  position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+  width: 18px; height: 18px; color: var(--muted); pointer-events: none;
+}
+.search input {
+  width: 100%; min-height: 48px;
+  background: #0c1320; border: 1px solid var(--line);
+  border-radius: 11px; color: var(--text);
+  padding: 12px 14px 12px 42px;
+  font-size: 14px; font-family: inherit;
+  transition: border-color .2s, box-shadow .2s;
+}
+.search input::placeholder { color: #6b7d96; }
+.search input:focus {
+  border-color: var(--line2);
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, .12);
+  outline: none;
+}
+.cli-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  gap: clamp(14px, 2vw, 20px);
+}
+.cli-card {
+  position: relative;
+  background: linear-gradient(180deg, #121927 0%, #0d131f 100%);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 20px;
+  min-width: 0;
+}
+.cli-card h3 { font-size: 16px; margin: 0 0 12px; color: #fff; padding-right: 88px; }
+.cli-card pre { margin: 0; }
+.code-wrap pre {
+  background: var(--code-bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 14px;
+  overflow-x: auto;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: #cfe3ff;
+}
+.code-copy { position: absolute; top: 15px; right: 18px; }
+.cli-empty { text-align: center; color: var(--muted); font-size: 14px; padding: 24px 0 0; }
+
+/* Fix modal */
+.fix-modal {
+  width: min(700px, 92vw);
+  max-height: 88vh;
+  margin: auto;
+  padding: 0;
+  background: #0b111c;
+  color: var(--text);
+  border: 1px solid var(--line2);
+  border-radius: var(--radius);
+  box-shadow: 0 30px 90px rgba(0, 0, 0, .8);
+  overflow: hidden;
+}
+.fix-modal::backdrop {
+  background: rgba(3, 6, 12, .74);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+.fix-modal-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--line);
+  background: #0f1726;
+}
+.fix-modal-title { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; min-width: 0; }
+.fix-modal-title h3 { margin: 0; font-size: 16px; color: #fff; }
+.fix-body { padding: 20px; overflow-y: auto; max-height: calc(88vh - 150px); }
+.fix-body > p { margin: 0 0 14px; color: var(--muted); font-size: 14px; }
+.fix-file {
+  display: inline-block; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px; color: #a5d8ff; background: #0c1421;
+  border: 1px solid var(--line); padding: 4px 9px; border-radius: 6px;
+  margin-bottom: 14px;
+}
+.diff {
+  background: var(--code-bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12.5px;
+  line-height: 1.7;
+  padding: 8px 0;
+  scrollbar-width: thin;
+}
+.diff-line { display: flex; gap: 10px; padding: 1px 14px; white-space: pre; }
+.diff-line .sign { width: 1ch; flex: 0 0 auto; opacity: .8; user-select: none; }
+.diff-line.del { background: rgba(248, 113, 113, .1); color: #fecaca; }
+.diff-line.add { background: rgba(52, 211, 153, .1); color: #bbf7d0; }
+.diff-line.ctx { color: #8fa3bd; }
+.fix-note {
+  margin-top: 14px; font-size: 12.5px; color: var(--muted);
+  border-left: 3px solid var(--ok);
+  background: rgba(52, 211, 153, .06);
+  padding: 10px 12px; border-radius: 0 8px 8px 0;
+}
+.fix-foot {
+  display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap;
+  padding: 14px 20px;
+  border-top: 1px solid var(--line);
+  background: #0d1422;
+}
+
 /* Toast */
 .toast-notice {
-  position: fixed; bottom: 24px; right: 24px; z-index: 100;
-  background: #162033; border: 1px solid #38bdf8;
+  position: fixed; bottom: 24px; right: 24px; z-index: 120;
+  display: flex; align-items: center; gap: 8px;
+  background: #162033; border: 1px solid var(--accent);
   color: #fff; padding: 12px 18px; border-radius: 9px;
-  font-weight: 700; font-size: 13px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-  display: none; animation: slideIn .3s ease;
+  font-weight: 700; font-size: 13px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  opacity: 0; transform: translateY(20px); pointer-events: none;
+  transition: opacity .25s ease, transform .25s ease;
+  max-width: calc(100vw - 32px);
 }
-@keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.toast-notice.show { opacity: 1; transform: translateY(0); }
+.toast-notice[data-kind="error"] { border-color: var(--bad); }
 
 /* Footer */
 footer {
   border-top: 1px solid var(--line);
-  padding: 40px 0;
+  padding: 40px 0 calc(40px + env(safe-area-inset-bottom));
   color: var(--muted);
   text-align: center;
   font-size: 14px;
 }
+.footer-links {
+  display: flex; justify-content: center; flex-wrap: wrap;
+  gap: 18px; margin-bottom: 16px;
+}
+.footer-links a { color: var(--muted); font-weight: 600; font-size: 13.5px; }
+.footer-links a:hover { color: #fff; }
+.footer-sign { color: #6ee7b7; font-weight: 700; margin-top: 10px; }
 
-@media (max-width: 768px) {
+/* Responsive */
+@media (max-width: 900px) {
   .nav-links { display: none; }
-  .features-grid { grid-template-columns: 1fr; }
+  .menu-btn { display: inline-flex; }
+}
+@media (max-width: 760px) {
+  .callout-box { grid-template-columns: 1fr; align-items: start; }
+  .callout-sign {
+    text-align: left; white-space: normal; overflow-wrap: anywhere; line-height: 1.5;
+  }
+}
+
+@media (max-width: 700px) {
+  .table-scroll { overflow: visible; border: 0; border-radius: 0; }
+  .gui-mock-table { display: block; min-width: 0; }
+  .gui-mock-table thead { display: none; }
+  .gui-mock-table tbody { display: block; }
+  .gui-mock-table tr {
+    display: block;
+    background: linear-gradient(180deg, #101a2a 0%, #0b1220 100%);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+  .gui-mock-table td {
+    display: grid;
+    grid-template-columns: 96px minmax(0, 1fr);
+    gap: 10px;
+    align-items: center;
+    justify-items: start;
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--line);
+    text-align: left;
+    font-size: 13px;
+    width: auto;
+  }
+  .gui-mock-table td:first-child { display: none; }
+  .gui-mock-table td::before {
+    content: attr(data-label);
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+  }
+  .gui-mock-table td:last-child { border-bottom: 0; }
+  .gui-mock-table td.desc-cell,
+  .gui-mock-table td.actions-cell { display: block; }
+  .gui-mock-table td.desc-cell::before,
+  .gui-mock-table td.actions-cell::before { display: block; margin-bottom: 6px; }
+  .gui-mock-table td code { white-space: normal; overflow-wrap: anywhere; }
+  .row-actions { justify-content: flex-start; flex-wrap: wrap; margin-top: 2px; }
+}
+@media (max-width: 640px) {
+  .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .terminal-top { grid-template-columns: 1fr; grid-template-areas: "dots" "actions" "tabs"; }
+  .terminal-actions { justify-self: stretch; width: 100%; }
+  .terminal-actions .btn { flex: 1 1 auto; }
+  .tab-group { width: 100%; }
+  .quick-row { flex-wrap: wrap; padding: 10px 10px 10px 12px; }
+  .quick-row code {
+    order: 3; flex-basis: 100%; padding: 2px 2px 0;
+    white-space: pre-wrap; overflow-wrap: anywhere; overflow-x: visible;
+  }
+  .tab-prefix, .tab-suffix { display: none; }
+  .code-wrap pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+  .quick-row .os-tag { order: 1; }
+  .quick-row .copy-btn { order: 2; margin-left: auto; }
+  .toast-notice {
+    left: 16px; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom));
+    justify-content: center; max-width: none;
+  }
+  .gui-actions { width: 100%; }
+  .gui-actions .btn { flex: 1 1 auto; }
+  .fix-foot { flex-direction: column-reverse; }
+  .fix-foot .btn { width: 100%; }
+}
+@media (max-width: 520px) {
+  .hero-actions { flex-direction: column; align-items: stretch; }
+  .hero-actions .btn { width: 100%; }
+  .pill-badge { font-size: 11.5px; text-align: left; justify-content: center; }
+  .section-header h2 { letter-spacing: -.01em; }
+}
+
+@media (max-width: 380px) {
+  .tab-btn { padding: 7px 9px; font-size: 11.5px; }
+  .tab-group { gap: 3px; }
 }
 </style>
 </head>
 <body>
 
-<!-- Header Navigation -->
-<header class="nav-wrap">
+<div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="nav-wrap" id="siteNav">
   <div class="nav">
-    <a href="#" class="brand">
-      <div class="logo-icon">CG</div>
+    <a href="#" class="brand" aria-label="CommitGuard home">
+      <span class="logo-icon" aria-hidden="true">CG</span>
       <span>CommitGuard</span>
     </a>
-    <nav class="nav-links">
-      <a href="#install">Install Script</a>
-      <a href="#features">Features</a>
-      <a href="#control-center">Control Center GUI</a>
-      <a href="#cli">CLI Reference</a>
-      <a href="https://github.com/CommitGuard-Sec/CommitGuard" target="_blank" class="btn small">
-        <svg height="16" width="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+    <nav class="nav-links" aria-label="Primary">
+      <a href="#install" data-nav="install">Install</a>
+      <a href="#features" data-nav="features">Features</a>
+      <a href="#control-center" data-nav="control-center">Control Center</a>
+      <a href="#cli" data-nav="cli">CLI Reference</a>
+      <a href="https://github.com/CommitGuard-Sec/CommitGuard" target="_blank" rel="noopener noreferrer" class="btn small">
+        <svg height="16" width="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
         GitHub
       </a>
     </nav>
+    <button class="menu-btn" id="menuBtn" type="button" aria-label="Open menu" aria-controls="drawer" aria-expanded="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
   </div>
 </header>
 
+<div class="drawer-backdrop" id="drawerBackdrop" aria-hidden="true"></div>
+<aside class="drawer" id="drawer" aria-label="Mobile navigation" aria-hidden="true" inert>
+  <div class="drawer-head">
+    <span class="brand"><span class="logo-icon" aria-hidden="true">CG</span> CommitGuard</span>
+    <button class="icon-btn" id="drawerClose" type="button" aria-label="Close menu">&times;</button>
+  </div>
+  <nav class="drawer-actions" aria-label="Mobile">
+    <a href="#install" class="drawer-link" data-nav="install">Install <span aria-hidden="true">&rarr;</span></a>
+    <a href="#features" class="drawer-link" data-nav="features">Features <span aria-hidden="true">&rarr;</span></a>
+    <a href="#control-center" class="drawer-link" data-nav="control-center">Control Center <span aria-hidden="true">&rarr;</span></a>
+    <a href="#cli" class="drawer-link" data-nav="cli">CLI Reference <span aria-hidden="true">&rarr;</span></a>
+  </nav>
+  <div class="drawer-actions">
+    <a href="#install" class="btn primary">Install to your repo</a>
+    <a href="https://github.com/CommitGuard-Sec/CommitGuard" target="_blank" rel="noopener noreferrer" class="btn">Star on GitHub</a>
+  </div>
+</aside>
+
+<main id="main">
 <!-- Hero Section -->
-<main>
 <section class="hero">
+  <span class="blob one" aria-hidden="true"></span>
+  <span class="blob two" aria-hidden="true"></span>
   <div class="container">
     <div class="pill-badge">
-      <span>🛡️ 100% Offline · Zero Telemetry · Local Privacy First</span>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>
+      <span>100% Offline &middot; Zero Telemetry &middot; Local Privacy First</span>
     </div>
     <h1>Secure Your Code Before It Reaches Git.</h1>
     <p>
       CommitGuard is a fast, offline pre-commit security &amp; SAST analysis engine.
       Scans only added diff lines for hardcoded credentials, AST cross-line taint flows,
-      vulnerable packages, and dependency blast-radius — with 1-click auto-fixes.
+      vulnerable packages, and dependency blast-radius &mdash; with 1-click auto-fixes.
     </p>
     <div class="hero-actions">
       <a href="#install" class="btn primary">
-        <span>⚡ Install to Your Repo</span>
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        Install to Your Repo
       </a>
       <a href="#control-center" class="btn">
-        <span>🖥️ Open Web Control Center</span>
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+        Open Web Control Center
       </a>
-      <a href="https://github.com/CommitGuard-Sec/CommitGuard" target="_blank" class="btn">
-        <span>⭐ Star on GitHub</span>
+      <a href="https://github.com/CommitGuard-Sec/CommitGuard" target="_blank" rel="noopener noreferrer" class="btn">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        Star on GitHub
       </a>
+    </div>
+
+    <div class="metrics" aria-label="CommitGuard at a glance">
+      <div class="metric"><b>100%</b><span>Local &amp; offline</span></div>
+      <div class="metric"><b>300+</b><span>Secret &amp; SAST rules</span></div>
+      <div class="metric"><b>7+</b><span>Languages parsed</span></div>
+      <div class="metric"><b>0</b><span>Telemetry &amp; cloud calls</span></div>
     </div>
   </div>
 </section>
 
-<!-- Installation Section (Requested Feature) -->
+<!-- Installation Section -->
 <section id="install" class="section">
   <div class="container">
     <div class="section-header">
+      <span class="eyebrow">01 &middot; Install</span>
       <h2>One-Click Offline Installation</h2>
       <p>
         Works on Linux, macOS, and Windows. Run the script inside any existing Git project
@@ -290,40 +895,65 @@ footer {
       </p>
     </div>
 
-    <div class="terminal-window">
-      <div class="terminal-top">
-        <div class="terminal-dots">
-          <span class="dot red"></span>
-          <span class="dot yellow"></span>
-          <span class="dot green"></span>
-          <span style="font-size:12px;color:var(--muted);margin-left:8px;font-family:monospace;" id="scriptFileName">install.sh</span>
+    <div class="terminal-shell">
+      <div class="quick-install">
+        <div class="quick-row">
+          <span class="os-tag">macOS / Linux</span>
+          <code>curl -fsSL https://raw.githubusercontent.com/CommitGuard-Sec/CommitGuard/main/docs/site/install.sh -o install.sh &amp;&amp; bash install.sh</code>
+          <button class="copy-btn" type="button" data-copy="curl -fsSL https://raw.githubusercontent.com/CommitGuard-Sec/CommitGuard/main/docs/site/install.sh -o install.sh &amp;&amp; bash install.sh" aria-label="Copy macOS and Linux install command">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <span data-label>Copy</span>
+          </button>
         </div>
-        <div class="tab-group">
-          <button class="tab-btn active" onclick="switchTab('sh')">Linux &amp; macOS (install.sh)</button>
-          <button class="tab-btn" onclick="switchTab('ps1')">Windows PowerShell (install.ps1)</button>
-          <button class="tab-btn" onclick="switchTab('bat')">Windows CMD (install.bat)</button>
+        <div class="quick-row">
+          <span class="os-tag">Windows</span>
+          <code>iwr -useb https://raw.githubusercontent.com/CommitGuard-Sec/CommitGuard/main/docs/site/install.ps1 -OutFile install.ps1; powershell -NoProfile -ExecutionPolicy Bypass -File ./install.ps1</code>
+          <button class="copy-btn" type="button" data-copy="iwr -useb https://raw.githubusercontent.com/CommitGuard-Sec/CommitGuard/main/docs/site/install.ps1 -OutFile install.ps1; powershell -NoProfile -ExecutionPolicy Bypass -File ./install.ps1" aria-label="Copy Windows PowerShell install command">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <span data-label>Copy</span>
+          </button>
         </div>
-        <div class="terminal-actions">
-          <button class="btn small" onclick="copyScriptCode()">📋 Copy Code</button>
-          <a id="downloadScriptBtn" href="install.sh" download class="btn small success">⬇️ Download Script</a>
-        </div>
+        <p class="quick-note">Downloads the installer, then runs it from the root of the Git repository you want to protect. Prefer to inspect it first? Use the download button below.</p>
       </div>
-      <div class="terminal-body">
-        <pre><code id="scriptCodeDisplay">Loading script...</code></pre>
-      </div>
-    </div>
 
-    <!-- Verification Callout -->
-    <div class="callout-box">
-      <div>
-        <strong>🛡️ Built-in Safety &amp; Repo Detection:</strong><br>
-        <span style="font-size:13.5px;color:var(--muted)">
-          The installer automatically tests if the current directory is a valid git repository.
-          If outside a repository, it safely aborts with an error. When complete, it concludes with:
-        </span>
+      <div class="terminal-window">
+        <div class="terminal-top">
+          <div class="terminal-dots">
+            <span class="dot red" aria-hidden="true"></span>
+            <span class="dot yellow" aria-hidden="true"></span>
+            <span class="dot green" aria-hidden="true"></span>
+            <span class="filename" id="scriptFileName">install.sh</span>
+          </div>
+          <div class="terminal-actions">
+            <button class="btn small" id="copyScriptBtn" type="button">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              <span data-label>Copy Code</span>
+            </button>
+            <a id="downloadScriptBtn" href="install.sh" download class="btn small success">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+              <span>Download Script</span>
+            </a>
+          </div>
+          <div class="tab-group" role="tablist" aria-label="Installer script">
+            <button class="tab-btn active" type="button" role="tab" id="tab-sh" data-tab="sh" aria-selected="true" aria-controls="scriptPanel">Linux &amp; macOS <span class="tab-suffix">(install.sh)</span></button>
+            <button class="tab-btn" type="button" role="tab" id="tab-ps1" data-tab="ps1" aria-selected="false" aria-controls="scriptPanel" tabindex="-1"><span class="tab-prefix">Windows </span>PowerShell <span class="tab-suffix">(install.ps1)</span></button>
+            <button class="tab-btn" type="button" role="tab" id="tab-bat" data-tab="bat" aria-selected="false" aria-controls="scriptPanel" tabindex="-1"><span class="tab-prefix">Windows </span>CMD <span class="tab-suffix">(install.bat)</span></button>
+          </div>
+        </div>
+        <div class="terminal-body" id="scriptPanel" role="tabpanel" aria-labelledby="tab-sh" tabindex="0">
+          <pre><code id="scriptCodeDisplay">Loading script...</code></pre>
+        </div>
       </div>
-      <div style="font-family:monospace;background:#061a12;border:1px solid #10b981;padding:8px 14px;border-radius:8px;color:#6ee7b7;font-weight:700">
-        "Have a nice life far from hacking developer bro :) 😊"
+
+      <div class="callout-box">
+        <div>
+          <strong>Built-in Safety &amp; Repo Detection</strong>
+          <p class="callout-copy" style="margin:6px 0 0">
+            The installer automatically tests if the current directory is a valid git repository.
+            If outside a repository, it safely aborts with an error. When complete, it concludes with:
+          </p>
+        </div>
+        <div class="callout-sign">"Have a nice life far from hacking developer&nbsp;bro&nbsp;:)&nbsp;&#128522;"</div>
       </div>
     </div>
   </div>
@@ -333,38 +963,51 @@ footer {
 <section id="features" class="section">
   <div class="container">
     <div class="section-header">
+      <span class="eyebrow">02 &middot; Engine</span>
       <h2>Engineered for High Precision &amp; Speed</h2>
       <p>Everything runs on your local CPU in milliseconds. Nothing is ever sent to the cloud.</p>
     </div>
 
     <div class="features-grid">
       <div class="feature-card">
-        <div class="feature-icon">🔑</div>
+        <div class="feature-icon" style="--icon:#fbbf24">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6M15.5 7.5l3 3L22 7l-3-3"/></svg>
+        </div>
         <h3>Deep Secret Detection</h3>
         <p>300+ rules covering AWS, GCP, Azure, OpenAI, Anthropic, Stripe, SSH keys, combined with Shannon entropy and character-class adjustment to eliminate false positives.</p>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">🧠</div>
+        <div class="feature-icon" style="--icon:#a78bfa">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/><path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/></svg>
+        </div>
         <h3>AST Cross-Line Taint Analysis</h3>
         <p>Follows untrusted user inputs (Flask/Django <code>request.args</code>, env variables) across multi-line variable reassignments straight into SQL execution and shell sinks.</p>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">🔗</div>
+        <div class="feature-icon" style="--icon:#38bdf8">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="6" r="3"/><circle cx="19" cy="6" r="3"/><circle cx="12" cy="18" r="3"/><path d="M8 6h8M6.5 8.5 10.5 16M17.5 8.5 13.5 16"/></svg>
+        </div>
         <h3>Dependency &amp; Blast Radius</h3>
         <p>Parses import trees in 7+ languages (Python, JS/TS, Go, Rust, Java, etc.) and calculates the exact blast-radius of vulnerable files with native Mermaid diagrams.</p>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">⚡</div>
+        <div class="feature-icon" style="--icon:#34d399">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        </div>
         <h3>1-Click Auto-Fix Engine</h3>
-        <p>Don't just detect vulnerabilities — fix them. Automatically transforms insecure code (like <code>yaml.load()</code> to <code>yaml.safe_load()</code>) and git-stages the result.</p>
+        <p>Don't just detect vulnerabilities &mdash; fix them. Automatically transforms insecure code (like <code>yaml.load()</code> to <code>yaml.safe_load()</code>) and git-stages the result.</p>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">📦</div>
+        <div class="feature-icon" style="--icon:#f472b6">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7.5 4.27 9 5.15M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/></svg>
+        </div>
         <h3>Free Dependency SCA</h3>
         <p>Scans project manifests (<code>requirements.txt</code>, <code>package.json</code>, etc.) against Google OSV.dev batch vulnerability data completely free with zero API keys required.</p>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">🤖</div>
+        <div class="feature-icon" style="--icon:#67e8f9">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4M8 16h.01M16 16h.01"/></svg>
+        </div>
         <h3>GitHub Actions &amp; PR Bot</h3>
         <p>Generates clean SARIF reports, GitHub annotations, automated pull requests, and native click-to-commit inline suggestions on PR diffs.</p>
       </div>
@@ -376,6 +1019,7 @@ footer {
 <section id="control-center" class="section">
   <div class="container">
     <div class="section-header">
+      <span class="eyebrow">03 &middot; Control Center</span>
       <h2>Web Control Center &amp; Suggestion Engine</h2>
       <p>Launch a modern, dark-themed local GUI on <code>127.0.0.1</code> with a single command.</p>
     </div>
@@ -383,72 +1027,74 @@ footer {
     <div class="gui-preview">
       <div class="gui-header">
         <div class="terminal-dots">
-          <span class="dot red"></span>
-          <span class="dot yellow"></span>
-          <span class="dot green"></span>
-          <span style="font-size:13px;font-weight:700;color:#fff;margin-left:10px;">CommitGuard Control Center · http://127.0.0.1:8765</span>
+          <span class="dot red" aria-hidden="true"></span>
+          <span class="dot yellow" aria-hidden="true"></span>
+          <span class="dot green" aria-hidden="true"></span>
+          <span class="gui-title">CommitGuard Control Center &middot; http://127.0.0.1:8765</span>
         </div>
-        <div>
-          <span class="badge high">Scan Mode: Staged</span>
-        </div>
+        <span class="badge high">Scan Mode: Staged</span>
       </div>
       <div class="gui-content">
-        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
-          <div>
-            <span style="font-size:18px;font-weight:800;color:#fff">Scan Findings (2)</span>
-            <span class="badge crit" style="margin-left:8px;">1 Critical</span>
-            <span class="badge high" style="margin-left:4px;">1 High</span>
-            <span class="badge fix" style="margin-left:4px;">⚡ 1 Fix Available</span>
+        <div class="gui-toolbar">
+          <div class="gui-toolbar-title">
+            <span class="gui-count">Scan Findings (2)</span>
+            <span class="badge crit">1 Critical</span>
+            <span class="badge high">1 High</span>
+            <span class="badge fix">1 Fix Available</span>
           </div>
-          <div style="display:flex;gap:8px;">
-            <button class="btn small primary" style="background:#132338;border-color:#2a4d7c;color:#70b8ff">💡 Suggest All Fixes (1)</button>
-            <button class="btn small success">⚡ Apply Selected Fixes</button>
+          <div class="gui-actions">
+            <button class="btn small primary" type="button" data-fix="yaml">Suggest All Fixes (1)</button>
+            <button class="btn small success" type="button" data-fix="yaml">Apply Selected Fixes</button>
           </div>
         </div>
 
-        <table class="gui-mock-table">
-          <thead>
-            <tr>
-              <th style="width:30px"><input type="checkbox" checked disabled></th>
-              <th>Severity</th>
-              <th>Rule ID</th>
-              <th>Location</th>
-              <th>Description</th>
-              <th style="text-align:right">Interactive Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><input type="checkbox" checked disabled></td>
-              <td><span class="badge high">high</span></td>
-              <td><code>python-yaml-unsafe-load</code></td>
-              <td><code>src/config.py:42</code></td>
-              <td>Unsafe <code>yaml.load()</code> allows arbitrary code execution.</td>
-              <td style="text-align:right">
-                <button class="btn small" style="background:#132338;border-color:#2a4d7c;color:#70b8ff">💡 Suggest fix</button>
-                <button class="btn small success">⚡ Apply</button>
-                <button class="btn small">Details</button>
-              </td>
-            </tr>
-            <tr>
-              <td><input type="checkbox" disabled></td>
-              <td><span class="badge crit">critical</span></td>
-              <td><code>gitleaks-aws-access-key</code></td>
-              <td><code>deploy/creds.py:12</code></td>
-              <td>Hardcoded AWS Access Key ID detected.</td>
-              <td style="text-align:right">
-                <button class="btn small" style="background:#132338;border-color:#2a4d7c;color:#70b8ff">💡 Remediation</button>
-                <button class="btn small">Suppress</button>
-                <button class="btn small">Details</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <div class="table-scroll">
+          <table class="gui-mock-table">
+            <thead>
+              <tr>
+                <th><span class="visually-hidden">Select</span><input type="checkbox" checked disabled aria-label="Select finding"></th>
+                <th>Severity</th>
+                <th>Rule ID</th>
+                <th>Location</th>
+                <th>Description</th>
+                <th style="text-align:right">Interactive Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td data-label="Selected"><input type="checkbox" checked disabled aria-label="Select finding"></td>
+                <td data-label="Severity"><span class="badge high">high</span></td>
+                <td data-label="Rule"><code>python-yaml-unsafe-load</code></td>
+                <td data-label="Location"><code>src/config.py:42</code></td>
+                <td data-label="Description" class="desc-cell">Unsafe <code>yaml.load()</code> allows arbitrary code execution.</td>
+                <td data-label="Actions" class="actions-cell">
+                  <div class="row-actions">
+                    <button class="btn small" type="button" data-fix="yaml">Suggest fix</button>
+                    <button class="btn small success" type="button" data-fix="yaml">Apply</button>
+                    <button class="btn small" type="button" data-fix="yaml">Details</button>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td data-label="Selected"><input type="checkbox" disabled aria-label="Select finding"></td>
+                <td data-label="Severity"><span class="badge crit">critical</span></td>
+                <td data-label="Rule"><code>gitleaks-aws-access-key</code></td>
+                <td data-label="Location"><code>deploy/creds.py:12</code></td>
+                <td data-label="Description" class="desc-cell">Hardcoded AWS Access Key ID detected.</td>
+                <td data-label="Actions" class="actions-cell">
+                  <div class="row-actions">
+                    <button class="btn small" type="button" data-fix="aws">Remediation</button>
+                    <button class="btn small" type="button" data-suppress>Suppress</button>
+                    <button class="btn small" type="button" data-fix="aws">Details</button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
-        <div style="margin-top:20px;text-align:center;">
-          <code style="background:#070b12;padding:8px 16px;border-radius:8px;border:1px solid var(--line);color:#38bdf8">
-            $ ./commit-guard gui
-          </code>
+        <div class="gui-command">
+          <code>$ ./commit-guard gui</code>
         </div>
       </div>
     </div>
@@ -459,42 +1105,52 @@ footer {
 <section id="cli" class="section">
   <div class="container">
     <div class="section-header">
+      <span class="eyebrow">04 &middot; CLI Reference</span>
       <h2>Command-Line Reference</h2>
       <p>Use the lightweight <code>./commit-guard</code> wrapper or invoke <code>main.py</code> directly.</p>
     </div>
 
-    <div class="features-grid">
-      <div class="feature-card">
+    <div class="cli-tools">
+      <label class="search">
+        <span class="visually-hidden">Filter CLI commands</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="search" id="cliSearch" placeholder="Filter commands&hellip; try &ldquo;fix&rdquo;, &ldquo;gui&rdquo;, &ldquo;pr&rdquo;" autocomplete="off">
+      </label>
+    </div>
+
+    <div class="cli-grid" id="cliGrid">
+      <div class="cli-card" data-keywords="scan staged manual threshold severity">
         <h3>Manual Staged Scan</h3>
-        <pre class="pre" style="margin-top:10px"><code>./commit-guard scan
+        <pre><code>./commit-guard scan
 ./commit-guard scan --threshold medium</code></pre>
       </div>
-      <div class="feature-card">
+      <div class="cli-card" data-keywords="fix autofix dry-run stage apply">
         <h3>1-Click Auto-Fix</h3>
-        <pre class="pre" style="margin-top:10px"><code>./commit-guard scan --fix --dry-run
+        <pre><code>./commit-guard scan --fix --dry-run
 ./commit-guard scan --fix</code></pre>
       </div>
-      <div class="feature-card">
+      <div class="cli-card" data-keywords="dep dependency graph blast radius mermaid">
         <h3>Dependency Blast-Radius</h3>
-        <pre class="pre" style="margin-top:10px"><code>./commit-guard scan --dep-graph
+        <pre><code>./commit-guard scan --dep-graph
 ./commit-guard scan --dep-graph-format all</code></pre>
       </div>
-      <div class="feature-card">
+      <div class="cli-card" data-keywords="gui web control center port localhost">
         <h3>Control Center Web GUI</h3>
-        <pre class="pre" style="margin-top:10px"><code>./commit-guard gui
+        <pre><code>./commit-guard gui
 ./commit-guard gui --port 8765</code></pre>
       </div>
-      <div class="feature-card">
+      <div class="cli-card" data-keywords="doctor status health repository diagnose">
         <h3>Repository Health Doctor</h3>
-        <pre class="pre" style="margin-top:10px"><code>./commit-guard doctor
+        <pre><code>./commit-guard doctor
 ./commit-guard status</code></pre>
       </div>
-      <div class="feature-card">
+      <div class="cli-card" data-keywords="pr pull request github create review automation">
         <h3>Pull Request Automation</h3>
-        <pre class="pre" style="margin-top:10px"><code>./commit-guard scan --create-pr
+        <pre><code>./commit-guard scan --create-pr
 ./commit-guard scan --review-pr</code></pre>
       </div>
     </div>
+    <p class="cli-empty" id="cliEmpty" hidden>No commands match that filter.</p>
   </div>
 </section>
 </main>
@@ -502,17 +1158,46 @@ footer {
 <!-- Footer -->
 <footer>
   <div class="container">
-    <p>
+    <nav class="footer-links" aria-label="Footer">
+      <a href="#install">Install</a>
+      <a href="#features">Features</a>
+      <a href="#control-center">Control Center</a>
+      <a href="#cli">CLI Reference</a>
+      <a href="https://github.com/CommitGuard-Sec/CommitGuard" target="_blank" rel="noopener noreferrer">GitHub</a>
+    </nav>
+    <p style="margin:0">
       CommitGuard is open source under the MIT License.<br>
       Developed with zero telemetry and 100% offline security in mind.
     </p>
-    <p style="color:#6ee7b7;font-weight:700">
-      Have a nice life far from hacking developer bro :) 😊
-    </p>
+    <p class="footer-sign">Have a nice life far from hacking developer&nbsp;bro&nbsp;:)&nbsp;&#128522;</p>
   </div>
 </footer>
 
-<div class="toast-notice" id="copyToast">Copied to clipboard! 📋</div>
+<div class="toast-notice" id="copyToast" role="status" aria-live="polite"></div>
+
+<!-- Fix preview modal -->
+<dialog class="fix-modal" id="fixModal" aria-labelledby="fixTitle">
+  <div class="fix-modal-head">
+    <div class="fix-modal-title">
+      <span class="badge high" id="fixSeverity">high</span>
+      <h3 id="fixTitle">Suggested fix</h3>
+    </div>
+    <button class="icon-btn" id="fixClose" type="button" aria-label="Close dialog">&times;</button>
+  </div>
+  <div class="fix-body">
+    <p id="fixWhy"></p>
+    <span class="fix-file" id="fixFile"></span>
+    <div class="diff" id="fixDiff" aria-label="Suggested code change"></div>
+    <div class="fix-note">
+      CommitGuard can apply this change and git-stage it automatically with
+      <code>./commit-guard scan --fix</code>.
+    </div>
+  </div>
+  <div class="fix-foot">
+    <button class="btn" id="fixDismiss" type="button">Close</button>
+    <button class="btn success" id="fixApply" type="button">Apply &amp; Stage Fix</button>
+  </div>
+</dialog>
 
 <script>
 const scripts = {
@@ -726,33 +1411,335 @@ exit /b %ERRORLEVEL%`
   }
 };
 
-let currentTab = 'sh';
+const $ = (sel, root = document) => root.querySelector(sel);
+const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+const COPY_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
 
+let currentTab = 'sh';
+let toastTimer;
+
+function showToast(message, kind = 'ok') {
+  const toast = $('#copyToast');
+  if (!toast) return;
+  toast.textContent = message;
+  toast.dataset.kind = kind;
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 2300);
+}
+
+async function copyText(text) {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch (err) { /* fall back below */ }
+  try {
+    const area = document.createElement('textarea');
+    area.value = text;
+    area.setAttribute('readonly', '');
+    area.style.position = 'fixed';
+    area.style.top = '-1000px';
+    area.style.opacity = '0';
+    document.body.appendChild(area);
+    area.select();
+    area.setSelectionRange(0, text.length);
+    const ok = document.execCommand('copy');
+    document.body.removeChild(area);
+    return ok;
+  } catch (err) {
+    return false;
+  }
+}
+
+function flashButton(button, ok) {
+  const label = button.querySelector('[data-label]');
+  if (!label) return;
+  if (!button.dataset.originalLabel) button.dataset.originalLabel = label.textContent;
+  if (ok) {
+    button.classList.add('copied');
+    label.textContent = 'Copied';
+  } else {
+    label.textContent = 'Retry';
+  }
+  setTimeout(() => {
+    button.classList.remove('copied');
+    label.textContent = button.dataset.originalLabel;
+  }, 1700);
+}
+
+async function copyWithFeedback(button, text, successMessage) {
+  const ok = await copyText(text);
+  flashButton(button, ok);
+  showToast(ok ? successMessage : 'Copy failed — select the text manually', ok ? 'ok' : 'error');
+}
+
+/* Installer tabs */
 function switchTab(type) {
+  if (!scripts[type]) return;
   currentTab = type;
-  document.querySelectorAll('.tab-btn').forEach((b, i) => {
-    b.classList.toggle('active', (type === 'sh' && i === 0) || (type === 'ps1' && i === 1) || (type === 'bat' && i === 2));
+  $$('.tab-btn').forEach((button) => {
+    const selected = button.dataset.tab === type;
+    button.classList.toggle('active', selected);
+    button.setAttribute('aria-selected', selected ? 'true' : 'false');
+    button.tabIndex = selected ? 0 : -1;
   });
   const data = scripts[type];
-  document.getElementById('scriptFileName').textContent = data.name;
-  document.getElementById('scriptCodeDisplay').textContent = data.code;
-  const dl = document.getElementById('downloadScriptBtn');
-  dl.href = data.download;
-  dl.download = data.name;
+  $('#scriptFileName').textContent = data.name;
+  $('#scriptCodeDisplay').textContent = data.code;
+  $('#scriptPanel').setAttribute('aria-labelledby', 'tab-' + type);
+  const download = $('#downloadScriptBtn');
+  download.href = data.download;
+  download.download = data.name;
 }
 
-function copyScriptCode() {
-  const code = scripts[currentTab].code;
-  navigator.clipboard.writeText(code).then(() => {
-    const toast = document.getElementById('copyToast');
-    toast.style.display = 'block';
-    setTimeout(() => { toast.style.display = 'none'; }, 2400);
+const tabButtons = $$('.tab-btn');
+tabButtons.forEach((button, index) => {
+  button.addEventListener('click', () => switchTab(button.dataset.tab));
+  button.addEventListener('keydown', (event) => {
+    const pressed = event.key;
+    if (!['ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(pressed)) return;
+    event.preventDefault();
+    let next = index;
+    switch (pressed) {
+      case 'ArrowRight': next = (index + 1) % tabButtons.length; break;
+      case 'ArrowLeft': next = (index - 1 + tabButtons.length) % tabButtons.length; break;
+      case 'Home': next = 0; break;
+      case 'End': next = tabButtons.length - 1; break;
+      default: break;
+    }
+    tabButtons[next].focus();
+    switchTab(tabButtons[next].dataset.tab);
+  });
+});
+
+$('#copyScriptBtn').addEventListener('click', (event) => {
+  const data = scripts[currentTab];
+  copyWithFeedback(event.currentTarget, data.code, 'Copied ' + data.name + ' to clipboard');
+});
+
+switchTab('sh');
+
+/* When hosted, keep displayed code in sync with the real downloadable scripts */
+Object.keys(scripts).forEach((key) => {
+  fetch(scripts[key].download)
+    .then((response) => (response.ok ? response.text() : Promise.reject(new Error('missing'))))
+    .then((text) => {
+      if (!text.trim()) return;
+      scripts[key].code = text;
+      if (currentTab === key) switchTab(key);
+    })
+    .catch(() => { /* offline or file:// — embedded copy stays in place */ });
+});
+
+/* Quick install copy buttons */
+$$('[data-copy]').forEach((button) => {
+  button.addEventListener('click', () => {
+    copyWithFeedback(button, button.getAttribute('data-copy'), 'Install command copied');
+  });
+});
+
+/* Copy buttons for every CLI code block */
+$$('.cli-card pre').forEach((pre) => {
+  const wrap = document.createElement('div');
+  wrap.className = 'code-wrap';
+  pre.parentNode.insertBefore(wrap, pre);
+  wrap.appendChild(pre);
+
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'copy-btn code-copy';
+  button.setAttribute('aria-label', 'Copy command');
+  button.innerHTML = COPY_ICON + '<span data-label>Copy</span>';
+  button.addEventListener('click', () => {
+    const code = pre.querySelector('code');
+    copyWithFeedback(button, (code || pre).textContent, 'Command copied to clipboard');
+  });
+  pre.closest('.cli-card').appendChild(button);
+});
+
+/* Mobile navigation drawer */
+const drawer = $('#drawer');
+const menuBtn = $('#menuBtn');
+const drawerClose = $('#drawerClose');
+const drawerBackdrop = $('#drawerBackdrop');
+
+function getFocusable(container) {
+  return $$('a[href], button:not([disabled]), input, [tabindex]:not([tabindex="-1"])', container)
+    .filter((el) => el.offsetParent !== null);
+}
+
+function openNav() {
+  document.body.classList.add('nav-open');
+  menuBtn.setAttribute('aria-expanded', 'true');
+  menuBtn.setAttribute('aria-label', 'Close menu');
+  drawer.inert = false;
+  drawer.setAttribute('aria-hidden', 'false');
+  setTimeout(() => {
+    const firstLink = drawer.querySelector('.drawer-link');
+    if (firstLink) firstLink.focus();
+  }, 60);
+}
+
+function closeNav(returnFocus = true) {
+  document.body.classList.remove('nav-open');
+  menuBtn.setAttribute('aria-expanded', 'false');
+  menuBtn.setAttribute('aria-label', 'Open menu');
+  drawer.inert = true;
+  drawer.setAttribute('aria-hidden', 'true');
+  if (returnFocus) menuBtn.focus();
+}
+
+menuBtn.addEventListener('click', () => {
+  if (document.body.classList.contains('nav-open')) closeNav();
+  else openNav();
+});
+drawerClose.addEventListener('click', () => closeNav());
+drawerBackdrop.addEventListener('click', () => closeNav());
+$$('#drawer .drawer-link, #drawer .btn').forEach((link) => {
+  link.addEventListener('click', () => closeNav(false));
+});
+drawer.addEventListener('keydown', (event) => {
+  if (event.key !== 'Tab' || !document.body.classList.contains('nav-open')) return;
+  const focusable = getFocusable(drawer);
+  if (!focusable.length) return;
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
+});
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && document.body.classList.contains('nav-open')) closeNav();
+});
+window.addEventListener('resize', () => {
+  if (window.innerWidth > 900 && document.body.classList.contains('nav-open')) closeNav(false);
+});
+
+/* Scroll progress + active nav link */
+const scrollProgress = $('#scrollProgress');
+const siteNav = $('#siteNav');
+const sectionEls = $$('main section[id]');
+
+function onScroll() {
+  const y = window.scrollY;
+  const max = document.documentElement.scrollHeight - window.innerHeight;
+  scrollProgress.style.width = (max > 0 ? (y / max) * 100 : 0) + '%';
+  siteNav.classList.toggle('scrolled', y > 8);
+
+  let current = '';
+  sectionEls.forEach((section) => {
+    if (section.getBoundingClientRect().top <= 140) current = section.id;
+  });
+  $$('[data-nav]').forEach((link) => {
+    const active = current !== '' && link.dataset.nav === current;
+    link.classList.toggle('active', active);
+    if (active) link.setAttribute('aria-current', 'page');
+    else link.removeAttribute('aria-current');
   });
 }
+window.addEventListener('scroll', onScroll, { passive: true });
+window.addEventListener('resize', onScroll);
+onScroll();
 
-// Initialize
-switchTab('sh');
+/* CLI filter */
+const searchInput = $('#cliSearch');
+const cliCards = $$('.cli-card');
+const cliEmpty = $('#cliEmpty');
+
+searchInput.addEventListener('input', () => {
+  const query = searchInput.value.trim().toLowerCase();
+  let visible = 0;
+  cliCards.forEach((card) => {
+    const haystack = ((card.dataset.keywords || '') + ' ' + card.textContent).toLowerCase();
+    const match = !query || haystack.includes(query);
+    card.hidden = !match;
+    if (match) visible += 1;
+  });
+  cliEmpty.hidden = visible > 0;
+});
+
+/* Fix preview modal */
+const fixes = {
+  yaml: {
+    title: 'Unsafe YAML deserialization',
+    severity: 'high',
+    file: 'src/config.py:42',
+    why: 'yaml.load() can construct arbitrary Python objects from untrusted input, which enables remote code execution. yaml.safe_load() only resolves primitive types.',
+    lines: [
+      { k: 'ctx', t: '40  def load_config(path):' },
+      { k: 'ctx', t: '41      with open(path, "r") as f:' },
+      { k: 'del', t: '42          return yaml.load(f)' },
+      { k: 'add', t: '42          return yaml.safe_load(f)' },
+      { k: 'ctx', t: '43  ' }
+    ]
+  },
+  aws: {
+    title: 'Hardcoded AWS access key',
+    severity: 'critical',
+    file: 'deploy/creds.py:12',
+    why: 'A live credential is embedded in source control. Move the value into an environment variable or secret manager, then rotate the exposed key.',
+    lines: [
+      { k: 'ctx', t: '10  import os' },
+      { k: 'ctx', t: '11  ' },
+      { k: 'del', t: '12  AWS_ACCESS_KEY_ID = "AKIAIOSFODNN7EXAMPLE"' },
+      { k: 'add', t: '12  AWS_ACCESS_KEY_ID = os.environ["AWS_ACCESS_KEY_ID"]' },
+      { k: 'ctx', t: '13  ' }
+    ]
+  }
+};
+
+const fixModal = $('#fixModal');
+
+function openFix(id) {
+  const data = fixes[id];
+  if (!data || typeof fixModal.showModal !== 'function') return;
+  $('#fixTitle').textContent = data.title;
+  $('#fixWhy').textContent = data.why;
+  $('#fixFile').textContent = data.file;
+  const severity = $('#fixSeverity');
+  severity.textContent = data.severity;
+  severity.className = 'badge ' + (data.severity === 'critical' ? 'crit' : 'high');
+
+  const diff = $('#fixDiff');
+  diff.replaceChildren();
+  data.lines.forEach((line) => {
+    const row = document.createElement('div');
+    row.className = 'diff-line ' + line.k;
+    const sign = document.createElement('span');
+    sign.className = 'sign';
+    sign.textContent = line.k === 'del' ? '-' : line.k === 'add' ? '+' : ' ';
+    const text = document.createElement('span');
+    text.textContent = line.t;
+    row.append(sign, text);
+    diff.appendChild(row);
+  });
+
+  fixModal.showModal();
+}
+
+$$('[data-fix]').forEach((button) => {
+  button.addEventListener('click', () => openFix(button.getAttribute('data-fix')));
+});
+
+$$('[data-suppress]').forEach((button) => {
+  button.addEventListener('click', () => showToast('Finding suppressed for this branch'));
+});
+
+$('#fixClose').addEventListener('click', () => fixModal.close());
+$('#fixDismiss').addEventListener('click', () => fixModal.close());
+$('#fixApply').addEventListener('click', () => {
+  fixModal.close();
+  showToast('Fix applied and staged — ready to commit');
+});
+fixModal.addEventListener('click', (event) => {
+  if (event.target === fixModal) fixModal.close();
+});
 </script>
 </body>
 </html>
-
