@@ -5,7 +5,7 @@
 # redistribution. Run `python -m unittest tests.test_provenance` after changing
 # a rule file or adding a pack.
 schema_version: 1
-updated: 2026-10-26
+updated: 2026-10-28
 checksum_algorithm: sha256
 policy:
   release_rule: "Only sources with status 'cleared' and redistribution 'allowed' may ship in a release artifact."
@@ -104,6 +104,41 @@ sources:
       - path: rules/semgrep_rules/semgrep_yaml.yaml
         sha256: 310de0255faab0c23d956ecd38340b4732be310e482177275406a4b685dc83f7
 
+  - id: microsoft-devskim-default-rules
+    kind: third-party-rule-pack
+    status: cleared
+    project: Microsoft DevSkim
+    source_url: https://github.com/microsoft/DevSkim
+    source_path: rules/default
+    revision: bd81f6967d84b3ef1dbce9e466dc28e124f56289
+    retrieved: 2026-10-28
+    license: MIT
+    license_url: https://github.com/microsoft/DevSkim/blob/main/LICENSE.txt
+    license_file: rules/general/devskim/LICENSE.txt
+    redistribution: allowed
+    bundled_default: true
+    notes: >-
+      Converted from DevSkim's default JSON rule pack into CommitGuard's native
+      regex format by scripts/fetch_general_rules.py. Conditional/expression
+      rules, language exclusions, structured path matchers, duplicate IDs, and
+      regex constructs unsupported by Python's re are intentionally skipped.
+      Re-run the pinned converter to reproduce these files.
+    files:
+      - path: rules/general/devskim/api.yaml
+        sha256: bf49395b52e29244503af50f7a29c1da64f4aec8f81052951f02b1c9518db9e9
+      - path: rules/general/devskim/correctness.yaml
+        sha256: aa32b6b89cba2bbcb2c874af76a40590c4aa6f76be776263be9d08c73dcc3a38
+      - path: rules/general/devskim/crypto.yaml
+        sha256: f22fedd65fa46990f8f840ac80f24d7334ff0fdda1471c352d452464fbb57a60
+      - path: rules/general/devskim/platform.yaml
+        sha256: ea96d4c12fa9ba2a56c71fc449056d172e157fd5931550584250d7d83cc2504a
+      - path: rules/general/devskim/supplychain.yaml
+        sha256: 6d463300dea091c4b348b36540fc843ee343d34087d2a99013cdc645c229b95c
+      - path: rules/general/devskim/tls.yaml
+        sha256: 64c0dd38650ce287cb5cd1d26d74f1fc4944e027155286672b144a60dc574992
+      - path: rules/general/devskim/web.yaml
+        sha256: e241affcc695cebedda64d779a85acd95d29ec2ba8415d9581f37b8a52b8bced
+
   - id: owasp-crs-sqli-942
     kind: third-party-rule-pack
     status: reference-only
@@ -155,9 +190,21 @@ sources:
       - path: rules/ai_security/rules.yaml
         sha256: 8b70755fe235b5eefd0ab6cedb4ab3e1faf61b2f73a3096edad3c27774100819
       - path: rules/iac/rules.yaml
-        sha256: 21bd1af87ffb2aaae66c532c8f10d178789487874f4436b2ec119ac69ec51f8b
+        sha256: ddf57e216621a5b021a46dbca7528c4788b0734134014e4ae31373f013e6c2ac
+      - path: rules/general/web.yaml
+        sha256: 04d3c91d6d23a21c34a111ead0fc63c1ddaf390af5be2088d142a5a057ee45ac
+      - path: rules/general/authz.yaml
+        sha256: 32ce9c8e49dcce3c434e10cdbd395393e637d12f0f01a51f55814c34d974a321
+      - path: rules/general/deserialization.yaml
+        sha256: 72e6b93629b04dba6f079644b134c14632444140eaeb177c2159961f6c598399
+      - path: rules/general/supply_chain.yaml
+        sha256: 78698166f7109c2eecf2a986c35c489f157360de824f83021222de26b16a5c87
+      - path: rules/general/web2.yaml
+        sha256: a9f50909ffbda5356c748cc8e963b2e47e15652f290749b6ad88bd1ea9992063
+      - path: rules/general/ai_agent.yaml
+        sha256: 81c284702abd78d5f7c5f6fb0f7cfbe998af9f282d978e4d284f5971a250a135
       - path: rules/corpus.yaml
-        sha256: 739a438794699c5f9c0c191dfda6a0dc2f8cd437a4ef4a03373b60acf9a15481
+        sha256: 9324c659b49fa1443d5f12506bef0706ffb1a19d80f88badb4f42d22f2751cc6
         notes: Positive/negative samples for check-rules; not a detection pack.
       - path: rules/nuclei_generic_key.yaml
         sha256: 6d5ae7e2e6f1d204f0dd761a021067f3249c818cc9517cab83011f696b5e0366

@@ -12,7 +12,8 @@ rules, and how to test them.
 |---|---|---|---|
 | gitleaks | `rules/gitleaks.toml` | 220+ | Secrets, entropy, keywords, per-rule allowlists. |
 | Semgrep regex | `rules/semgrep_rules/*.yaml` | 60+ | Language-scoped regex SAST patterns. Release-blocked: local development only, excluded from packages. |
-| Commit Guard native | `rules/custom_rules.yaml`, `rules/ai_security/`, `rules/iac/`, `rules/custom/**` | 120+ | Curated language, framework, CI, Kubernetes, Terraform, Docker, and configuration checks. |
+| Commit Guard native | `rules/custom_rules.yaml`, `rules/ai_security/`, `rules/iac/`, `rules/general/*.yaml`, `rules/custom/**` | 170+ | Curated language, framework, CI, Kubernetes, Terraform, Docker, web, authz, and configuration checks. |
+| DevSkim general | `rules/general/devskim/*.yaml` | 115 | MIT-licensed language/framework checks converted from a pinned upstream revision. |
 | Python AST taint | Built into `core/ast_taint.py` | 2 | Intraprocedural request/input-to-SQL and shell checks; no extra parser dependency. |
 | nuclei | `rules/nuclei_generic_key.yaml` | 2+ | Regex file templates for exposed credentials. |
 | Experimental | `rules/experimental/**` | not loaded | Reference packs kept for study/opt-in. |
@@ -85,13 +86,16 @@ Override any rule without editing upstream packs:
 
 ## Native rule format
 
-Put project rules in `rules/custom_rules.yaml` or any `rules/custom/*.yaml`:
+Put project rules in `rules/custom_rules.yaml`, `rules/general/*.yaml`, or any
+`rules/custom/*.yaml`:
 
 ```yaml
 rules:
   - id: cg-no-insecure-random
     description: Python's random module is not cryptographically secure.
     severity: medium
+    category: sast
+    confidence: medium
     languages: [python]
     paths: ["src/**"]              # optional globs; empty = all files
     tags: [crypto]
@@ -106,8 +110,11 @@ rules:
 | `id` | yes | Stable unique identifier shown in reports/suppressions. |
 | `description` | recommended | Human-readable explanation. |
 | `severity` | no | Defaults to `medium`. |
+| `category` | no | Reporting category (`sast`, `web`, `authz`, `logic`, `race`, `supply-chain`, `secret`, `dependency`, `iac`, `container`, `license`, `quality`). |
+| `confidence` | no | `high`, `medium`, or `low`; used to distinguish direct sinks from review prompts. Defaults to `medium`. |
+| `source` | no | Provenance label shown in reports. Defaults to `custom`. |
 | `regex` / `pattern` | yes | Python `re` pattern applied per line. |
-| `languages` | no | Semgrep-style language names (`python`, `javascript`, `dockerfile`, `yaml`, ...). Empty = every file. |
+| `languages` | no | Semgrep-style language names (`python`, `javascript`, `dockerfile`, `yaml`, ...) or filename tokens (`dotenv`, `pip-requirements`, `packages-config`, `csproj`, `config`). Empty = every file. |
 | `paths` | no | Glob list restricting the rule to matching repo paths. |
 | `tags` | no | Free-form labels included in reports/SARIF. |
 | `cwe` | no | CWE identifier included in reports/SARIF. |

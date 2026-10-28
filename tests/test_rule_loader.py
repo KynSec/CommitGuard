@@ -184,6 +184,9 @@ class RuleLoaderTests(unittest.TestCase):
             "  - id: fix-tls\n"
             "    description: fix tls\n"
             "    severity: medium\n"
+            "    source: packaged\n"
+            "    category: web\n"
+            "    confidence: low\n"
             "    regex: 'verify=False'\n"
             "    fix_pattern: 'verify\\s*=\\s*False'\n"
             "    fix_replacement: 'verify=True'\n"
@@ -195,6 +198,9 @@ class RuleLoaderTests(unittest.TestCase):
             self.assertIsNotNone(fix.fix_pattern)
             self.assertTrue(fix.fix_pattern.search("verify=False"))
             self.assertEqual(fix.fix_replacement, "verify=True")
+            self.assertEqual(fix.source, "packaged")
+            self.assertEqual(fix.category, "web")
+            self.assertEqual(fix.confidence, "low")
 
     def test_invalid_custom_severity_is_skipped(self):
         (self.rules_dir / "custom_rules.yaml").write_text(

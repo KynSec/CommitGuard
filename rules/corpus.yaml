@@ -520,3 +520,253 @@ samples:
     path: Dockerfile
     positive: 'COPY .env /app/.env'
     negative: 'COPY .env.example /app/.env.example'
+
+  - rule_id: cg-web-ssrf-request-url
+    path: app.py
+    positive: 'requests.get(request.args.get("url"))'
+    negative: 'requests.get("https://api.example.com/health")'
+
+  - rule_id: cg-web-open-redirect-untrusted
+    path: app.py
+    positive: 'redirect(request.args["next"])'
+    negative: 'redirect("/dashboard")'
+
+  - rule_id: cg-web-ssti-user-template
+    path: app.py
+    positive: 'render_template_string(request.args["t"])'
+    negative: 'render_template_string("Hello {{ name }}")'
+
+  - rule_id: cg-web-nosql-injection-request-body
+    path: app.js
+    positive: 'db.users.find({ username: req.body.username })'
+    negative: 'db.users.find({ username: String(req.body.username) })'
+
+  - rule_id: cg-web-xxe-python-php
+    path: app.py
+    positive: 'parser = etree.XMLParser(resolve_entities=True)'
+    negative: 'parser = etree.XMLParser(resolve_entities=False)'
+
+  - rule_id: cg-web-cookie-missing-secure
+    path: app.py
+    positive: 'Set-Cookie: session=abc; Path=/' # commit-guard-ignore
+    negative: 'Set-Cookie: session=abc; Secure; HttpOnly; Path=/'
+
+  - rule_id: cg-authz-mass-assignment-kwargs
+    path: app.py
+    positive: 'User.objects.create(**request.POST)'
+    negative: 'User.objects.create(username=request.POST["username"])'
+
+  - rule_id: cg-authz-mass-assignment-node
+    path: app.js
+    positive: 'Object.assign(user, req.body)'
+    negative: 'Object.assign(user, { name: req.body.name })'
+
+  - rule_id: cg-authz-role-from-request
+    path: app.py
+    positive: 'role = request.POST.get("role")'
+    negative: 'role = "member"'
+
+  - rule_id: cg-authz-jwt-no-expiry-option
+    path: app.js
+    positive: 'jwt.sign(payload, secret)'
+    negative: 'jwt.sign(payload, secret, { expiresIn: "1h" })'
+
+  - rule_id: cg-deser-python-torch-load
+    path: app.py
+    positive: 'torch.load(model_path)'
+    negative: 'torch.load(model_path, weights_only=True)'
+
+  - rule_id: cg-deser-python-joblib-load
+    path: app.py
+    positive: 'joblib.load(model_path)'
+    negative: 'json.load(open(model_path))'
+
+  - rule_id: cg-deser-python-numpy-allow-pickle
+    path: app.py
+    positive: 'np.load(path, allow_pickle=True)'
+    negative: 'np.load(path, allow_pickle=False)'
+
+  - rule_id: cg-supply-gha-write-all
+    path: .github/workflows/ci.yml
+    positive: 'permissions: write-all'
+    negative: 'permissions: read-all'
+
+  - rule_id: cg-web-xss-template-render-string
+    path: app.py
+    positive: 'html = render_template_string("<h1>" + request.args["name"] + "</h1>")'
+    negative: 'html = render_template("index.html", name=request.args["name"])'
+
+  - rule_id: cg-web-xss-django-mark-safe
+    path: views.py
+    positive: 'rendered = mark_safe(request.GET["content"])'
+    negative: 'rendered = escape(request.GET["content"])'
+
+  - rule_id: cg-web-xss-express-res-send
+    path: server.js
+    positive: 'res.send(`<h1>Hello ${req.query.name}</h1>`)'
+    negative: 'res.json({ name: req.query.name })'
+
+  - rule_id: cg-csrf-django-insecure-cookie
+    path: settings.py
+    positive: 'SESSION_COOKIE_SECURE = False'
+    negative: 'SESSION_COOKIE_SECURE = True'
+
+  - rule_id: cg-csrf-express-insecure-cookie
+    path: app.js
+    positive: 'res.cookie("session", id, { secure: false })'
+    negative: 'res.cookie("session", id, { secure: true })'
+
+  - rule_id: cg-csrf-rails-skip-verification
+    path: app/controllers/api_controller.rb
+    positive: 'skip_before_action :verify_authenticity_token'
+    negative: 'protect_from_forgery with: :exception'
+
+  - rule_id: cg-csrf-spring-disable
+    path: SecurityConfig.java
+    positive: 'http.csrf().disable()'
+    negative: 'http.csrf()'
+
+  - rule_id: cg-jwt-decode-verify-false
+    path: auth.py
+    positive: 'jwt.decode(token, key, verify=False)'
+    negative: 'jwt.decode(token, key, algorithms=["HS256"])'
+
+  - rule_id: cg-jwt-options-no-verify
+    path: auth.js
+    positive: 'const payload = jwt.decode(token, { verify_signature: false });'
+    negative: 'const payload = jwt.verify(token, secret);'
+
+  - rule_id: cg-injection-ldap-query
+    path: ldap_auth.py
+    positive: 'ldap.search("(uid=" + request.args["user"] + ")")'
+    negative: 'ldap.search_s(base_dn, ldap.SCOPE_SUBTREE, filter_escaped)'
+
+  - rule_id: cg-injection-crlf-header
+    path: server.js
+    positive: 'res.setHeader("X-Custom", req.query.customHeader)'
+    negative: 'res.setHeader("X-Custom", "safe-constant")'
+
+  - rule_id: cg-injection-log-forging
+    path: controller.py
+    positive: 'logger.info("Login attempt for: " + request.args["user"])'
+    negative: 'logger.info("Login attempt received")'
+
+  - rule_id: cg-java-path-traversal-get
+    path: FileHandler.java
+    positive: 'Path p = Paths.get(request.getParameter("path"));'
+    negative: 'Path p = basePath.resolve("safe.txt");'
+
+  - rule_id: cg-dotnet-file-read-request
+    path: Controller.cs
+    positive: 'string text = File.ReadAllText(Request.QueryString["file"]);'
+    negative: 'string text = File.ReadAllText("safe.txt");'
+
+  - rule_id: cg-go-file-read-request
+    path: handler.go
+    positive: 'data, _ := os.ReadFile(r.URL.Query().Get("file"))'
+    negative: 'data, _ := os.ReadFile("safe.txt")'
+
+  - rule_id: cg-graphql-introspection-enabled
+    path: graphql.js
+    positive: 'const server = new ApolloServer({ typeDefs, resolvers, introspection: true });'
+    negative: 'const server = new ApolloServer({ typeDefs, resolvers, introspection: false });'
+
+  - rule_id: cg-graphql-batching-abuse
+    path: server.js
+    positive: 'const server = new ApolloServer({ allowBatchedHttpRequests: true });'
+    negative: 'const server = new ApolloServer({ allowBatchedHttpRequests: false });'
+
+  - rule_id: cg-crypto-static-iv
+    path: crypto.py
+    positive: 'iv = b"0000000000000000"'
+    negative: 'iv = os.urandom(16)'
+
+  - rule_id: cg-crypto-ecb-mode
+    path: cipher.py
+    positive: 'cipher = AES.new(key, AES.MODE_ECB)'
+    negative: 'cipher = AES.new(key, AES.MODE_GCM, nonce=nonce)'
+
+  - rule_id: cg-ai-llm-output-to-exec
+    path: ai_runner.py
+    positive: 'exec(response.content)'
+    negative: 'print(response.content)'
+
+  - rule_id: cg-ai-llm-output-to-shell
+    path: ai_tools.py
+    positive: 'subprocess.run(response.content, shell=True)'
+    negative: 'subprocess.run(["echo", response.content], shell=False)'
+
+  - rule_id: cg-ai-llm-output-to-sql
+    path: query_gen.py
+    positive: 'cursor.execute(llm_sql)'
+    negative: 'cursor.execute("SELECT * FROM table WHERE id = ?", (param,))'
+
+  - rule_id: cg-ai-agent-wildcard-tools
+    path: agent.py
+    positive: 'agent = create_agent(tools=["*"])'
+    negative: 'agent = create_agent(tools=[calculator_tool])'
+
+  - rule_id: cg-ai-rag-user-controlled-path
+    path: rag.py
+    positive: 'loader = TextLoader(request.args.get("doc"))'
+    negative: 'loader = TextLoader("knowledge_base.txt")'
+
+  - rule_id: cg-secret-logging-credentials
+    path: auth.py
+    positive: 'logger.info("User logged in with password: " + user.password)'
+    negative: 'logger.info("User login attempt successful")'
+
+  - rule_id: cg-sentry-send-default-pii
+    path: config.py
+    positive: 'sentry_sdk.init(dsn="...", send_default_pii=True)'
+    negative: 'sentry_sdk.init(dsn="...", send_default_pii=False)'
+
+  - rule_id: cg-supply-gha-unpinned-action
+    path: .github/workflows/deploy.yml
+    positive: 'uses: actions/checkout@main'
+    negative: 'uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11'
+
+  - rule_id: cg-supply-pip-trusted-host
+    path: requirements.txt
+    positive: 'pip install --trusted-host pypi.org requests'
+    negative: 'pip install requests'
+
+  - rule_id: cg-supply-git-insecure-http
+    path: requirements.txt
+    positive: 'my-pkg @ git+http://github.com/org/repo.git'
+    negative: 'my-pkg @ git+https://github.com/org/repo.git'
+
+  - rule_id: cg-tf-ebs-unencrypted
+    path: storage.tf
+    positive: 'encrypted = false'
+    negative: 'encrypted = true'
+
+  - rule_id: cg-docker-curl-pipe-bash
+    path: Dockerfile
+    positive: 'RUN curl -fsSL https://get.example.com | bash'
+    negative: 'RUN curl -fsSL https://get.example.com -o script.sh'
+
+  - rule_id: cg-supply-gha-expression-injection
+    path: .github/workflows/notify.yml
+    positive: 'run: echo "New Issue: ${{ github.event.issue.title }}"'
+    negative: 'run: echo "New Issue created"'
+
+  - rule_id: cg-supply-gha-untrusted-checkout
+    path: .github/workflows/pr.yml
+    positive: 'ref: ${{ github.event.pull_request.head.sha }}'
+    negative: 'ref: ${{ github.event.pull_request.base.sha }}'
+
+  - rule_id: cg-supply-staged-large-binary
+    path: app.py
+    positive: 'DATA_FILE = "dataset.sqlite"'
+    negative: 'DATA_FILE = "dataset.json"'
+
+  - rule_id: cg-ai-unbounded-max-tokens
+    path: llm_client.py
+    positive: 'response = client.chat.completions.create(max_tokens=None)'
+    negative: 'response = client.chat.completions.create(max_tokens=1024)'
+
+  - rule_id: cg-ai-vector-db-pollution
+    path: retriever.py
+    positive: 'vector_store.add_documents(request.json["documents"])'
+    negative: 'vector_store.add_documents(validated_documents)'

@@ -56,7 +56,7 @@ class ScanContext:
     detect_ignore_file: bool = True
     deadline_at: float | None = None
     workers: int = 1
-    engine_timeout: float = 30.0
+    engine_timeout: float = 120.0
     options: dict[str, object] = field(default_factory=dict)
 
     @property

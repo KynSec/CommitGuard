@@ -7,6 +7,7 @@ file upwards so line numbers remain stable, then modified files are staged.
 
 from __future__ import annotations
 
+import difflib
 import re
 import subprocess
 from dataclasses import dataclass, field
@@ -148,3 +149,69 @@ def apply_fixes(
         fixed_fingerprints=fixed_fingerprints,
         dry_run=dry_run,
     )
+
+
+def generate_remediation_patch(
+    repo_root: Path,
+    findings: list[Finding],
+    rules: tuple[Rule, ...] | list[Rule],
+) -> str:
+    """Generates a standard Git unified diff patch string containing all applicable auto-fixes.
+
+    Developers can save this string to `commit_guard_remediation.patch` and run:
+        git apply commit_guard_remediation.patch
+    """
+    root = Path(repo_root).resolve()
+    rules_by_id = {
+        rule.rule_id: rule
+        for rule in rules
+        if rule.fix_pattern and rule.fix_replacement is not None
+    }
+    grouped: dict[str, list[Finding]] = {}
+    for finding in findings:
+        rule = rules_by_id.get(finding.rule_id)
+        if rule is None or rule.is_secret:
+            continue
+        grouped.setdefault(finding.file, []).append(finding)
+
+    patch_chunks: list[str] = []
+    for relative, file_findings in sorted(grouped.items()):
+        try:
+            path = _safe_path(root, relative)
+            original_text = path.read_text(encoding="utf-8")
+        except (AutoFixError, OSError, UnicodeDecodeError):
+            continue
+
+        original_lines = original_text.splitlines(keepends=True)
+        modified_lines = list(original_lines)
+
+        for finding in sorted(
+            file_findings,
+            key=lambda item: (item.line_number, item.rule_id),
+            reverse=True,
+        ):
+            rule = rules_by_id[finding.rule_id]
+            index = finding.line_number - 1
+            if index < 0 or index >= len(modified_lines):
+                continue
+            before = modified_lines[index]
+            fix_pattern = rule.fix_pattern
+            fix_replacement = rule.fix_replacement
+            if fix_pattern is None or fix_replacement is None:
+                continue
+            try:
+                after = fix_pattern.sub(fix_replacement, before, count=1)
+                modified_lines[index] = after
+            except (re.error, IndexError):
+                continue
+
+        if modified_lines != original_lines:
+            diff = difflib.unified_diff(
+                original_lines,
+                modified_lines,
+                fromfile=f"a/{relative}",
+                tofile=f"b/{relative}",
+            )
+            patch_chunks.append("".join(diff))
+
+    return "\n".join(chunk.strip() for chunk in patch_chunks if chunk.strip()) + ("\n" if patch_chunks else "")

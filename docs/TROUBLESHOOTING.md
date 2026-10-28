@@ -128,7 +128,7 @@ Commit Guard requires Python 3.11+ because it uses the standard-library
 ## `No usable rules were loaded`
 
 - Confirm `.commit_guard/rules/` exists and is non-empty.
-- Check that `gitleaks.toml`, `custom_rules.yaml`,
+- Check that `gitleaks.toml`, `custom_rules.yaml`, `general/**/*.yaml`,
   `nuclei_generic_key.yaml`, and/or `semgrep_rules/*.yaml` are readable.
 - Run with `--verbose-rules` to see per-rule parse errors.
 - Reinstall/update the engine to restore the bundled packs.

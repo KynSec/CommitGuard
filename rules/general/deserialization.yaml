@@ -1,0 +1,170 @@
+# Project-authored checks for unsafe deserialization and dangerous library APIs.
+rules:
+  - id: cg-deser-python-torch-load
+    description: torch.load() can execute arbitrary code unless weights_only=True is used.
+    severity: high
+    category: sast
+    confidence: high
+    languages: [python]
+    tags: [deserialization, machine-learning, cwe-502]
+    cwe: CWE-502
+    regex: '\btorch\.load\s*\((?![^)\n]*\bweights_only\s*=\s*True\b)'
+
+  - id: cg-deser-python-joblib-load
+    description: joblib.load() deserializes pickle data and can execute arbitrary code.
+    severity: high
+    category: sast
+    confidence: high
+    languages: [python]
+    tags: [deserialization, machine-learning, cwe-502]
+    cwe: CWE-502
+    regex: '\bjoblib\.load\s*\('
+
+  - id: cg-deser-python-numpy-allow-pickle
+    description: numpy.load(allow_pickle=True) can execute arbitrary code from an untrusted array file.
+    severity: high
+    category: sast
+    confidence: high
+    languages: [python]
+    tags: [deserialization, machine-learning, cwe-502]
+    cwe: CWE-502
+    regex: '\b(?:numpy|np)\.load\s*\([^)\n]*\ballow_pickle\s*=\s*True\b'
+
+  - id: cg-deser-python-pandas-read-pickle
+    description: pandas.read_pickle() deserializes pickle data and can execute arbitrary code.
+    severity: high
+    category: sast
+    confidence: high
+    languages: [python]
+    tags: [deserialization, machine-learning, cwe-502]
+    cwe: CWE-502
+    regex: '\bpandas\.read_pickle\s*\(|\bpd\.read_pickle\s*\('
+
+  - id: cg-deser-python-dill-load
+    description: dill.load() deserializes arbitrary Python objects and can execute code.
+    severity: high
+    category: sast
+    confidence: high
+    languages: [python]
+    tags: [deserialization, cwe-502]
+    cwe: CWE-502
+    regex: '\bdill\.loads?\s*\('
+
+  - id: cg-deser-dotnet-binaryformatter
+    description: BinaryFormatter deserialization is unsafe for untrusted data and can execute code.
+    severity: critical
+    category: sast
+    confidence: high
+    languages: [csharp, fsharp, vb]
+    tags: [deserialization, dotnet, cwe-502]
+    cwe: CWE-502
+    regex: '\b(?:BinaryFormatter|LosFormatter|ObjectStateFormatter)\b'
+
+  - id: cg-deser-java-xstream-fromxml
+    description: XStream.fromXML() deserializes untrusted XML into arbitrary objects.
+    severity: high
+    category: sast
+    confidence: high
+    languages: [java]
+    tags: [deserialization, java, cwe-502]
+    cwe: CWE-502
+    regex: '\bXStream\b[^\n]*\.fromXML\s*\(|\bnew\s+XStream\s*\('
+
+  - id: cg-deser-java-xmldecoder
+    description: XMLDecoder deserializes XML into arbitrary Java objects.
+    severity: high
+    category: sast
+    confidence: high
+    languages: [java]
+    tags: [deserialization, java, cwe-502]
+    cwe: CWE-502
+    regex: '\bnew\s+XMLDecoder\s*\('
+
+  - id: cg-deser-java-snakeyaml-default
+    description: SnakeYAML's default Yaml constructor can instantiate arbitrary classes.
+    severity: high
+    category: sast
+    confidence: medium
+    languages: [java]
+    tags: [deserialization, java, yaml, cwe-502]
+    cwe: CWE-502
+    regex: '\bnew\s+Yaml\s*\(\s*\)'
+
+  - id: cg-deser-java-expression-eval
+    description: User-controlled expression is evaluated with SpEL or GroovyShell.
+    severity: high
+    category: sast
+    confidence: medium
+    languages: [java]
+    tags: [deserialization, java, code-injection, needs-review]
+    cwe: CWE-917
+    regex: '(?i)(?:\.parseExpression|\.evaluate)\s*\(\s*(?:request\.|req\.|\$_)'
+
+  - id: cg-deser-java-invoker-transformer
+    description: Apache Commons Collections InvokerTransformer is a classic gadget-chain primitive.
+    severity: high
+    category: sast
+    confidence: high
+    languages: [java]
+    tags: [deserialization, java, gadget-chain]
+    cwe: CWE-502
+    regex: '\bInvokerTransformer\b|\bTransformedMap\b'
+
+  - id: cg-deser-node-vm-untrusted
+    description: Node's vm module is used with request-controlled code or data.
+    severity: high
+    category: sast
+    confidence: medium
+    languages: [javascript, typescript]
+    tags: [deserialization, node, code-injection, needs-review]
+    cwe: CWE-94
+    regex: '(?i)\bvm\.(?:runInNewContext|runInThisContext|runInContext|compileFunction)\s*\(\s*(?:req\.|request\.|\$_)|\bnew\s+VM\s*\('
+
+  - id: cg-deser-prototype-pollution-merge
+    description: Request data is merged into an object with a prototype-pollution-prone merge helper.
+    severity: high
+    category: sast
+    confidence: medium
+    languages: [javascript, typescript]
+    tags: [prototype-pollution, node, needs-review]
+    cwe: CWE-1321
+    regex: '(?i)\b(?:lodash\.)?(?:merge|mergeWith|defaultsDeep|set)\s*\(\s*[^,\n]+,\s*(?:req\.(?:body|query|params)|request\.body)'
+
+  - id: cg-deser-log4j-jndi
+    description: A Log4j JNDI lookup pattern is present (Log4Shell-style injection).
+    severity: critical
+    category: sast
+    confidence: high
+    tags: [log4j, jndi, injection]
+    cwe: CWE-917
+    regex: '\$\{jndi:'
+
+  - id: cg-deser-fastjson-autotype
+    description: Fastjson autoType support is enabled, allowing dangerous class instantiation.
+    severity: critical
+    category: sast
+    confidence: high
+    languages: [java]
+    tags: [fastjson, deserialization, java]
+    cwe: CWE-502
+    regex: '(?i)\bsetAutoTypeSupport\s*\(\s*true\s*\)|\bautoTypeSupport\s*[:=]\s*true\b'
+
+  - id: cg-deser-pil-decompression-bomb
+    description: Pillow's decompression-bomb protection is disabled.
+    severity: medium
+    category: sast
+    confidence: high
+    languages: [python]
+    tags: [image, denial-of-service]
+    cwe: CWE-400
+    regex: '\bImage\.MAX_IMAGE_PIXELS\s*=\s*None\b'
+
+  - id: cg-deser-user-controlled-regex
+    description: Request data is compiled as a regular expression (ReDoS risk).
+    severity: medium
+    category: sast
+    confidence: medium
+    languages: [python, javascript, typescript]
+    tags: [redos, denial-of-service, needs-review]
+    cwe: CWE-1333
+    regex: '(?i)\bre\.compile\s*\(\s*(?:request\.|req\.|\$_)|\bnew\s+RegExp\s*\(\s*(?:req\.|request\.|\$_)'

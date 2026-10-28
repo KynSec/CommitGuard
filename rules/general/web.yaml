@@ -1,0 +1,139 @@
+# Project-authored general web checks. These complement the downloaded DevSkim
+# pack and the language-specific rules in rules/custom_rules.yaml.
+rules:
+  - id: cg-web-ssrf-request-url
+    description: Request-controlled input is passed directly to an outbound HTTP client (SSRF).
+    severity: high
+    category: web
+    confidence: medium
+    languages: [python, javascript, typescript, php]
+    tags: [web, ssrf, owasp-a10]
+    cwe: CWE-918
+    regex: '(?i)\b(?:requests|httpx|session)\.(?:get|post|put|patch|delete|request)\s*\(\s*(?:request\.(?:args|form|json|values|GET|POST|data)|req\.(?:query|body|params)|input\s*\(|\$_(?:GET|POST|REQUEST))'
+
+  - id: cg-web-ssrf-fetch-request-url
+    description: Browser or Node HTTP client is called with a request-controlled URL (SSRF).
+    severity: high
+    category: web
+    confidence: medium
+    languages: [javascript, typescript]
+    tags: [web, ssrf, owasp-a10]
+    cwe: CWE-918
+    regex: '(?i)\b(?:fetch|axios\.(?:get|post|put|patch|delete)|got\.(?:get|post))\s*\(\s*(?:req\.(?:query|body|params)|request\.)'
+
+  - id: cg-web-ssrf-go-request-url
+    description: Go HTTP client uses a URL or form value taken from the request (SSRF).
+    severity: high
+    category: web
+    confidence: medium
+    languages: [go]
+    tags: [web, ssrf]
+    cwe: CWE-918
+    regex: '\b(?:http\.Get|http\.Post|http\.NewRequest)\s*\([^)]*(?:r\.URL\.Query\(\)|r\.FormValue|r\.PostFormValue)'
+
+  - id: cg-web-path-traversal-request-path
+    description: Request-controlled path is passed to a file API without a visible traversal guard.
+    severity: high
+    category: web
+    confidence: medium
+    languages: [python, php]
+    tags: [web, path-traversal, owasp-a01]
+    cwe: CWE-22
+    regex: '(?i)\b(?:open|send_file|send_from_directory)\s*\(\s*(?:request\.(?:args|form|values|GET|POST|data|json)|input\s*\(|\$_(?:GET|POST|REQUEST))'
+
+  - id: cg-web-path-traversal-node-fs
+    description: Node file API uses a request-controlled path without a visible traversal guard.
+    severity: high
+    category: web
+    confidence: medium
+    languages: [javascript, typescript]
+    tags: [web, path-traversal, owasp-a01]
+    cwe: CWE-22
+    regex: '(?i)\bfs\.(?:readFile|readFileSync|createReadStream|writeFile|writeFileSync|unlink|unlinkSync)\s*\(\s*(?:req\.(?:query|params|body)|path\.join\([^)]*req\.)'
+
+  - id: cg-web-open-redirect-untrusted
+    description: Redirect target is taken directly from request data (open redirect).
+    severity: medium
+    category: web
+    confidence: medium
+    languages: [python, javascript, typescript, php, ruby]
+    tags: [web, open-redirect]
+    cwe: CWE-601
+    regex: '(?i)\b(?:redirect|HttpResponseRedirect|res\.redirect|redirect_to)\s*\(\s*(?:request\.|req\.|\$_(?:GET|POST|REQUEST)|params\[)'
+
+  - id: cg-web-ssti-user-template
+    description: User-controlled data is rendered as a template (server-side template injection).
+    severity: high
+    category: web
+    confidence: medium
+    languages: [python, javascript, typescript, php, ruby]
+    tags: [web, ssti, template]
+    cwe: CWE-1336
+    regex: '(?i)\b(?:render_template_string|Template|ejs\.render|Handlebars\.compile|twig->render|render\s+inline:)\s*\(\s*(?:request\.|req\.|\$_(?:GET|POST|REQUEST)|params\[)'
+
+  - id: cg-web-nosql-injection-request-body
+    description: MongoDB query operator or document is built directly from request data (NoSQL injection).
+    severity: high
+    category: web
+    confidence: medium
+    languages: [javascript, typescript, python]
+    tags: [web, nosql, injection]
+    cwe: CWE-943
+    regex: '(?i)\$where\b|\b(?:find|findOne|findById|updateOne|updateMany|deleteOne|deleteMany)\s*\(\s*\{[^}]*\b(?:username|email|user|id)\b\s*:\s*(?:req\.(?:body|query|params)|request\.(?:POST|GET|data|json)|\$_(?:GET|POST|REQUEST))'
+
+  - id: cg-web-xxe-python-php
+    description: XML parser is configured to resolve external entities (XXE).
+    severity: high
+    category: web
+    confidence: high
+    languages: [python, php]
+    tags: [web, xxe, xml]
+    cwe: CWE-611
+    regex: '(?i)\b(?:resolve_entities|load_dtd)\s*=\s*True\b|\bno_network\s*=\s*False\b|libxml_disable_entity_loader\s*\(\s*(?:false|0)\s*\)'
+
+  - id: cg-web-xxe-java-insecure-feature
+    description: Java XML parser feature enables DTDs or external entities (XXE).
+    severity: high
+    category: web
+    confidence: medium
+    languages: [java]
+    tags: [web, xxe, xml]
+    cwe: CWE-611
+    regex: '(?i)\bsetFeature\s*\([^)]*(?:external-general-entities|external-parameter-entities|disallow-doctype-decl)[^)]*(?:true|false)\s*\)'
+
+  - id: cg-web-cors-credentials-wildcard
+    description: CORS allows any origin while also allowing credentials.
+    severity: high
+    category: web
+    confidence: high
+    tags: [web, cors, misconfiguration]
+    cwe: CWE-942
+    regex: '(?i)(?=[^\n]*access-control-allow-origin\s*[:=]\s*[\x27"]?\*)(?=[^\n]*access-control-allow-credentials\s*[:=]\s*[\x27"]?true)'
+
+  - id: cg-web-cookie-missing-secure
+    description: A session-like cookie is set without the Secure attribute.
+    severity: medium
+    category: web
+    confidence: medium
+    tags: [web, cookie, session]
+    cwe: CWE-614
+    regex: '(?i)set-cookie(?=[^\n]*(?:session|token|auth))(?:(?!\bsecure\b).)*$'
+
+  - id: cg-web-cookie-missing-httponly
+    description: A session-like cookie is set without the HttpOnly attribute.
+    severity: medium
+    category: web
+    confidence: medium
+    tags: [web, cookie, session]
+    cwe: CWE-1004
+    regex: '(?i)set-cookie(?=[^\n]*(?:session|token|auth))(?:(?!\bhttponly\b).)*$'
+
+  - id: cg-web-file-upload-untrusted-name
+    description: Uploaded file name is used for a filesystem operation without visible validation.
+    severity: medium
+    category: web
+    confidence: low
+    languages: [python, javascript, typescript, php]
+    tags: [web, file-upload, needs-review]
+    cwe: CWE-434
+    regex: '(?i)\b(?:filename|file\.name|upload\.name|originalname)\b[^\n]*(?:save|rename|writeFile|move_uploaded_file)\s*\('

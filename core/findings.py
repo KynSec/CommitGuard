@@ -26,6 +26,11 @@ CATEGORIES = (
     "container",
     "license",
     "quality",
+    "web",
+    "authz",
+    "logic",
+    "race",
+    "supply-chain",
     "unknown",
 )
 _ENGINES = ("regex", "ast", "semgrep", "sca", "ingest", "unknown")
@@ -44,6 +49,15 @@ _SECRET_MARKERS = (
     "cwe-259",
     "cwe-321",
 )
+_SUPPLY_CHAIN_MARKERS = (
+    "supply-chain",
+    "supplychain",
+    "dependency-confusion",
+    "install-script",
+    "github-actions",
+    "cwe-506",
+    "cwe-829",
+)
 _DEPENDENCY_MARKERS = (
     "dependency",
     "vulnerable package",
@@ -54,7 +68,48 @@ _DEPENDENCY_MARKERS = (
     "npm-audit",
     "snyk",
     "dependabot",
+    "typosquat",
+    "malicious package",
 )
+_WEB_MARKERS = (
+    "web",
+    "ssrf",
+    "xss",
+    "csrf",
+    "xxe",
+    "open-redirect",
+    "open redirect",
+    "cors",
+    "cwe-79",
+    "cwe-601",
+    "cwe-611",
+    "cwe-918",
+    "cwe-942",
+    "cwe-1336",
+    "cwe-943",
+)
+_AUTHZ_MARKERS = (
+    "authz",
+    "authorization",
+    "access-control",
+    "access control",
+    "idor",
+    "privilege",
+    "cwe-269",
+    "cwe-285",
+    "cwe-639",
+    "cwe-862",
+    "cwe-863",
+    "cwe-915",
+)
+_LOGIC_MARKERS = (
+    "business-logic",
+    "business logic",
+    "logic",
+    "payment",
+    "cwe-840",
+)
+_RACE_MARKERS = ("race", "toctou", "cwe-367")
 _IAC_MARKERS = ("iac", "terraform", "kubernetes", "checkov", "cloudformation", "helm")
 _CONTAINER_MARKERS = ("container", "docker", "image", "trivy", "grype")
 _LICENSE_MARKERS = ("license", "copyleft")
@@ -170,6 +225,8 @@ def infer_category(
     ).lower()
     if any(marker in text for marker in _SECRET_MARKERS):
         return "secret"
+    if any(marker in text for marker in _SUPPLY_CHAIN_MARKERS):
+        return "supply-chain"
     if fixed_versions or any(marker in text for marker in _DEPENDENCY_MARKERS):
         return "dependency"
     if any(marker in text for marker in _CONTAINER_MARKERS):
@@ -182,6 +239,14 @@ def infer_category(
         return "license"
     if any(marker in text for marker in _QUALITY_MARKERS):
         return "quality"
+    if any(marker in text for marker in _AUTHZ_MARKERS):
+        return "authz"
+    if any(marker in text for marker in _LOGIC_MARKERS):
+        return "logic"
+    if any(marker in text for marker in _RACE_MARKERS):
+        return "race"
+    if any(marker in text for marker in _WEB_MARKERS):
+        return "web"
     return "sast"
 
 

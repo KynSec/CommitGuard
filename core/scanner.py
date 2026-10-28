@@ -207,6 +207,13 @@ class Finding:
             return self.flagged_code
         return self.redacted_code
 
+    @property
+    def risk_priority(self) -> float:
+        """Calculates dynamic risk priority score (0.0 to 100.0)."""
+        from core.scoring import score_finding_priority
+
+        return score_finding_priority(self)
+
 
 def _truncate(text: str, limit: int = _MAX_FLAGGED_SNIPPET_LEN) -> str:
     stripped = text.strip()
@@ -475,11 +482,20 @@ def scan_diff(
 
                 flagged = _truncate(diff_line.code_content)
                 redacted = flagged
+                finding_confidence = rule.confidence
                 if rule.is_secret:
                     mask_start, mask_end = _redaction_span(match, rule.secret_group)
                     redacted = _truncate(
                         redact_span(diff_line.code_content, mask_start, mask_end)
                     )
+                    from core.scoring import calculate_secret_score
+                    secret_score = calculate_secret_score(secret)
+                    if secret_score >= 0.70:
+                        finding_confidence = "high"
+                    elif secret_score >= 0.35:
+                        finding_confidence = "medium"
+                    else:
+                        finding_confidence = "low"
 
                 findings.append(
                     Finding(
@@ -494,6 +510,8 @@ def scan_diff(
                         fingerprint=_fingerprint(rule.rule_id, file_path, diff_line.code_content),
                         tags=rule.tags,
                         cwe=rule.cwe,
+                        category=rule.category,
+                        confidence=finding_confidence,
                     )
                 )
                 matches += 1
@@ -521,6 +539,11 @@ def has_blocking_findings(
 def sort_findings_by_severity(findings: list[Finding]) -> list[Finding]:
     """Returns findings sorted most-severe-first, stable on discovery order."""
     return sorted(findings, key=lambda f: SEVERITY_ORDER.get(f.severity, 0), reverse=True)
+
+
+def sort_findings_by_risk_priority(findings: list[Finding]) -> list[Finding]:
+    """Returns findings sorted by risk priority score (highest first)."""
+    return sorted(findings, key=lambda f: f.risk_priority, reverse=True)
 
 
 def apply_report_allowlist(

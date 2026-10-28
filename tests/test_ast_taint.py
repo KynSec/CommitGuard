@@ -126,6 +126,52 @@ class PythonAstTaintTests(unittest.TestCase):
         result = scan_python_taint({"app.js": ["eval(input)"]}, {"app.js": {1}})
         self.assertEqual(result, result.__class__())
 
+    def test_request_value_flow_to_ssrf_sink(self):
+        result = self.scan(
+            "def fetch(request):\n"
+            "    target = request.args.get('url')\n"
+            "    requests.get(target)\n",
+            {3},
+        )
+        self.assertEqual(len(result.matches), 1)
+        self.assertEqual(result.matches[0].finding.rule_id, "cg-python-ast-ssrf-taint")
+        self.assertEqual(result.matches[0].finding.cwe, "CWE-918")
+
+    def test_request_value_flow_to_path_traversal_sink(self):
+        result = self.scan(
+            "def read_user_file(request):\n"
+            "    filename = request.form['path']\n"
+            "    with open(filename, 'r') as f:\n"
+            "        return f.read()\n",
+            {3},
+        )
+        self.assertEqual(len(result.matches), 1)
+        self.assertEqual(result.matches[0].finding.rule_id, "cg-python-ast-path-traversal-taint")
+        self.assertEqual(result.matches[0].finding.cwe, "CWE-22")
+
+    def test_request_value_flow_to_xss_sink(self):
+        result = self.scan(
+            "def render_greeting(request):\n"
+            "    name = request.args.get('name')\n"
+            "    return render_template_string('<h1>' + name + '</h1>')\n",
+            {3},
+        )
+        self.assertEqual(len(result.matches), 1)
+        self.assertEqual(result.matches[0].finding.rule_id, "cg-python-ast-xss-taint")
+        self.assertEqual(result.matches[0].finding.cwe, "CWE-79")
+
+    def test_llm_output_flow_to_code_exec_sink(self):
+        result = self.scan(
+            "def execute_ai(llm_client, prompt):\n"
+            "    response = llm_client.invoke(prompt)\n"
+            "    code = response.content\n"
+            "    exec(code)\n",
+            {4},
+        )
+        self.assertEqual(len(result.matches), 1)
+        self.assertEqual(result.matches[0].finding.rule_id, "cg-python-ast-llm-code-exec-taint")
+        self.assertEqual(result.matches[0].finding.cwe, "CWE-95")
+
 
 if __name__ == "__main__":
     unittest.main()

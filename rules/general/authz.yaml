@@ -1,0 +1,106 @@
+# Project-authored authorization, business-logic, and race-condition heuristics.
+# These are intentionally low/medium confidence: use them as review prompts, not
+# as proof of a vulnerability.
+rules:
+  - id: cg-authz-mass-assignment-kwargs
+    description: Request data is expanded into a model constructor or update (mass assignment).
+    severity: medium
+    category: authz
+    confidence: medium
+    languages: [python]
+    tags: [authz, mass-assignment, owasp-a01, needs-review]
+    cwe: CWE-915
+    regex: '(?i)\b(?:[A-Z]\w*|\w+_model|model)\.?(?:objects\.)?(?:create|update)?\s*\([^)\n]*\*\*\s*(?:request\.(?:POST|GET|data|json|body)|req\.(?:body|query|params)|input\s*\()'
+
+  - id: cg-authz-mass-assignment-node
+    description: Request body is merged or assigned into an object without an allowlist (mass assignment).
+    severity: medium
+    category: authz
+    confidence: medium
+    languages: [javascript, typescript]
+    tags: [authz, mass-assignment, owasp-a01, needs-review]
+    cwe: CWE-915
+    regex: '(?i)(?:Object\.assign|\.\.\.)\s*\(?[^\n]*\b(?:req\.body|request\.body)\b(?![.\w])|\b(?:user|account|profile|model|doc|document)\s*\.\s*(?:set|update)\s*\(\s*req\.body'
+
+  - id: cg-authz-mass-assignment-laravel
+    description: All request fields are passed to a model update or create call (mass assignment).
+    severity: medium
+    category: authz
+    confidence: medium
+    languages: [php]
+    tags: [authz, mass-assignment, laravel, needs-review]
+    cwe: CWE-915
+    regex: '(?i)\b(?:update|create|fill|forceFill)\s*\(\s*\$request->all\s*\(\s*\)'
+
+  - id: cg-authz-mass-assignment-rails
+    description: Rails strong parameters are bypassed with permit! (mass assignment).
+    severity: high
+    category: authz
+    confidence: high
+    languages: [ruby]
+    tags: [authz, mass-assignment, rails]
+    cwe: CWE-915
+    regex: '\.permit!\b'
+
+  - id: cg-authz-role-from-request
+    description: A role, admin flag, or permission is assigned from request data.
+    severity: medium
+    category: authz
+    confidence: low
+    languages: [python, javascript, typescript, php, ruby]
+    tags: [authz, privilege-escalation, needs-review]
+    cwe: CWE-269
+    regex: '(?i)\b(?:role|is_?admin|is_?staff|is_?superuser|permissions?|privileges?)\s*[:=]\s*(?:request\.(?:POST|GET|data|json|body)|req\.(?:body|query|params)|params\[|\$_(?:GET|POST|REQUEST))'
+
+  - id: cg-authz-price-quantity-from-request
+    description: A price, amount, quantity, or discount is trusted directly from request data.
+    severity: medium
+    category: logic
+    confidence: low
+    languages: [python, javascript, typescript, php, ruby]
+    tags: [logic, business-logic, payment, needs-review]
+    cwe: CWE-840
+    regex: '(?i)\b(?:price|unit_price|amount|total|quantity|discount|status)\s*[:=]\s*(?:request\.(?:POST|GET|data|json|body)|req\.(?:body|query|params)|params\[|\$_(?:GET|POST|REQUEST))'
+
+  - id: cg-authz-object-lookup-request-id
+    description: ORM object lookup uses an identifier taken from the request (possible IDOR).
+    severity: medium
+    category: authz
+    confidence: low
+    languages: [python, javascript, typescript, php, ruby]
+    tags: [authz, idor, owasp-a01, needs-review]
+    cwe: CWE-639
+    regex: '(?i)\b(?:get_object_or_404|objects\.(?:get|filter)|findById|findOne|findUnique|findFirst|\.find)\s*\([^)\n]*(?:\b(?:pk|id|uuid|key)\b\s*[=:]|\{\s*(?:id|_id|pk)\b)[^)\n]*(?:request\.(?:GET|POST|args|params|data|json)|req\.(?:params|query|body)|\$_(?:GET|POST|REQUEST)|params\[)'
+
+  - id: cg-authz-race-check-then-act
+    description: A check-then-act sequence follows an existence check without a visible transaction or lock.
+    severity: medium
+    category: race
+    confidence: low
+    languages: [python, javascript, typescript, ruby]
+    tags: [race, toctou, needs-review]
+    cwe: CWE-367
+    regex: '(?i)\b(?:os\.path\.exists|path\.exists|\.exists\s*\(|\.count\s*\(|\.findOne\s*\()'
+    context:
+      after: 6
+      regex: '(?i)\b(?:open|write|create|save|insert|update|delete|unlink|remove)\s*\('
+
+  - id: cg-authz-timing-unsafe-token-compare
+    description: A token or signature is compared with a non-constant-time equality operator.
+    severity: medium
+    category: authz
+    confidence: medium
+    languages: [python, javascript, typescript]
+    tags: [authz, timing, cryptography]
+    cwe: CWE-208
+    regex: '(?i)\b(?:token|signature|hmac|digest|secret|nonce)\w*\s*={2,3}\s*(?!(?:hmac\.compare_digest|secrets\.compare_digest|crypto\.timingSafeEqual))'
+
+  - id: cg-authz-jwt-no-expiry-option
+    description: JWT encoding does not appear to set an expiration in the same call.
+    severity: low
+    category: authz
+    confidence: low
+    languages: [javascript, typescript]
+    tags: [authz, jwt, session, needs-review]
+    cwe: CWE-613
+    regex: '(?i)\bjwt\.sign\s*\((?![^)\n]*\b(?:expiresIn|exp)\b)[^)\n]*\)'

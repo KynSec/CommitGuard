@@ -31,6 +31,19 @@ has been reviewed and the entry is marked `cleared`.
   case-insensitive flag to the whole alternation. The change is recorded in
   `rules/PROVENANCE.yaml`.
 
+### Microsoft DevSkim default rules
+
+- Project: https://github.com/microsoft/DevSkim
+- Source: `rules/default` at commit
+  `bd81f6967d84b3ef1dbce9e466dc28e124f56289`
+- Files: `rules/general/devskim/*.yaml`
+- License: MIT; the upstream license text is bundled at
+  `rules/general/devskim/LICENSE.txt`
+- Use: broad language and framework security checks
+- Conversion: `scripts/fetch_general_rules.py` converts only the regex-compatible
+  subset. Rules requiring DevSkim's structured analyzers are omitted rather than
+  approximated.
+
 ### Semgrep rules
 
 - Project: https://github.com/semgrep/semgrep-rules
@@ -73,6 +86,10 @@ The following packs are original project work under Apache-2.0:
 - `rules/custom_rules.yaml`
 - `rules/ai_security/rules.yaml`
 - `rules/iac/rules.yaml`
+- `rules/general/web.yaml`
+- `rules/general/authz.yaml`
+- `rules/general/deserialization.yaml`
+- `rules/general/supply_chain.yaml`
 - `rules/corpus.yaml`
 - `rules/nuclei_generic_key.yaml`
 

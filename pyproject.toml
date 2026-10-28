@@ -48,7 +48,7 @@ include-package-data = true
 version = {attr = "core.__version__"}
 
 [tool.setuptools.package-data]
-rules = ["*.toml", "*.yaml", "*.yml", "**/*.toml", "**/*.yaml", "**/*.yml"]
+rules = ["*.toml", "*.yaml", "*.yml", "**/*.toml", "**/*.yaml", "**/*.yml", "**/*.txt"]
 
 [tool.setuptools.exclude-package-data]
 # Semgrep Rules License v1.0 forbids redistribution. The packs stay in the

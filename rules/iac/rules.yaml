@@ -206,3 +206,26 @@ rules:
     tags: [docker, iac, secret]
     cwe: CWE-798
     regex: '(?i)^\s*(?:COPY|ADD)\s+[^\n]*(?:\.env(?!\.(?:example|sample|template))|id_[re]sa|\.pem\b|credentials|secrets?\.(?:json|ya?ml|txt))'
+
+  - id: cg-tf-ebs-unencrypted
+    description: Terraform storage volume (EBS/Disk) encryption is explicitly set to false.
+    severity: high
+    category: iac
+    confidence: high
+    languages: [terraform]
+    paths: ["**/*.tf"]
+    tags: [terraform, iac, encryption]
+    cwe: CWE-311
+    regex: '(?i)\bencrypted\s*=\s*false\b'
+    fix_pattern: '(?i)\bencrypted\s*=\s*false\b'
+    fix_replacement: 'encrypted = true'
+
+  - id: cg-docker-curl-pipe-bash
+    description: Dockerfile executes a downloaded remote script directly via curl pipe bash.
+    severity: high
+    category: iac
+    confidence: high
+    languages: [dockerfile]
+    tags: [docker, iac, supply-chain]
+    cwe: CWE-494
+    regex: '(?i)\bcurl\s+[^\n|]+\|\s*(?:bash|sh)\b'

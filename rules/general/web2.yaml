@@ -1,0 +1,332 @@
+# High-value web application security rules:
+# Server-side XSS, CSRF/session, JWT, Injection breadth (LDAP, XPath, CRLF, Log, CSV),
+# Java/.NET/Go file APIs, GraphQL, and Cryptography.
+
+rules:
+  # ---------------------------------------------------------------------------
+  # Server-side XSS
+  # ---------------------------------------------------------------------------
+  - id: cg-web-xss-template-render-string
+    description: Server-side template rendering from user input can lead to XSS or template injection.
+    severity: high
+    category: web
+    confidence: high
+    languages: [python]
+    tags: [web, xss, ssti, owasp-a03]
+    cwe: CWE-79
+    regex: '(?i)\brender_template_string\s*\(\s*(?:f["\x27]|["\x27][^"\x27]*["\x27]\s*\+|request\.(?:args|form|values|GET|POST)|req\.)'
+
+  - id: cg-web-xss-django-mark-safe
+    description: mark_safe() called with request input bypasses HTML escaping and leads to XSS.
+    severity: high
+    category: web
+    confidence: high
+    languages: [python]
+    tags: [web, xss, django, owasp-a03]
+    cwe: CWE-79
+    regex: '(?i)\bmark_safe\s*\(\s*(?:request\.(?:GET|POST|data|body)|f["\x27][^"\x27]*\{[^}\n]*request)'
+
+  - id: cg-web-xss-express-res-send
+    description: Express res.send() directly reflects unescaped user parameters as HTML.
+    severity: medium
+    category: web
+    confidence: medium
+    languages: [javascript, typescript]
+    tags: [web, xss, express, node, owasp-a03]
+    cwe: CWE-79
+    regex: '(?i)\bres\.(?:send|write)\s*\(\s*(?:req\.(?:query|params|body)|`[^`]*\$\{req\.)'
+
+  - id: cg-web-xss-java-response-writer
+    description: Java servlet response writer outputs unsanitized request parameter.
+    severity: high
+    category: web
+    confidence: medium
+    languages: [java]
+    tags: [web, xss, java, servlet, owasp-a03]
+    cwe: CWE-79
+    regex: '(?i)\b(?:response\.getWriter\(\)\.(?:write|print(?:ln)?)|out\.print(?:ln)?)\s*\(\s*(?:request\.getParameter|req\.getParameter)'
+
+  - id: cg-web-xss-php-echo-request
+    description: Direct output of unescaped PHP superglobals leads to XSS.
+    severity: high
+    category: web
+    confidence: medium
+    languages: [php]
+    tags: [web, xss, php, owasp-a03]
+    cwe: CWE-79
+    regex: '(?i)\b(?:echo|print)\s+(?:\$_GET|\$_POST|\$_REQUEST)\[[^\]]+\]'
+
+  - id: cg-web-xss-rails-raw-params
+    description: Rails raw() or html_safe called on request parameters creates an XSS vulnerability.
+    severity: high
+    category: web
+    confidence: high
+    languages: [ruby]
+    tags: [web, xss, rails, owasp-a03]
+    cwe: CWE-79
+    regex: '(?i)\b(?:raw\s*\(?\s*params\[|params\[[^\]]+\]\.html_safe\b)'
+
+  # ---------------------------------------------------------------------------
+  # CSRF / Session Security
+  # ---------------------------------------------------------------------------
+  - id: cg-csrf-django-insecure-cookie
+    description: Django cookie security flags are disabled, risking cookie theft or CSRF.
+    severity: high
+    category: web
+    confidence: high
+    languages: [python]
+    tags: [csrf, session, django, owasp-a05]
+    cwe: CWE-614
+    regex: '(?i)^\s*(?:SESSION_COOKIE_SECURE|CSRF_COOKIE_SECURE|SESSION_COOKIE_HTTPONLY)\s*=\s*False\b'
+
+  - id: cg-csrf-express-insecure-cookie
+    description: Express session cookie secure flag is explicitly disabled.
+    severity: high
+    category: web
+    confidence: high
+    languages: [javascript, typescript]
+    tags: [csrf, session, express, owasp-a05]
+    cwe: CWE-614
+    regex: '(?i)\bcookie\s*:\s*\{[^}]*\bsecure\s*:\s*false\b|\bres\.cookie\s*\([^)\n]*\{\s*secure\s*:\s*false'
+
+  - id: cg-csrf-rails-skip-verification
+    description: Rails CSRF token verification is globally or controller-level skipped.
+    severity: high
+    category: web
+    confidence: high
+    languages: [ruby]
+    tags: [csrf, rails, owasp-a01]
+    cwe: CWE-352
+    regex: '\bskip_before_action\s+:verify_authenticity_token\b'
+
+  - id: cg-csrf-laravel-except-route
+    description: Laravel CSRF middleware exemption list contains overly permissive wildcards or routes.
+    severity: medium
+    category: web
+    confidence: medium
+    languages: [php]
+    tags: [csrf, laravel, owasp-a01]
+    cwe: CWE-352
+    regex: 'protected\s+\$except\s*=\s*\[[^\]]*["\x27]\*["\x27]'
+
+  - id: cg-csrf-spring-disable
+    description: Spring Security CSRF protection is explicitly disabled.
+    severity: high
+    category: web
+    confidence: high
+    languages: [java, kotlin]
+    tags: [csrf, spring, owasp-a01]
+    cwe: CWE-352
+    regex: '(?i)\.csrf\s*\(\s*\)\s*\.disable\s*\(\s*\)|csrf\s*->\s*csrf\.disable\s*\(\s*\)'
+
+  # ---------------------------------------------------------------------------
+  # JWT / Session Handling
+  # ---------------------------------------------------------------------------
+  - id: cg-jwt-decode-verify-false
+    description: JWT signature verification is disabled (verify=False), allowing token forgery.
+    severity: critical
+    category: authz
+    confidence: high
+    languages: [python, javascript, typescript]
+    tags: [jwt, authz, owasp-a07]
+    cwe: CWE-347
+    regex: '(?i)\bjwt\.decode\s*\([^)\n]*\bverify\s*=\s*False\b|\bverify_signature\s*["\x27]?\s*:\s*False\b'
+
+  - id: cg-jwt-options-no-verify
+    description: JWT verification options explicitly disable signature or expiration verification.
+    severity: critical
+    category: authz
+    confidence: high
+    languages: [python, javascript, typescript]
+    tags: [jwt, authz, owasp-a07]
+    cwe: CWE-347
+    regex: '(?i)["\x27]?(?:verify_signature|verify_exp)["\x27]?\s*:\s*(?:False|false)\b'
+
+  - id: cg-session-samesite-none-insecure
+    description: Cookie SameSite is set to None without the mandatory Secure attribute.
+    severity: medium
+    category: web
+    confidence: high
+    languages: [python, javascript, typescript, php]
+    tags: [session, csrf, cookie]
+    cwe: CWE-1275
+    regex: '(?i)\bSameSite\s*=\s*None\b(?!.*(?i:Secure))|\bsameSite\s*:\s*["\x27]none["\x27]\s*,\s*(?!.*secure\s*:\s*true)'
+
+  - id: cg-session-fixation-missing-regenerate
+    description: Session fixation risk - session data assigned on login without regenerating session ID.
+    severity: medium
+    category: authz
+    confidence: low
+    languages: [python, javascript, typescript]
+    tags: [session, fixation, authz]
+    cwe: CWE-384
+    regex: '(?i)\b(?:req\.session|session)\[["\x27](?:user|user_id|auth|authenticated)["\x27]\]\s*=\s*'
+    context:
+      after: 8
+      regex: '(?i)\bregenerate\b'
+
+  # ---------------------------------------------------------------------------
+  # Injection Breadth (LDAP, XPath, CRLF, Log, CSV formula)
+  # ---------------------------------------------------------------------------
+  - id: cg-injection-ldap-query
+    description: LDAP search filter built with string concatenation from user input.
+    severity: high
+    category: sast
+    confidence: medium
+    languages: [python, java, csharp]
+    tags: [ldap, injection, owasp-a03]
+    cwe: CWE-90
+    regex: '(?i)\b(?:ldap\.search|DirectorySearcher|ldapsearch)\s*\([^)\n]*(?:\+|f["\x27]|String\.format|\.format\()'
+
+  - id: cg-injection-xpath-query
+    description: XPath expression built using untrusted string formatting or concatenation.
+    severity: high
+    category: sast
+    confidence: medium
+    languages: [python, java, csharp, javascript]
+    tags: [xpath, injection, owasp-a03]
+    cwe: CWE-643
+    regex: '(?i)\b(?:xpath|evaluate|SelectNodes|SelectSingleNode)\s*\([^)\n]*(?:\+|f["\x27]|String\.format|\.format\()'
+
+  - id: cg-injection-crlf-header
+    description: HTTP response header value incorporates unvalidated user parameters (CRLF injection).
+    severity: high
+    category: web
+    confidence: medium
+    languages: [python, java, javascript, typescript, csharp]
+    tags: [crlf, header-injection, web, owasp-a03]
+    cwe: CWE-113
+    regex: '(?i)\b(?:setHeader|addHeader)\s*\([^)\n]*,\s*(?:req\.(?:query|params|body)|request\.(?:GET|POST|args)|input\()|(?i)\bresponse\.headers\[[^\]]+\]\s*=\s*(?:req\.|request\.)'
+
+  - id: cg-injection-log-forging
+    description: User-controlled input written directly into application logs allows log forging/injection.
+    severity: medium
+    category: sast
+    confidence: low
+    languages: [python, java, javascript, typescript]
+    tags: [log-injection, logging, owasp-a09]
+    cwe: CWE-117
+    regex: '(?i)\b(?:logger\.(?:info|error|warn|debug)|console\.log)\s*\([^)\n]*(?:req\.(?:query|body|params)|request\.(?:GET|POST|args|data))'
+
+  - id: cg-injection-csv-formula
+    description: Unsanitized field exported into CSV could trigger formula injection (=, +, -, @).
+    severity: medium
+    category: sast
+    confidence: low
+    languages: [python, javascript, typescript, php, ruby]
+    tags: [csv, formula-injection, export]
+    cwe: CWE-1236
+    regex: '(?i)\b(?:csv\.writer|to_csv|csvWriter|stringify)\s*\([^)\n]*(?:user|input|request|record)'
+
+  # ---------------------------------------------------------------------------
+  # Java / .NET / Go File APIs
+  # ---------------------------------------------------------------------------
+  - id: cg-java-path-traversal-get
+    description: Java Paths.get or Path.of uses request parameter without normalization.
+    severity: high
+    category: web
+    confidence: high
+    languages: [java]
+    tags: [path-traversal, java, owasp-a01]
+    cwe: CWE-22
+    regex: '(?i)\b(?:Paths\.get|Path\.of)\s*\([^)\n]*(?:request\.getParameter|req\.getParameter|request\.getHeader)'
+
+  - id: cg-dotnet-file-read-request
+    description: .NET File API reads file directly from Request.QueryString or Request.Form.
+    severity: high
+    category: web
+    confidence: high
+    languages: [csharp]
+    tags: [path-traversal, dotnet, csharp, owasp-a01]
+    cwe: CWE-22
+    regex: '(?i)\bFile\.(?:ReadAllText|ReadAllBytes|OpenRead|OpenText)\s*\([^)\n]*Request\.(?:QueryString|Form|Query)'
+
+  - id: cg-go-file-read-request
+    description: Go file read or HTTP get uses request URL query parameter directly.
+    severity: high
+    category: web
+    confidence: high
+    languages: [go]
+    tags: [path-traversal, ssrf, go]
+    cwe: CWE-22
+    regex: '(?i)\b(?:os\.Open|ioutil\.ReadFile|os\.ReadFile)\s*\([^)\n]*r\.(?:URL\.Query\(\)\.Get|FormValue)'
+
+  # ---------------------------------------------------------------------------
+  # GraphQL
+  # ---------------------------------------------------------------------------
+  - id: cg-graphql-introspection-enabled
+    description: GraphQL schema introspection is explicitly enabled in server options.
+    severity: medium
+    category: web
+    confidence: high
+    languages: [javascript, typescript, python]
+    tags: [graphql, introspection, information-disclosure]
+    cwe: CWE-200
+    regex: '(?i)\bintrospection\s*:\s*true\b'
+
+  - id: cg-graphql-missing-depth-limit
+    description: GraphQL server configuration lacks query depth or complexity limiting rules.
+    severity: medium
+    category: web
+    confidence: low
+    languages: [javascript, typescript]
+    tags: [graphql, dos, query-depth]
+    cwe: CWE-400
+    regex: '(?i)new\s+ApolloServer\s*\(\s*\{'
+    context:
+      after: 10
+      regex: '(?i)\bvalidationRules\b'
+
+  - id: cg-graphql-batching-abuse
+    description: GraphQL HTTP batching is enabled without rate limiting or depth protection.
+    severity: medium
+    category: web
+    confidence: high
+    languages: [javascript, typescript, python]
+    tags: [graphql, batching, dos]
+    cwe: CWE-400
+    regex: '(?i)\b(?:allowBatchedHttpRequests|batching)\s*:\s*true\b'
+
+  # ---------------------------------------------------------------------------
+  # Cryptography
+  # ---------------------------------------------------------------------------
+  - id: cg-crypto-static-iv
+    description: Cryptographic initialization vector (IV) appears hardcoded or statically initialized.
+    severity: high
+    category: sast
+    confidence: high
+    languages: [python, java, javascript, typescript, csharp, go]
+    tags: [crypto, iv, owasp-a02]
+    cwe: CWE-329
+    regex: '(?i)\biv\s*[:=]\s*(?:b?["\x27]0{16,}["\x27]|new\s+byte\[16\]|bytes\(\[0\]\s*\*\s*16|Buffer\.alloc\(16,\s*0\))'
+
+  - id: cg-crypto-ecb-mode
+    description: Electronic Codebook (ECB) cipher mode does not provide semantic security.
+    severity: high
+    category: sast
+    confidence: high
+    languages: [python, java, csharp, go, javascript]
+    tags: [crypto, ecb, owasp-a02]
+    cwe: CWE-327
+    regex: '(?i)\b(?:AES\.MODE_ECB|CipherMode\.ECB|AES/ECB/PKCS5Padding|["\x27]aes-128-ecb["\x27]|["\x27]aes-256-ecb["\x27])\b'
+
+  - id: cg-crypto-reused-nonce
+    description: Reused or zeroed cryptographic nonce in authenticated encryption (AES-GCM / ChaCha20).
+    severity: high
+    category: sast
+    confidence: high
+    languages: [python, java, javascript, typescript, go]
+    tags: [crypto, nonce, gcm]
+    cwe: CWE-323
+    regex: '(?i)\bnonce\s*[:=]\s*(?:b?["\x27]0{12,}["\x27]|new\s+byte\[12\]|Buffer\.alloc\(12\))'
+
+  - id: cg-crypto-hardcoded-key
+    description: Symmetric encryption key is hardcoded in source code.
+    severity: critical
+    category: secret
+    confidence: high
+    languages: [python, java, javascript, typescript, csharp]
+    tags: [crypto, secret, owasp-a02]
+    cwe: CWE-321
+    secret: true
+    regex: '(?i)\b(?:aes_key|encryption_key|cipher_key)\s*[:=]\s*b?["\x27]([A-Za-z0-9+/=]{16,64})["\x27]'

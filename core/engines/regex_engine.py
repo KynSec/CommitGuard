@@ -6,7 +6,7 @@ import time
 from dataclasses import replace
 
 from core.engines.base import EngineCapability, EngineResult, ScanContext
-from core.findings import infer_category, infer_confidence
+from core.findings import infer_category
 from core.scanner import scan_diff
 
 
@@ -52,7 +52,6 @@ class RegexEngine:
                     fixed_versions=finding.fixed_versions,
                     category=finding.category,
                 ),
-                confidence=infer_confidence(self.name, finding.severity),
             )
             for finding in findings
         )

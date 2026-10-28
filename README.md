@@ -109,7 +109,7 @@ automatically). Linux, macOS, Windows, Git worktrees, and custom
 |---|---|---|
 | Staged commit gate | Scans only added lines with stable exit codes and a policy decision. | Yes |
 | Secret detection | 220+ gitleaks-style rules with entropy, keywords, path filters, and allowlists. Values are redacted by default. | Yes |
-| SAST | 120+ curated native rules for Python, JS/TS, Go, Java, PHP, Ruby, Rust, C/C++, shell, frameworks, CI, Kubernetes, Terraform, and Docker. | Yes |
+| SAST | 280+ curated native and MIT-licensed DevSkim rules for Python, JS/TS, Go, Java, PHP, Ruby, Rust, C/C++, shell, frameworks, web, CI, Kubernetes, Terraform, and Docker. | Yes |
 | Python taint | Standard-library AST checks for common request/input flows into SQL and shell sinks. | Yes |
 | Dependencies | Pinned-dependency checks against an offline OSV snapshot, with opt-in OSV.dev lookup. | Yes / opt-in |
 | Analyzer interop | Normalize and merge SARIF or native output from Semgrep, CodeQL, Trivy, Checkov, Bandit, and gitleaks. | Yes |

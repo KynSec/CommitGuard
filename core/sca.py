@@ -123,6 +123,106 @@ class SCAResult:
     def to_findings(self) -> list[Finding]:
         return [vulnerability.to_finding() for vulnerability in self.vulnerabilities]
 
+    def to_cyclonedx(self, project_name: str = "CommitGuard-Project") -> dict[str, Any]:
+        """Exports scanned packages as a CycloneDX 1.5 JSON SBOM."""
+        return generate_cyclonedx_sbom(self.packages, project_name=project_name)
+
+    def to_spdx(self, project_name: str = "CommitGuard-Project") -> dict[str, Any]:
+        """Exports scanned packages as an SPDX 2.3 JSON SBOM."""
+        return generate_spdx_sbom(self.packages, project_name=project_name)
+
+
+def generate_cyclonedx_sbom(
+    packages: Sequence[Package],
+    project_name: str = "CommitGuard-Project",
+    project_version: str = "1.0.0",
+) -> dict[str, Any]:
+    """Generates an offline CycloneDX 1.5 JSON SBOM dictionary."""
+    import uuid
+    from datetime import datetime, timezone
+
+    components = []
+    for pkg in packages:
+        purl_type = "pypi" if pkg.ecosystem.lower() in ("pypi", "python") else "npm"
+        components.append({
+            "type": "library",
+            "name": pkg.name,
+            "version": pkg.version,
+            "purl": f"pkg:{purl_type}/{pkg.name}@{pkg.version}",
+            "properties": [
+                {"name": "commitguard:manifest", "value": pkg.manifest},
+                {"name": "commitguard:ecosystem", "value": pkg.ecosystem},
+            ],
+        })
+
+    return {
+        "bomFormat": "CycloneDX",
+        "specVersion": "1.5",
+        "serialNumber": f"urn:uuid:{uuid.uuid4()}",
+        "version": 1,
+        "metadata": {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "tools": [{"vendor": "CommitGuard", "name": "CommitGuard", "version": "2.1.0"}],
+            "component": {
+                "type": "application",
+                "name": project_name,
+                "version": project_version,
+            },
+        },
+        "components": components,
+    }
+
+
+def generate_spdx_sbom(
+    packages: Sequence[Package],
+    project_name: str = "CommitGuard-Project",
+) -> dict[str, Any]:
+    """Generates an offline SPDX 2.3 JSON SBOM dictionary."""
+    import uuid
+    from datetime import datetime, timezone
+
+    doc_spdx_id = f"SPDXRef-DOCUMENT-{uuid.uuid4().hex[:8]}"
+    package_list = []
+    relationships = []
+
+    root_id = f"SPDXRef-Package-{project_name.replace(' ', '-')}"
+    package_list.append({
+        "SPDXID": root_id,
+        "name": project_name,
+        "downloadLocation": "NOASSERTION",
+        "filesAnalyzed": False,
+    })
+
+    for idx, pkg in enumerate(packages, start=1):
+        spdx_id = f"SPDXRef-Package-{pkg.name.replace('/', '-')}-{idx}"
+        package_list.append({
+            "SPDXID": spdx_id,
+            "name": pkg.name,
+            "versionInfo": pkg.version,
+            "downloadLocation": "NOASSERTION",
+            "filesAnalyzed": False,
+            "sourceInfo": f"Extracted from {pkg.manifest}",
+        })
+        relationships.append({
+            "spdxElementId": root_id,
+            "relatedSpdxElement": spdx_id,
+            "relationshipType": "DEPENDS_ON",
+        })
+
+    return {
+        "spdxVersion": "SPDX-2.3",
+        "dataLicense": "CC0-1.0",
+        "SPDXID": doc_spdx_id,
+        "name": f"{project_name} SBOM",
+        "documentNamespace": f"https://commitguard.local/spdx/{uuid.uuid4()}",
+        "creationInfo": {
+            "created": datetime.now(timezone.utc).isoformat(),
+            "creators": ["Tool: CommitGuard-2.1.0"],
+        },
+        "packages": package_list,
+        "relationships": relationships,
+    }
+
 
 def _clean_version(raw: str) -> str | None:
     version = raw.strip().strip("\"'")
@@ -727,6 +827,31 @@ class OSVClient:
         return results
 
 
+def check_package_typosquatting(packages: Iterable[Package]) -> list[Vulnerability]:
+    """Checks packages against known popular packages using Damerau-Levenshtein distance."""
+    from core.scoring import check_typosquatting
+
+    typos: list[Vulnerability] = []
+    for pkg in packages:
+        is_suspicious, target, dist = check_typosquatting(pkg.name, ecosystem=pkg.ecosystem)
+        if is_suspicious and target:
+            typos.append(
+                Vulnerability(
+                    id=f"TYPOSQUAT-{pkg.name.upper()}",
+                    aliases=("typosquat", f"target:{target}"),
+                    summary=f"Possible typosquatting of popular package '{target}' (distance {dist}).",
+                    severity="high",
+                    package_name=pkg.name,
+                    ecosystem=pkg.ecosystem,
+                    version=pkg.version,
+                    fixed_versions=(),
+                    advisory_url="",
+                    manifest=pkg.manifest,
+                )
+            )
+    return typos
+
+
 def scan_dependencies(
     repo_root: Path,
     *,
@@ -777,6 +902,10 @@ def scan_dependencies(
         for raw in raw_vulns:
             if _matches_package(raw, pkg):
                 vulnerabilities.append(_to_vulnerability(raw, pkg))
+
+    # Evaluate typosquatting heuristics
+    vulnerabilities.extend(check_package_typosquatting(packages))
+
     unique: dict[tuple[str, str, str], Vulnerability] = {}
     for vulnerability in vulnerabilities:
         unique[(vulnerability.id, vulnerability.package_name, vulnerability.version)] = vulnerability

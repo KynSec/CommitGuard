@@ -84,12 +84,13 @@ the scan engine safe to call from CI and trivial to test.
 
 ### `core/rule_loader.py`
 
-- Normalizes four pack formats into a single frozen `Rule` dataclass:
+- Normalizes bundled and project packs into a single frozen `Rule` dataclass:
   - gitleaks TOML: regex, path, `secretGroup`, entropy, keywords, tags,
     nested allowlists, global path/regex allowlists;
   - semgrep YAML: top-level `pattern-regex`, plus `pattern-either` when all
     branches are regexes;
-  - native YAML: project rules with globs/languages/tags;
+  - native YAML: project rules with globs/languages/tags, including curated
+    `rules/general/*.yaml` and generated `rules/general/devskim/*.yaml`;
   - nuclei YAML: regex file matchers/extractors.
 - Hoists inline global regex flags (`foo(?i)bar` → `(?i)foobar`) so upstream
   patterns compile under Python's stricter `re` parser.

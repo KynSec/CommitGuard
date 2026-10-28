@@ -252,6 +252,22 @@ class SCATests(unittest.TestCase):
         )
         self.assertEqual(SCAResult((), (vuln,)).to_findings()[0].file, "requirements.txt")
 
+    def test_cyclonedx_and_spdx_sbom_generation(self):
+        pkg = Package("PyPI", "requests", "2.28.1", "requirements.txt")
+        result = SCAResult(packages=(pkg,), vulnerabilities=())
+
+        cyclonedx = result.to_cyclonedx(project_name="TestApp")
+        self.assertEqual(cyclonedx["bomFormat"], "CycloneDX")
+        self.assertEqual(cyclonedx["specVersion"], "1.5")
+        self.assertEqual(len(cyclonedx["components"]), 1)
+        self.assertEqual(cyclonedx["components"][0]["name"], "requests")
+        self.assertEqual(cyclonedx["components"][0]["version"], "2.28.1")
+
+        spdx = result.to_spdx(project_name="TestApp")
+        self.assertEqual(spdx["spdxVersion"], "SPDX-2.3")
+        self.assertEqual(len(spdx["packages"]), 2)  # root app + requests
+        self.assertTrue(any(p["name"] == "requests" for p in spdx["packages"]))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,0 +1,118 @@
+# Project-authored supply-chain heuristics for package manifests and CI.
+rules:
+  - id: cg-supply-npm-install-script-network
+    description: npm lifecycle script downloads or executes remote code during install.
+    severity: high
+    category: supply-chain
+    confidence: medium
+    languages: [json]
+    paths: ["**/package.json"]
+    tags: [supply-chain, npm, install-script]
+    cwe: CWE-506
+    regex: '(?i)"(?:pre|post)?install"\s*:\s*"[^"]*(?:curl|wget|node\s+-e|bash|sh\s+-c|powershell)'
+
+  - id: cg-supply-python-setup-shell
+    description: Python setup.py executes shell or network commands during installation.
+    severity: high
+    category: supply-chain
+    confidence: medium
+    languages: [python]
+    paths: ["**/setup.py"]
+    tags: [supply-chain, pypi, install-script]
+    cwe: CWE-506
+    regex: '\b(?:os\.system|subprocess\.(?:run|call|Popen|check_call|check_output)|urllib\.request\.urlopen|requests\.(?:get|post))\s*\('
+
+  - id: cg-supply-gha-pwn-request
+    description: Workflow uses pull_request_target and checks out attacker-controlled PR content.
+    severity: high
+    category: supply-chain
+    confidence: low
+    languages: [yaml]
+    paths: [".github/workflows/*.yml", ".github/workflows/*.yaml"]
+    tags: [supply-chain, github-actions, ci, needs-review]
+    cwe: CWE-829
+    regex: '\bpull_request_target\b'
+    context:
+      after: 20
+      regex: '(?:actions/checkout|github\.event\.pull_request\.head\.(?:sha|ref))'
+
+  - id: cg-supply-gha-write-all
+    description: GitHub Actions workflow grants write-all permissions.
+    severity: medium
+    category: supply-chain
+    confidence: high
+    languages: [yaml]
+    paths: [".github/workflows/*.yml", ".github/workflows/*.yaml"]
+    tags: [supply-chain, github-actions, ci]
+    cwe: CWE-250
+    regex: '(?i)^\s*permissions\s*:\s*write-all\s*$'
+
+  - id: cg-supply-gha-unpinned-action
+    description: GitHub Action is pinned to a mutable ref (@main or @master) instead of a full commit SHA.
+    severity: medium
+    category: supply-chain
+    confidence: high
+    languages: [yaml]
+    paths: [".github/workflows/*.yml", ".github/workflows/*.yaml"]
+    tags: [supply-chain, github-actions, ci]
+    cwe: CWE-829
+    regex: '(?i)\buses\s*:\s*[A-Za-z0-9_\-]+/[A-Za-z0-9_\-]+@(main|master)\b'
+
+  - id: cg-supply-lockfile-http-resolved
+    description: Package lockfile resolves dependency over insecure plaintext HTTP protocol.
+    severity: high
+    category: supply-chain
+    confidence: high
+    paths: ["**/package-lock.json", "**/yarn.lock", "**/pnpm-lock.yaml"]
+    tags: [supply-chain, mitm, lockfile]
+    cwe: CWE-319
+    regex: '(?i)["\x27]?(?:resolved|url)["\x27]?\s*[:=]\s*["\x27]?http://'
+
+  - id: cg-supply-pip-trusted-host
+    description: pip --trusted-host disables SSL certificate verification, exposing packages to MITM attacks.
+    severity: high
+    category: supply-chain
+    confidence: high
+    tags: [supply-chain, pip, mitm]
+    cwe: CWE-295
+    regex: '(?i)\b(?:pip\s+install|pip\.conf)\b[^\n]*--trusted-host\b|\btrusted-host\s*='
+
+  - id: cg-supply-git-insecure-http
+    description: Git dependency URL uses unencrypted HTTP (git+http://), vulnerable to tampering.
+    severity: high
+    category: supply-chain
+    confidence: high
+    tags: [supply-chain, git, mitm]
+    cwe: CWE-319
+    regex: '(?i)\bgit\+http://'
+
+  - id: cg-supply-gha-expression-injection
+    description: GitHub Actions workflow interpolates untrusted event body/title into run command (script injection).
+    severity: high
+    category: supply-chain
+    confidence: high
+    languages: [yaml]
+    paths: [".github/workflows/*.yml", ".github/workflows/*.yaml"]
+    tags: [supply-chain, github-actions, injection]
+    cwe: CWE-78
+    regex: '(?i)\brun\s*:[^\n]*\$\{\{\s*github\.event\.(?:issue|pull_request|comment)\.(?:title|body)'
+
+  - id: cg-supply-gha-untrusted-checkout
+    description: Workflow checks out untrusted PR head reference under pull_request_target.
+    severity: high
+    category: supply-chain
+    confidence: high
+    languages: [yaml]
+    paths: [".github/workflows/*.yml", ".github/workflows/*.yaml"]
+    tags: [supply-chain, github-actions, ci]
+    cwe: CWE-829
+    regex: '(?i)\bref\s*:\s*\$\{\{\s*github\.event\.pull_request\.head\.sha\s*\}\}'
+
+  - id: cg-supply-staged-large-binary
+    description: Accidental staging of large/compiled binary asset (.sqlite, .dump, .pt, .onnx, .bin).
+    severity: medium
+    category: quality
+    confidence: high
+    tags: [git-hygiene, performance, binary]
+    cwe: CWE-400
+    regex: '(?i)\.(?:sqlite3?|dump|safetensors|onnx|bin|tar\.gz|weights|iso)\b'

@@ -74,7 +74,7 @@ from core.paths import glob_to_regex
 SEVERITY_ORDER = {"critical": 4, "high": 3, "medium": 2, "low": 1, "info": 0}
 
 _RULE_FILE_SUFFIXES = (".toml", ".yaml", ".yml", ".conf")
-_CACHE_VERSION = 8
+_CACHE_VERSION = 9
 _CACHE_ENV = "COMMIT_GUARD_CACHE_DIR"
 
 
@@ -96,6 +96,8 @@ class Rule:
     tags: tuple[str, ...] = field(default_factory=tuple)
     cwe: str | None = None
     is_secret: bool = False
+    category: str = ""
+    confidence: str = "medium"
     context_regexes: tuple[re.Pattern[str], ...] = field(default_factory=tuple)
     context_before: int = 0
     context_after: int = 0
@@ -159,12 +161,34 @@ _SEMGREP_LANG_TO_EXT = {
     "docker": ("dockerfile",),
     "yaml": (".yaml", ".yml"),
     "json": (".json",),
+    "xml": (".xml",),
+    "xsl": (".xsl", ".xslt"),
     "bash": (".sh", ".bash", ".zsh"),
     "shell": (".sh", ".bash", ".zsh"),
     "sh": (".sh",),
     "elixir": (".ex", ".exs"),
     "html": (".html", ".htm"),
     "vue": (".vue",),
+    "objective-c": (".m", ".mm"),
+    "fsharp": (".fs", ".fsx"),
+    "vb": (".vb",),
+    "powershell": (".ps1", ".psm1", ".psd1"),
+    "shellscript": (".sh", ".bash", ".zsh"),
+    "batch": (".bat", ".cmd"),
+    "razor": (".cshtml", ".razor"),
+    "javascriptreact": (".jsx",),
+    "typescriptreact": (".tsx",),
+    "sql": (".sql",),
+    "cobol": (".cob", ".cbl"),
+    "csproj": (".csproj",),
+    "csharp project": ("csproj",),
+    "dotenv": ("dotenv",),
+    "pip-requirements": ("pip-requirements",),
+    "pip-config": ("pip-config",),
+    "packages.config": ("packages-config",),
+    ".config": ("config",),
+    "androidmanifest": ("androidmanifest",),
+    "code": ("code",),
     "generic": (),
 }
 
@@ -506,12 +530,13 @@ def _load_custom_yaml_file(path: Path, skipped: list[SkippedRule]) -> list[Rule]
         if not isinstance(entry, dict):
             continue
         rule_id = str(entry.get("id", f"custom-{path.stem}-unknown"))
+        source = str(entry.get("source") or "custom").strip() or "custom"
         regex_str = entry.get("regex", entry.get("pattern"))
         if not isinstance(regex_str, str) or not regex_str:
-            skipped.append(SkippedRule(rule_id, "custom", "no 'regex'/'pattern' field present"))
+            skipped.append(SkippedRule(rule_id, source, "no 'regex'/'pattern' field present"))
             continue
 
-        compiled = _safe_compile(regex_str, rule_id, "custom", skipped)
+        compiled = _safe_compile(regex_str, rule_id, source, skipped)
         if compiled is None:
             continue
 
@@ -539,7 +564,7 @@ def _load_custom_yaml_file(path: Path, skipped: list[SkippedRule]) -> list[Rule]
         context_regexes = _compile_many(
             raw_context_regex,
             rule_id,
-            "custom",
+            source,
             skipped,
             label="context regex",
         )
@@ -557,7 +582,7 @@ def _load_custom_yaml_file(path: Path, skipped: list[SkippedRule]) -> list[Rule]
             _safe_compile(
                 raw_fix_pattern,
                 rule_id,
-                "custom",
+                source,
                 skipped,
                 label="fix pattern",
             )
@@ -584,7 +609,7 @@ def _load_custom_yaml_file(path: Path, skipped: list[SkippedRule]) -> list[Rule]
             skipped.append(
                 SkippedRule(
                     rule_id,
-                    "custom",
+                    source,
                     f"invalid severity '{raw_severity}' "
                     f"(expected one of: {', '.join(SEVERITY_ORDER)})",
                 )
@@ -598,13 +623,25 @@ def _load_custom_yaml_file(path: Path, skipped: list[SkippedRule]) -> list[Rule]
         if not isinstance(secret_group, int) or secret_group < 0:
             secret_group = 0
 
+        category = str(entry.get("category") or "").strip()
+        confidence = str(entry.get("confidence") or "medium").strip().lower()
+        if confidence not in {"high", "medium", "low"}:
+            skipped.append(
+                SkippedRule(
+                    rule_id,
+                    source,
+                    f"invalid confidence '{confidence}' (expected high, medium, or low)",
+                )
+            )
+            continue
+
         rules.append(
             Rule(
                 rule_id=rule_id,
                 description=str(entry.get("description", entry.get("message", "Commit Guard rule match."))),
                 severity=severity,
                 pattern=compiled,
-                source="custom",
+                source=source,
                 languages=tuple(exts),
                 path_regexes=tuple(path_regexes),
                 secret_group=secret_group,
@@ -613,13 +650,15 @@ def _load_custom_yaml_file(path: Path, skipped: list[SkippedRule]) -> list[Rule]
                 allowlist_regexes=_compile_many(
                     entry.get("allowlist_regexes", entry.get("allowlist")),
                     rule_id,
-                    "custom",
+                    source,
                     skipped,
                     label="allowlist regex",
                 ),
                 tags=tags,
                 cwe=_first_string(entry.get("cwe")),
                 is_secret=bool(entry.get("secret", "secret" in tags)),
+                category=category,
+                confidence=confidence,
                 context_regexes=context_regexes,
                 context_before=context_before,
                 context_after=context_after,
@@ -633,7 +672,7 @@ def _load_custom_yaml_file(path: Path, skipped: list[SkippedRule]) -> list[Rule]
 def _load_custom_rules(rules_dir: Path, skipped: list[SkippedRule]) -> list[Rule]:
     rules: list[Rule] = []
     rules.extend(_load_custom_yaml_file(rules_dir / "custom_rules.yaml", skipped))
-    for dirname in ("custom", "ai_security", "iac"):
+    for dirname in ("custom", "ai_security", "iac", "general"):
         pack_dir = rules_dir / dirname
         if not pack_dir.is_dir():
             continue
@@ -865,6 +904,8 @@ def _serialize_ruleset(ruleset: RuleSet) -> dict:
                 "tags": list(rule.tags),
                 "cwe": rule.cwe,
                 "is_secret": rule.is_secret,
+                "category": rule.category,
+                "confidence": rule.confidence,
                 "context_regexes": [p.pattern for p in rule.context_regexes],
                 "context_before": rule.context_before,
                 "context_after": rule.context_after,
@@ -904,6 +945,8 @@ def _deserialize_ruleset(payload: dict) -> RuleSet:
             tags=tuple(entry.get("tags", [])),
             cwe=entry.get("cwe"),
             is_secret=bool(entry.get("is_secret", False)),
+            category=str(entry.get("category", "")),
+            confidence=str(entry.get("confidence", "medium")),
             context_regexes=tuple(
                 _recompile(p) for p in entry.get("context_regexes", [])
             ),
@@ -1087,25 +1130,57 @@ def load_all_rules(rules_dir: Path, warn: bool = True) -> list[Rule]:
     return list(load_ruleset(rules_dir, warn=warn).rules)
 
 
-def rules_for_file(rules: list[Rule] | tuple[Rule, ...], file_path: str) -> list[Rule]:
-    """Filters rules down to those applicable to a given file path."""
-    suffix = Path(file_path).suffix.lower()
-    name = Path(file_path).name.lower()
+_CODE_EXTENSIONS = {
+    ".py", ".pyi", ".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx", ".mts", ".cts",
+    ".go", ".java", ".kt", ".kts", ".c", ".h", ".cc", ".cpp", ".cxx", ".hpp",
+    ".hxx", ".cs", ".rb", ".php", ".phtml", ".rs", ".swift", ".scala", ".sol",
+    ".sh", ".bash", ".zsh", ".ps1", ".psm1", ".psd1", ".bat", ".cmd", ".vue",
+    ".html", ".htm", ".cshtml", ".razor", ".sql", ".m", ".mm", ".fs", ".fsx",
+    ".vb", ".ex", ".exs", ".cob", ".cbl", ".tf", ".tfvars", ".yml", ".yaml",
+    ".json", ".toml", ".ini", ".cfg", ".conf", ".config", ".xml", ".gradle",
+    ".groovy", ".lua", ".pl", ".pm", ".r", ".dart", ".clj", ".elm", ".erl",
+}
 
-    is_dockerfile = (
+
+def _file_language_tokens(file_path: str) -> set[str]:
+    """Returns extension and filename aliases used by rule language filters."""
+    path = Path(file_path)
+    name = path.name.lower()
+    tokens = {path.suffix.lower()} if path.suffix else set()
+    if tokens & _CODE_EXTENSIONS:
+        tokens.add("code")
+
+    if (
         name == "dockerfile"
         or name.startswith("dockerfile.")
         or name.endswith(".dockerfile")
-    )
-    applicable: list[Rule] = []
-    for rule in rules:
-        if (
-            not rule.languages
-            or suffix in rule.languages
-            or ("dockerfile" in rule.languages and is_dockerfile)
-        ):
-            applicable.append(rule)
-    return applicable
+    ):
+        tokens.add("dockerfile")
+    if name == ".env" or name.startswith(".env."):
+        tokens.update({"dotenv", "code"})
+    if name.startswith("requirements") and name.endswith(".txt"):
+        tokens.add("pip-requirements")
+    if name in {"pip.conf", "pip.ini"}:
+        tokens.add("pip-config")
+    if name == "packages.config":
+        tokens.update({"packages-config", "config"})
+    elif name.endswith(".config"):
+        tokens.add("config")
+    if name.endswith(".csproj"):
+        tokens.add("csproj")
+    if name == "androidmanifest.xml":
+        tokens.update({"androidmanifest", "code"})
+    return tokens
+
+
+def rules_for_file(rules: list[Rule] | tuple[Rule, ...], file_path: str) -> list[Rule]:
+    """Filters rules down to those applicable to a given file path."""
+    tokens = _file_language_tokens(file_path)
+    return [
+        rule
+        for rule in rules
+        if not rule.languages or any(lang in tokens for lang in rule.languages)
+    ]
 
 
 def apply_severity_overrides(

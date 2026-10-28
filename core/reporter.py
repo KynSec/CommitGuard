@@ -91,6 +91,16 @@ def build_markdown_report(
     lines.append(f"**Commit Guard:** v{__version__}")
     lines.append(f"**Status:** {'❌ FAILED (commit blocked)' if blocked else '✅ PASSED'}")
     lines.append(f"**Block threshold:** `{block_threshold}` and above")
+    if findings:
+        from core.scoring import calculate_commit_risk_index, calculate_security_debt
+
+        risk_index = calculate_commit_risk_index(findings)
+        debt = calculate_security_debt(findings)
+        lines.append(f"**Commit Risk Index:** `{risk_index}%`")
+        lines.append(
+            f"**Security Debt:** `{int(debt['net_debt_minutes'])}m` "
+            f"(Auto-fix savings: `{int(debt['saved_by_autofix_minutes'])}m`)"
+        )
     if not show_secrets and findings:
         lines.append(
             "**Secrets:** redacted (run `commit-guard scan --show-secrets` to display them locally)"
@@ -642,6 +652,21 @@ def print_cli_summary(
         for severity in ("critical", "high", "medium", "low", "info")
     )
     print(f"  Breakdown      : {breakdown}")
+    if findings:
+        from core.scoring import calculate_commit_risk_index, calculate_security_debt
+
+        risk_index = calculate_commit_risk_index(findings)
+        debt = calculate_security_debt(findings)
+        risk_label = (
+            "CRITICAL"
+            if risk_index >= 75
+            else ("HIGH" if risk_index >= 50 else ("MODERATE" if risk_index >= 25 else "LOW"))
+        )
+        print(f"  Commit Risk    : {_paint(f'{risk_index}% ({risk_label})', 'high' if risk_index >= 50 else 'info', color)}")
+        debt_msg = f"{int(debt['net_debt_minutes'])}m"
+        if debt["saved_by_autofix_minutes"] > 0:
+            debt_msg += f" (Auto-fix saves {int(debt['saved_by_autofix_minutes'])}m)"
+        print(f"  Security Debt  : {debt_msg}")
     if findings and not show_secrets:
         print("  Secrets        : redacted (use --show-secrets to display)")
     if truncated:

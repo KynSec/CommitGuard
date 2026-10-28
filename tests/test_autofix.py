@@ -169,5 +169,20 @@ class AutoFixTests(unittest.TestCase):
             )
 
 
+    def test_generate_remediation_patch(self):
+        from core.autofix import generate_remediation_patch
+
+        self.write("app.py", "a = verify=False\n")
+        patch = generate_remediation_patch(
+            self.root,
+            [finding("app.py", 1, "fix-verify", "f1")],
+            [rule()],
+        )
+        self.assertIn("--- a/app.py", patch)
+        self.assertIn("+++ b/app.py", patch)
+        self.assertIn("-a = verify=False", patch)
+        self.assertIn("+a = verify=True", patch)
+
+
 if __name__ == "__main__":
     unittest.main()

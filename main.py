@@ -925,6 +925,21 @@ def run_scan(
             print(f"[commit-guard] ERROR: could not write report: {exc}", file=sys.stderr)
             return 2
         written.extend(dependency_paths)
+
+        try:
+            from core.autofix import generate_remediation_patch
+
+            patch_str = generate_remediation_patch(target_repo, [], ruleset.rules)
+            if patch_str:
+                patch_target_dir = (
+                    target_repo / (config.report_dir or "commit_guard_reports")
+                ).resolve()
+                patch_target_dir.mkdir(parents=True, exist_ok=True)
+                patch_file = patch_target_dir / "commit_guard_remediation.patch"
+                patch_file.write_text(patch_str, encoding="utf-8")
+                written.append(patch_file)
+        except Exception:
+            pass
         if not quiet:
             label = f" [{target_repo.name}]"
             print(
@@ -1202,6 +1217,21 @@ def run_scan(
         print(f"[commit-guard] ERROR: could not write report: {exc}", file=sys.stderr)
         return 2
     written.extend(dependency_paths)
+
+    try:
+        from core.autofix import generate_remediation_patch
+
+        patch_str = generate_remediation_patch(target_repo, findings, ruleset.rules)
+        if patch_str:
+            patch_target_dir = (
+                target_repo / (config.report_dir or "commit_guard_reports")
+            ).resolve()
+            patch_target_dir.mkdir(parents=True, exist_ok=True)
+            patch_file = patch_target_dir / "commit_guard_remediation.patch"
+            patch_file.write_text(patch_str, encoding="utf-8")
+            written.append(patch_file)
+    except Exception:
+        pass
 
     if gate_result is not None:
         blocked = not gate_result.passed

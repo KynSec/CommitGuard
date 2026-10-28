@@ -1,0 +1,145 @@
+# AI/LLM Agent Security & Secret Handling Rules:
+# Dangerous sinks (exec, shell, SQL, HTML), over-permissive tool execution,
+# prompt secret logging, user-controlled RAG paths, logging credentials,
+# Sentry PII leakage, and Dockerfile ARG/ENV secrets.
+
+rules:
+  # ---------------------------------------------------------------------------
+  # AI/LLM Dangerous Sinks
+  # ---------------------------------------------------------------------------
+  - id: cg-ai-llm-output-to-exec
+    description: LLM completion or response is passed directly to exec() or eval().
+    severity: critical
+    category: sast
+    confidence: high
+    languages: [python, javascript, typescript]
+    tags: [ai, llm, rce, injection]
+    cwe: CWE-95
+    regex: '(?i)\b(?:exec|eval)\s*\(\s*(?:response\.content|response\.text|completion|llm_output|ai_message|result\.text)'
+
+  - id: cg-ai-llm-output-to-shell
+    description: LLM completion or response is passed to a shell execution function.
+    severity: critical
+    category: sast
+    confidence: high
+    languages: [python]
+    tags: [ai, llm, command-injection, rce]
+    cwe: CWE-78
+    regex: '(?i)\b(?:os\.system|subprocess\.(?:run|call|Popen))\s*\([^\n)]*(?:response\.content|llm_output|completion)[^\n)]*shell\s*=\s*True'
+
+  - id: cg-ai-llm-output-to-sql
+    description: LLM output is passed directly to SQL query execute() without parameterization.
+    severity: high
+    category: sast
+    confidence: high
+    languages: [python, javascript, typescript]
+    tags: [ai, llm, sqli, injection]
+    cwe: CWE-89
+    regex: '(?i)\.(?:execute|executemany)\s*\(\s*(?:response\.content|response\.text|llm_sql|generated_sql|completion)'
+
+  - id: cg-ai-llm-output-to-html
+    description: LLM output is marked as safe HTML without sanitization, risking stored/reflected XSS.
+    severity: high
+    category: web
+    confidence: high
+    languages: [python, javascript, typescript]
+    tags: [ai, llm, xss, web]
+    cwe: CWE-79
+    regex: '(?i)\b(?:mark_safe|Markup|dangerouslySetInnerHTML)\s*(?:\(|\s*=\s*\{\s*\{\s*__html\s*:)\s*(?:response\.content|llm_output|ai_response)'
+
+  # ---------------------------------------------------------------------------
+  # Agent Architecture & RAG Misconfigurations
+  # ---------------------------------------------------------------------------
+  - id: cg-ai-agent-wildcard-tools
+    description: AI Agent is configured with wildcard allowed_tools=["*"], granting unrestricted tool execution.
+    severity: high
+    category: sast
+    confidence: high
+    languages: [python, javascript, typescript, json, yaml]
+    tags: [ai, agent, privilege-escalation]
+    cwe: CWE-250
+    regex: '(?i)\b(?:allowed_tools|tools)\s*[:=]\s*(?:\[\s*["\x27]\*["\x27]\s*\]|["\x27]\*["\x27])|\ballow_all_tools\s*[:=]\s*True\b'
+
+  - id: cg-ai-rag-user-controlled-path
+    description: RAG document loader initializes with untrusted user input without path restriction.
+    severity: high
+    category: web
+    confidence: medium
+    languages: [python, javascript, typescript]
+    tags: [ai, rag, path-traversal]
+    cwe: CWE-22
+    regex: '(?i)\b(?:TextLoader|PyPDFLoader|DirectoryLoader|UnstructuredFileLoader)\s*\(\s*(?:request\.|req\.|input\(|params\[)'
+
+  - id: cg-ai-prompt-secret-logging
+    description: Full user prompt containing secrets or API tokens is logged to external sinks.
+    severity: medium
+    category: sast
+    confidence: medium
+    languages: [python, javascript, typescript]
+    tags: [ai, logging, secret, data-leakage]
+    cwe: CWE-532
+    regex: '(?i)\b(?:logger\.(?:info|debug|warn)|console\.log)\s*\([^)\n]*(?:api_key|token|password|secret)[^)\n]*(?:prompt|completion|llm_response)'
+
+  # ---------------------------------------------------------------------------
+  # Secret Handling & PII
+  # ---------------------------------------------------------------------------
+  - id: cg-secret-logging-credentials
+    description: Sensitive credentials (passwords, tokens, secret keys) appear to be written to application logs.
+    severity: high
+    category: secret
+    confidence: medium
+    languages: [python, javascript, typescript, java, go]
+    tags: [secret, logging, cwe-532, owasp-a09]
+    cwe: CWE-532
+    regex: '(?i)\b(?:logger\.(?:info|debug|warn|error)|console\.log|System\.out\.println)\s*\([^)\n]*["\x27]?(?:password|passwd|token|api_?key|auth_?token|secret_?key)["\x27]?\s*[:=]'
+
+  - id: cg-sentry-send-default-pii
+    description: Sentry SDK is configured with send_default_pii=True, which may capture sensitive user data.
+    severity: medium
+    category: sast
+    confidence: high
+    languages: [python, javascript, typescript]
+    tags: [sentry, pii, data-leakage, privacy]
+    cwe: CWE-359
+    regex: '(?i)\b(?:send_default_pii|sendDefaultPii)\s*[:=]\s*(?:True|true)\b'
+
+  - id: cg-docker-secret-in-arg-env
+    description: Dockerfile ARG or ENV instruction defines an exposed secret or token.
+    severity: high
+    category: iac
+    confidence: high
+    paths: ["**/Dockerfile*", "**/*.dockerfile"]
+    tags: [docker, iac, secret, cwe-798]
+    cwe: CWE-798
+    regex: '(?i)^\s*(?:ARG|ENV)\s+[A-Z0-9_]*(?:SECRET|PASSWORD|TOKEN|API_KEY|PRIVATE_KEY)[A-Z0-9_]*\s*=\s*["\x27]?[A-Za-z0-9_\-./+=]{8,}["\x27]?'
+
+  - id: cg-ai-unbounded-max-tokens
+    description: LLM generation call is configured with unbounded max_tokens, risking resource exhaustion DoS.
+    severity: medium
+    category: sast
+    confidence: high
+    languages: [python, javascript, typescript]
+    tags: [ai, llm, dos, owasp-llm-04]
+    cwe: CWE-400
+    regex: '(?i)\bmax_tokens\s*[:=]\s*(?:None|0|\d{6,})\b'
+
+  - id: cg-ai-vector-db-pollution
+    description: Raw request or untrusted user input is directly upserted into a vector store without tenant scoping.
+    severity: medium
+    category: sast
+    confidence: medium
+    languages: [python, javascript, typescript]
+    tags: [ai, vector-db, rag, pollution]
+    cwe: CWE-943
+    regex: '(?i)\b(?:vector_store|vectorstore|index|collection)\.(?:add_documents|upsert|add_texts)\s*\(\s*(?:req\.|request\.|input\()'
+
+  - id: cg-ai-indirect-prompt-injection-delimiter
+    description: Untrusted data is concatenated into an LLM prompt without delimiter boundaries.
+    severity: medium
+    category: sast
+    confidence: low
+    languages: [python, javascript, typescript]
+    tags: [ai, prompt-injection, owasp-llm-01]
+    cwe: CWE-1427
+    regex: '(?i)f["\x27][^"\x27\n]*\buser_message\b[^"\x27\n]*["\x27]\s*(?!\s*[\n#])'
+

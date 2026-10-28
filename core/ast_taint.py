@@ -21,6 +21,30 @@ TAINT_RULES = {
         "cwe": "CWE-78",
         "tags": ("command-injection", "taint", "ast"),
     },
+    "cg-python-ast-ssrf-taint": {
+        "description": "Request-controlled data reaches an outbound network request; validate or allowlist destination URLs (SSRF).",
+        "severity": "high",
+        "cwe": "CWE-918",
+        "tags": ("ssrf", "web", "taint", "ast"),
+    },
+    "cg-python-ast-path-traversal-taint": {
+        "description": "Request-controlled data reaches a filesystem API without visible boundary validation.",
+        "severity": "high",
+        "cwe": "CWE-22",
+        "tags": ("path-traversal", "web", "taint", "ast"),
+    },
+    "cg-python-ast-xss-taint": {
+        "description": "Request-controlled data is rendered directly into HTML or unescaped template string (XSS/SSTI).",
+        "severity": "high",
+        "cwe": "CWE-79",
+        "tags": ("xss", "ssti", "web", "taint", "ast"),
+    },
+    "cg-python-ast-llm-code-exec-taint": {
+        "description": "Untrusted or LLM-generated output reaches an exec() or eval() call; avoid dynamic code execution.",
+        "severity": "critical",
+        "cwe": "CWE-95",
+        "tags": ("ai", "llm", "rce", "taint", "ast"),
+    },
 }
 
 _REQUEST_INPUTS = {
@@ -38,7 +62,11 @@ _REQUEST_INPUTS = {
     "path_params",
     "view_args",
     "query_params",
+    "params",
+    "body",
 }
+_LLM_OUTPUT_ATTRS = {"content", "text", "choices", "output", "response"}
+_LLM_CLIENT_CALLS = {"invoke", "predict", "generate_content", "create", "complete"}
 _SUBPROCESS_FUNCTIONS = {
     "run",
     "call",
@@ -74,20 +102,33 @@ def _attribute_chain(node: ast.AST) -> list[str]:
 def _is_request_source(node: ast.AST) -> bool:
     if isinstance(node, ast.Attribute):
         chain = _attribute_chain(node)
-        return (
+        if (
             len(chain) >= 2
             and chain[0] in {"request", "req"}
             and any(part in _REQUEST_INPUTS for part in chain[1:])
-        )
+        ):
+            return True
+        if (
+            len(chain) >= 2
+            and chain[0] in {"response", "completion", "result", "llm_output", "ai_response"}
+            and any(part in _LLM_OUTPUT_ATTRS for part in chain[1:])
+        ):
+            return True
     if isinstance(node, ast.Call):
         function = node.func
-        return (
+        if (
             isinstance(function, ast.Name)
             and function.id == "input"
         ) or (
             isinstance(function, ast.Attribute)
             and _attribute_chain(function) == ["builtins", "input"]
-        )
+        ):
+            return True
+        if isinstance(function, ast.Attribute):
+            chain = _attribute_chain(function)
+            if any(call_name in chain[-1:] for call_name in _LLM_CLIENT_CALLS):
+                if any(mod in chain for mod in ("llm", "model", "chat", "client", "openai", "anthropic")):
+                    return True
     return False
 
 
@@ -237,6 +278,72 @@ class _TaintAnalyzer:
             command = _call_argument(call, {"args"})
             sources = _is_tainted(command, tainted) if command is not None else set()
             return ("cg-python-ast-shell-taint", sources) if sources else None
+
+        # 3. SSRF (requests, httpx, urllib, etc.)
+        is_http_client = (
+            isinstance(function, ast.Attribute)
+            and len(chain) >= 2
+            and chain[0] in {"requests", "httpx", "session", "http"}
+            and chain[1] in {"get", "post", "put", "delete", "patch", "head", "request"}
+        ) or (
+            isinstance(function, ast.Attribute)
+            and chain == ["urllib", "request", "urlopen"]
+        )
+        if is_http_client:
+            url_arg = _call_argument(call, {"url"})
+            sources = _is_tainted(url_arg, tainted) if url_arg is not None else set()
+            return ("cg-python-ast-ssrf-taint", sources) if sources else None
+
+        # 4. Path traversal (open, os.remove/unlink/rmdir/listdir, shutil...)
+        is_file_open = (
+            (isinstance(function, ast.Name) and function.id == "open")
+            or (
+                isinstance(function, ast.Attribute)
+                and _attribute_chain(function) == ["builtins", "open"]
+            )
+            or (
+                isinstance(function, ast.Attribute)
+                and len(chain) == 2
+                and chain[0] in {"os", "shutil"}
+                and chain[1] in {
+                    "remove", "unlink", "rmdir", "listdir", "open", "rmtree", "copy", "move"
+                }
+            )
+        )
+        if is_file_open:
+            path_arg = _call_argument(call, {"file", "path", "filename"})
+            sources = _is_tainted(path_arg, tainted) if path_arg is not None else set()
+            return ("cg-python-ast-path-traversal-taint", sources) if sources else None
+
+        # 5. XSS / Server-side Template Rendering
+        is_xss_sink = (
+            (
+                isinstance(function, ast.Name)
+                and function.id in {"render_template_string", "mark_safe", "Markup"}
+            )
+            or (
+                isinstance(function, ast.Attribute)
+                and function.attr in {"render_template_string", "mark_safe", "Markup"}
+            )
+        )
+        if is_xss_sink:
+            xss_arg = _call_argument(call, {"source", "s", "template"})
+            sources = _is_tainted(xss_arg, tainted) if xss_arg is not None else set()
+            return ("cg-python-ast-xss-taint", sources) if sources else None
+
+        # 6. Dynamic Code Execution (eval / exec)
+        is_code_exec = (
+            (isinstance(function, ast.Name) and function.id in {"eval", "exec"})
+            or (
+                isinstance(function, ast.Attribute)
+                and _attribute_chain(function) in (["builtins", "eval"], ["builtins", "exec"])
+            )
+        )
+        if is_code_exec:
+            code_arg = _call_argument(call, {"source", "code"})
+            sources = _is_tainted(code_arg, tainted) if code_arg is not None else set()
+            return ("cg-python-ast-llm-code-exec-taint", sources) if sources else None
+
         return None
 
     def _assign(self, target: ast.AST, sources: set[int], state: dict[str, set[int]]) -> None:
