@@ -451,11 +451,12 @@ def scan_diff(
         if not applicable_rules:
             continue
 
+        lowered = diff_line.code_content.lower()
         for rule in applicable_rules:
             if rule.rule_id in ignored_rule_ids or rule.rule_id in suppressed_ids:
                 continue
             if rule.keywords and not any(
-                keyword in diff_line.code_content.lower() for keyword in rule.keywords
+                keyword in lowered for keyword in rule.keywords
             ):
                 continue
 

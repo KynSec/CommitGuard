@@ -17,7 +17,9 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
+from datetime import UTC
 from pathlib import Path
 from typing import Any
 
@@ -139,7 +141,7 @@ def generate_cyclonedx_sbom(
 ) -> dict[str, Any]:
     """Generates an offline CycloneDX 1.5 JSON SBOM dictionary."""
     import uuid
-    from datetime import datetime, timezone
+    from datetime import datetime
 
     components = []
     for pkg in packages:
@@ -161,7 +163,7 @@ def generate_cyclonedx_sbom(
         "serialNumber": f"urn:uuid:{uuid.uuid4()}",
         "version": 1,
         "metadata": {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "tools": [{"vendor": "CommitGuard", "name": "CommitGuard", "version": "2.1.0"}],
             "component": {
                 "type": "application",
@@ -179,7 +181,7 @@ def generate_spdx_sbom(
 ) -> dict[str, Any]:
     """Generates an offline SPDX 2.3 JSON SBOM dictionary."""
     import uuid
-    from datetime import datetime, timezone
+    from datetime import datetime
 
     doc_spdx_id = f"SPDXRef-DOCUMENT-{uuid.uuid4().hex[:8]}"
     package_list = []
@@ -216,7 +218,7 @@ def generate_spdx_sbom(
         "name": f"{project_name} SBOM",
         "documentNamespace": f"https://commitguard.local/spdx/{uuid.uuid4()}",
         "creationInfo": {
-            "created": datetime.now(timezone.utc).isoformat(),
+            "created": datetime.now(UTC).isoformat(),
             "creators": ["Tool: CommitGuard-2.1.0"],
         },
         "packages": package_list,

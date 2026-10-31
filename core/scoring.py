@@ -22,7 +22,6 @@ from typing import Any
 
 from core.entropy import shannon_entropy
 
-
 # -----------------------------------------------------------------------------
 # 1. Risk Priority Equation
 # -----------------------------------------------------------------------------
@@ -108,9 +107,7 @@ def score_finding_priority(
     # 3. Exposure
     if exposure is None:
         file_path = str(getattr(finding, "file", "")).lower()
-        if any(file_path.endswith(ext) for ext in (".test.js", ".spec.js", ".test.ts", "_test.go", "_test.py")):
-            exposure = 0.35
-        elif "tests/" in file_path or "test/" in file_path or "fixtures/" in file_path:
+        if any(file_path.endswith(ext) for ext in (".test.js", ".spec.js", ".test.ts", "_test.go", "_test.py")) or "tests/" in file_path or "test/" in file_path or "fixtures/" in file_path:
             exposure = 0.35
         elif "docs/" in file_path or file_path.endswith(".md"):
             exposure = 0.25
@@ -403,7 +400,7 @@ def calculate_file_blast_radius(
                 seen[parent] = next_depth
                 queue.append((parent, next_depth))
 
-    for target, depth in seen.items():
+    for depth in seen.values():
         if depth > 0:
             score += 1.0 / (float(depth) ** alpha)
 

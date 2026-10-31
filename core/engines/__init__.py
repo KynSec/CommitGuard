@@ -10,6 +10,7 @@ from core.engines.base import (
 from core.engines.normalize import dedupe_findings, stable_order
 from core.engines.regex_engine import RegexEngine
 from core.engines.runner import Registry, Runner, RunReport, default_registry
+from core.engines.semgrep_engine import SemgrepEngine
 from core.engines.taint_engine import TaintEngine
 
 __all__ = [
@@ -22,6 +23,7 @@ __all__ = [
     "RunReport",
     "Runner",
     "ScanContext",
+    "SemgrepEngine",
     "TaintEngine",
     "dedupe_findings",
     "default_registry",

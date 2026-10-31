@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import ast
 import hashlib
+import re
 from dataclasses import dataclass
 
 from core.scanner import Finding
@@ -126,9 +127,11 @@ def _is_request_source(node: ast.AST) -> bool:
             return True
         if isinstance(function, ast.Attribute):
             chain = _attribute_chain(function)
-            if any(call_name in chain[-1:] for call_name in _LLM_CLIENT_CALLS):
-                if any(mod in chain for mod in ("llm", "model", "chat", "client", "openai", "anthropic")):
-                    return True
+            if any(call_name in chain[-1:] for call_name in _LLM_CLIENT_CALLS) and any(
+                mod in chain
+                for mod in ("llm", "model", "chat", "client", "openai", "anthropic")
+            ):
+                return True
     return False
 
 
@@ -457,3 +460,174 @@ def scan_python_taint(
         except ValueError as exc:
             warnings.append(f"{path}: {exc}")
     return TaintResult(tuple(matches), tuple(warnings))
+
+
+JS_TAINT_RULES = {
+    "cg-js-ast-code-exec-taint": {
+        "description": "Request or user-controlled data reaches eval/Function; avoid dynamic code execution.",
+        "severity": "critical",
+        "cwe": "CWE-95",
+        "tags": ("ai", "rce", "taint", "javascript"),
+    },
+    "cg-js-ast-sqli-taint": {
+        "description": "Request-controlled data reaches a database query; use parameterized queries.",
+        "severity": "high",
+        "cwe": "CWE-89",
+        "tags": ("sqli", "injection", "taint", "javascript"),
+    },
+    "cg-js-ast-shell-taint": {
+        "description": "Request-controlled data reaches a shell command; avoid shell execution or validate arguments.",
+        "severity": "high",
+        "cwe": "CWE-78",
+        "tags": ("command-injection", "taint", "javascript"),
+    },
+    "cg-js-ast-ssrf-taint": {
+        "description": "Request-controlled data reaches an outbound request URL; validate or allowlist destinations (SSRF).",
+        "severity": "high",
+        "cwe": "CWE-918",
+        "tags": ("ssrf", "web", "taint", "javascript"),
+    },
+    "cg-js-ast-path-traversal-taint": {
+        "description": "Request-controlled data reaches a filesystem API without visible boundary validation.",
+        "severity": "high",
+        "cwe": "CWE-22",
+        "tags": ("path-traversal", "web", "taint", "javascript"),
+    },
+    "cg-js-ast-xss-taint": {
+        "description": "Request-controlled data is written to HTML or a response without escaping (XSS).",
+        "severity": "high",
+        "cwe": "CWE-79",
+        "tags": ("xss", "web", "taint", "javascript"),
+    },
+}
+
+TAINT_RULES.update(JS_TAINT_RULES)
+
+_JS_SOURCE_RE = re.compile(
+    r"\b(?:req|request)\s*\.\s*(?:query|body|params|headers|cookies|url)\b"
+    r"|\b(?:window|document)\s*\.\s*location\b"
+    r"|\blocation\s*\.\s*(?:search|hash|href)\b"
+    r"|\bprocess\s*\.\s*argv\b"
+    r"|\binput\b"
+)
+_JS_ASSIGN_RE = re.compile(
+    r"\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*="
+)
+_JS_SINKS = (
+    (
+        re.compile(r"\b(?:eval|Function)\s*\("),
+        "cg-js-ast-code-exec-taint",
+    ),
+    (
+        re.compile(r"\b(?:child_process\s*\.\s*)?(?:exec|execSync|spawn|spawnSync)\s*\("),
+        "cg-js-ast-shell-taint",
+    ),
+    (
+        re.compile(
+            r"\b(?:db|database|connection|pool|client|knex|sequelize)\s*\.\s*"
+            r"(?:query|raw|execute|all|get|run)\s*\("
+        ),
+        "cg-js-ast-sqli-taint",
+    ),
+    (
+        re.compile(r"\b(?:fetch|axios(?:\.\w+)?)\s*\("),
+        "cg-js-ast-ssrf-taint",
+    ),
+    (
+        re.compile(
+            r"\b(?:fs|fsPromises|fsExtra)\s*\.\s*"
+            r"(?:readFile|readFileSync|writeFile|writeFileSync|unlink|unlinkSync|rm|rmSync|createReadStream|createWriteStream)\s*\("
+        ),
+        "cg-js-ast-path-traversal-taint",
+    ),
+    (
+        re.compile(
+            r"\.(?:innerHTML|outerHTML)\s*="
+            r"|\bdocument\s*\.\s*write(?:ln)?\s*\("
+            r"|\bres\s*\.\s*(?:send|write)\s*\("
+        ),
+        "cg-js-ast-xss-taint",
+    ),
+)
+
+
+def _js_identifier_used(text: str, names: set[str]) -> bool:
+    return any(re.search(rf"\b{re.escape(name)}\b", text) for name in names)
+
+
+def scan_js_taint(
+    files: dict[str, list[str]],
+    changed_lines: dict[str, set[int]],
+) -> TaintResult:
+    """Conservative line-oriented taint flow for JavaScript/TypeScript files."""
+    matches: list[TaintMatch] = []
+    warnings: list[str] = []
+    for path, changed in sorted(changed_lines.items()):
+        if not path.lower().endswith((".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx")):
+            continue
+        lines = files.get(path)
+        if lines is None:
+            warnings.append(f"{path}: staged/current file content was unavailable")
+            continue
+        tainted: dict[str, set[int]] = {}
+        for number, text in enumerate(lines, start=1):
+            source_match = _JS_SOURCE_RE.search(text)
+            source_lines = {number} if source_match else set()
+            if source_match:
+                assign = _JS_ASSIGN_RE.search(text)
+                if assign:
+                    tainted[assign.group(1)] = {number}
+            names = {
+                name
+                for name, sources in tainted.items()
+                if _js_identifier_used(text, {name})
+            }
+            for name in names:
+                source_lines.update(tainted[name])
+            assign = _JS_ASSIGN_RE.search(text)
+            if assign and source_lines:
+                tainted[assign.group(1)] = set(source_lines)
+            if not source_lines:
+                continue
+            for pattern, rule_id in _JS_SINKS:
+                if not pattern.search(text):
+                    continue
+                if number in changed or source_lines & changed:
+                    finding_line = number if number in changed else max(source_lines & changed)
+                    flagged = text.strip()
+                    if not flagged:
+                        continue
+                    details = JS_TAINT_RULES[rule_id]
+                    source_line = min(source_lines)
+                    description = (
+                        f"{details['description']} (sink at line {number}; "
+                        f"tainted source at line {source_line})."
+                    )
+                    fingerprint = hashlib.sha256(
+                        f"{rule_id}\0{path}\0{number}\0{flagged}".encode(
+                            "utf-8", "replace"
+                        )
+                    ).hexdigest()[:16]
+                    matches.append(
+                        TaintMatch(
+                            Finding(
+                                file=path,
+                                line_number=finding_line,
+                                rule_id=rule_id,
+                                description=description,
+                                severity=str(details["severity"]),
+                                source="javascript_ast",
+                                flagged_code=flagged,
+                                redacted_code=flagged,
+                                fingerprint=fingerprint,
+                                tags=tuple(details["tags"]),
+                                cwe=str(details["cwe"]),
+                            ),
+                            number,
+                        )
+                    )
+                    break
+    unique: dict[tuple[str, str, int], TaintMatch] = {}
+    for match in matches:
+        unique[(match.finding.file, match.finding.rule_id, match.sink_line)] = match
+    return TaintResult(tuple(unique.values()), tuple(warnings))

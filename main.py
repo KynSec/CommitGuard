@@ -566,7 +566,12 @@ def _list_rules(rules_dir: Path, verbose: bool, use_cache: bool) -> int:
     by_source: dict[str, list[str]] = {}
     for rule in ruleset.rules:
         by_source.setdefault(rule.source, []).append(rule.rule_id)
-    by_source["python_ast"] = list(TAINT_RULES)
+    by_source["python_ast"] = [
+        rule_id for rule_id in TAINT_RULES if "python" in rule_id
+    ]
+    by_source["javascript_ast"] = [
+        rule_id for rule_id in TAINT_RULES if "js-ast" in rule_id
+    ]
     for source in sorted(by_source):
         ids = by_source[source]
         print(f"{source} ({len(ids)}):")
@@ -938,7 +943,7 @@ def run_scan(
                 patch_file = patch_target_dir / "commit_guard_remediation.patch"
                 patch_file.write_text(patch_str, encoding="utf-8")
                 written.append(patch_file)
-        except Exception:
+        except Exception:  # noqa: BLE001, S110 - remediation patches are best effort
             pass
         if not quiet:
             label = f" [{target_repo.name}]"
@@ -1230,7 +1235,7 @@ def run_scan(
             patch_file = patch_target_dir / "commit_guard_remediation.patch"
             patch_file.write_text(patch_str, encoding="utf-8")
             written.append(patch_file)
-    except Exception:
+    except Exception:  # noqa: BLE001, S110 - remediation patches are best effort
         pass
 
     if gate_result is not None:

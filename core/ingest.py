@@ -24,7 +24,7 @@ from core.scanner import Finding
 
 MAX_REPORT_BYTES = 50 * 1024 * 1024
 MAX_RESULTS = 100_000
-_TOOLS = ("semgrep", "codeql", "trivy", "checkov", "gitleaks", "bandit")
+_TOOLS = ("semgrep", "codeql", "trivy", "grype", "checkov", "gitleaks", "bandit")
 
 _LEVEL_SEVERITY = {
     "critical": "critical",
@@ -79,21 +79,30 @@ def _mask(value: str) -> str:
     return _SECRET_ASSIGNMENT_RE.sub(replace, value)
 
 
-def _cwe(value: Any) -> str | None:
-    values: list[str] = []
+def _cwe_value(value: Any) -> str | None:
     if isinstance(value, str):
-        values = [value]
-    elif isinstance(value, Mapping):
-        raw_id = value.get("id")
-        if raw_id is not None:
-            values = [f"CWE-{raw_id}"]
-    elif isinstance(value, (list, tuple)):
-        values = [str(item) for item in value]
-    for item in values:
-        match = _CWE_RE.search(item)
-        if match:
-            return match.group(0).upper().replace("CWE", "CWE")
+        text = value.strip()
+        if text.isdigit():
+            return f"CWE-{text}"
+        match = _CWE_RE.search(text)
+        return match.group(0).upper() if match else None
+    if isinstance(value, int) and not isinstance(value, bool):
+        return f"CWE-{value}"
+    if isinstance(value, Mapping):
+        for key in ("cwe", "id", "value"):
+            if key in value:
+                return _cwe_value(value[key])
     return None
+
+
+def _cwe(value: Any) -> str | None:
+    if isinstance(value, (list, tuple)):
+        for item in value:
+            result = _cwe_value(item)
+            if result:
+                return result
+        return None
+    return _cwe_value(value)
 
 
 def _safe_path(raw: Any, repo_root: str | Path | None) -> str:
@@ -604,6 +613,68 @@ def ingest_trivy(
     return findings
 
 
+def ingest_grype(
+    document: Any, *, repo_root: str | Path | None = None
+) -> list[Finding]:
+    if not isinstance(document, Mapping):
+        raise IngestError("Grype report must be an object")
+    matches = document.get("matches") or []
+    if not isinstance(matches, list):
+        raise IngestError("Grype matches must be a list")
+    findings: list[Finding] = []
+    for match in matches:
+        if not isinstance(match, Mapping):
+            continue
+        vulnerability = _as_mapping(match.get("vulnerability"))
+        artifact = _as_mapping(match.get("artifact"))
+        vuln_id = str(vulnerability.get("id") or "grype/unknown")
+        package = str(artifact.get("name") or "unknown")
+        version = str(artifact.get("version") or "")
+        locations = artifact.get("locations") or []
+        location = ""
+        if isinstance(locations, list) and locations:
+            first = locations[0]
+            location = str(
+                _as_mapping(first).get("path")
+                or _as_mapping(first).get("realPath")
+                or ""
+            )
+        fix = _as_mapping(vulnerability.get("fix"))
+        fixed_versions = fix.get("versions") or []
+        references = [
+            str(item)
+            for item in (vulnerability.get("urls") or [])
+            if str(item)
+        ]
+        findings.append(
+            _make_finding(
+                tool="grype",
+                rule_id=f"grype/{vuln_id}",
+                file=location or str(artifact.get("metadataType") or "unknown"),
+                line=1,
+                description=str(
+                    vulnerability.get("description")
+                    or f"{package} {version} is affected by {vuln_id}"
+                ),
+                severity=_severity(vulnerability.get("severity")),
+                repo_root=repo_root,
+                category="dependency",
+                tags=("dependency", "sca", "grype"),
+                cwe=_cwe(vulnerability.get("cwes")),
+                code=f"{package}=={version}",
+                references=references,
+                original_severity=str(vulnerability.get("severity") or ""),
+                extra_provenance={
+                    "package": package,
+                    "installed_version": version,
+                    "fixed_versions": fixed_versions,
+                    "artifact_type": artifact.get("type", ""),
+                },
+            )
+        )
+    return findings
+
+
 def ingest_checkov(
     document: Any, *, repo_root: str | Path | None = None
 ) -> list[Finding]:
@@ -690,6 +761,8 @@ def _detect_tool(document: Any) -> str:
             return "commitguard"
         if "Results" in document:
             return "trivy"
+        if "matches" in document:
+            return "grype"
         if "results" in document:
             results = document["results"]
             if isinstance(results, Mapping) and "failed_checks" in results:
@@ -734,6 +807,8 @@ def ingest_data(
         return ingest_gitleaks(document, repo_root=repo_root)
     if selected == "trivy":
         return ingest_trivy(document, repo_root=repo_root)
+    if selected == "grype":
+        return ingest_grype(document, repo_root=repo_root)
     if selected == "checkov":
         return ingest_checkov(document, repo_root=repo_root)
     if selected == "bandit":

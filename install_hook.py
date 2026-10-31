@@ -1282,7 +1282,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_ingest = sub.add_parser("ingest", help="Normalize SARIF/native reports.")
     p_ingest.add_argument("inputs", nargs="+", type=Path)
     p_ingest.add_argument("--repo", dest="repo_opt", default=".")
-    p_ingest.add_argument("--tool", choices=("auto", "sarif", "semgrep", "codeql", "trivy", "checkov", "gitleaks", "bandit"), default="auto")
+    p_ingest.add_argument("--tool", choices=("auto", "sarif", "semgrep", "codeql", "trivy", "grype", "checkov", "gitleaks", "bandit"), default="auto")
     p_ingest.add_argument("--format", choices=("json", "sarif", "markdown"), default="json")
     p_ingest.add_argument("--output", type=Path, default=None)
 
@@ -1361,6 +1361,63 @@ def build_parser() -> argparse.ArgumentParser:
     p_rules_test = rules_sub.add_parser("test", help="Run rule corpus tests.")
     p_rules_test.add_argument("repo", nargs="?", default=".")
     p_rules_test.add_argument("--corpus", type=Path, default=None)
+
+    p_sbom = sub.add_parser("sbom", help="Generate CycloneDX or SPDX SBOMs offline.")
+    p_sbom.add_argument("repo", nargs="?", default=".")
+    p_sbom.add_argument("--format", choices=("cyclonedx", "spdx"), default="cyclonedx")
+    p_sbom.add_argument("--output", type=Path, default=None)
+    p_sbom.add_argument("--project-name", default=None)
+    p_sbom.add_argument("--project-version", default="1.0.0")
+
+    p_license = sub.add_parser("license", help="Evaluate dependency license policy.")
+    p_license.add_argument("repo", nargs="?", default=".")
+    p_license.add_argument("--policy", type=Path, default=None)
+    p_license.add_argument("--format", choices=("text", "json"), default="text")
+    p_license.add_argument("--output", type=Path, default=None)
+    p_license.add_argument("--strict", action="store_true",
+                           help="Fail on review and unknown licenses.")
+    p_license.add_argument("--fail-on-unknown", action="store_true", default=None)
+    p_license.add_argument("--fail-on-review", action="store_true", default=None)
+    p_license.add_argument("--allow", action="append", default=[])
+    p_license.add_argument("--deny", action="append", default=[])
+    p_license.add_argument("--review", action="append", default=[])
+
+    p_dashboard = sub.add_parser("dashboard", help="Build a static dashboard from local reports.")
+    p_dashboard.add_argument("repo", nargs="?", default=".")
+    p_dashboard.add_argument("--reports", action="append", type=Path, default=None)
+    p_dashboard.add_argument("--history", type=Path, default=None)
+    p_dashboard.add_argument("--output", type=Path, default=None)
+    p_dashboard.add_argument("--format", choices=("html", "json"), default="html")
+    p_dashboard.add_argument("--owner", default="unassigned")
+
+    p_watch = sub.add_parser("watch", help="Re-scan incrementally when files change.")
+    p_watch.add_argument("repo", nargs="?", default=".")
+    p_watch.add_argument("--interval", type=float, default=1.0)
+    p_watch.add_argument("--debounce", type=float, default=0.25)
+    p_watch.add_argument("--once", action="store_true", help="Run one initial scan and exit.")
+    p_watch.add_argument("--all", action="store_true", help="Scan the whole working tree.")
+    p_watch.add_argument("--diff", metavar="REV", dest="diff_revision", default=None)
+    p_watch.add_argument("--max-scans", type=int, default=None)
+    p_watch.add_argument("--quiet", action="store_true")
+
+    p_lsp = sub.add_parser("lsp", help="Run the stdio language server.")
+    p_lsp.add_argument("repo", nargs="?", default=".")
+
+    p_compliance = sub.add_parser("compliance", help="Map findings to compliance controls.")
+    p_compliance.add_argument("repo", nargs="?", default=".")
+    p_compliance.add_argument("--report", type=Path, required=True)
+    p_compliance.add_argument("--pack", action="append", default=None)
+    p_compliance.add_argument("--format", choices=("markdown", "json", "text"), default="markdown")
+    p_compliance.add_argument("--output", type=Path, default=None)
+
+    p_plugin = sub.add_parser("plugin", help="List, validate, or run out-of-process plugins.")
+    p_plugin.add_argument("action", choices=("list", "validate", "run"), nargs="?", default="list")
+    p_plugin.add_argument("--repo", dest="repo_opt", default=".")
+    p_plugin.add_argument("--dir", type=Path, default=None)
+    p_plugin.add_argument("--allow-unsigned-plugin", action="store_true")
+    p_plugin.add_argument("--timeout", type=float, default=30.0)
+    p_plugin.add_argument("--format", choices=("text", "json"), default="text")
+    p_plugin.add_argument("--output", type=Path, default=None)
 
     return parser
 
@@ -1592,6 +1649,87 @@ def main(argv: list[str] | None = None) -> int:
             else:
                 command.extend(["--explain", args.rule_id])
             return subprocess.run(command, cwd=str(repo_root), check=False).returncode
+        elif args.command == "sbom":
+            from core.commands import command_sbom
+
+            return command_sbom(
+                target,
+                fmt=args.format,
+                output=args.output,
+                project_name=args.project_name,
+                project_version=args.project_version,
+            )
+        elif args.command == "license":
+            from core.commands import command_license
+
+            def _split(values):
+                items = []
+                for value in values or ():
+                    items.extend(item for item in value.split(",") if item)
+                return items
+
+            return command_license(
+                target,
+                policy_path=args.policy,
+                fmt=args.format,
+                output=args.output,
+                strict=args.strict,
+                fail_on_unknown=args.fail_on_unknown,
+                fail_on_review=args.fail_on_review,
+                allow=_split(args.allow),
+                deny=_split(args.deny),
+                review=_split(args.review),
+            )
+        elif args.command == "dashboard":
+            from core.commands import command_dashboard
+
+            return command_dashboard(
+                target,
+                reports=args.reports,
+                history=args.history,
+                output=args.output,
+                fmt=args.format,
+                owner=args.owner,
+            )
+        elif args.command == "watch":
+            from core.commands import command_watch
+
+            return command_watch(
+                target,
+                interval=args.interval,
+                debounce=args.debounce,
+                once=args.once,
+                scan_all=args.all,
+                diff_revision=args.diff_revision,
+                max_scans=args.max_scans,
+                quiet=args.quiet,
+            )
+        elif args.command == "lsp":
+            from core.commands import command_lsp
+
+            return command_lsp(target)
+        elif args.command == "compliance":
+            from core.commands import command_compliance
+
+            return command_compliance(
+                target,
+                report=args.report,
+                packs=args.pack,
+                fmt=args.format,
+                output=args.output,
+            )
+        elif args.command == "plugin":
+            from core.commands import command_plugin
+
+            return command_plugin(
+                target,
+                args.action,
+                directory=args.dir,
+                allow_unsigned=args.allow_unsigned_plugin,
+                timeout=args.timeout,
+                fmt=args.format,
+                output=args.output,
+            )
         elif args.command in ("check-rules", "explain", "suppressions"):
             repo_root = find_repo_root(target)
             main_py = get_install_dir(repo_root) / "main.py"
