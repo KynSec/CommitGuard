@@ -101,13 +101,46 @@ def load_report(
     return findings, source
 
 
+_NON_REPORT_NAMES = {"history.json", "dashboard.json", "triage.json"}
+
+
+def expand_report_inputs(paths: Iterable[str | Path]) -> list[Path]:
+    """Expands directories into the report files they contain.
+
+    This makes multi-repository and multi-job merges reproducible: a CI job can
+    download several artifact directories and pass them to ``report merge``
+    without writing a shell loop.  Local state files that live beside reports
+    are ignored so an artifact directory can be passed wholesale.
+    """
+    expanded: dict[str, Path] = {}
+    for raw in paths:
+        path = Path(raw).expanduser()
+        if path.is_dir():
+            candidates = sorted(
+                item
+                for item in path.rglob("*")
+                if item.is_file()
+                and item.suffix.lower() in {".json", ".sarif"}
+                and item.name.lower() not in _NON_REPORT_NAMES
+            )
+        else:
+            candidates = [path]
+        for candidate in candidates:
+            try:
+                resolved = candidate.resolve()
+            except OSError:
+                resolved = candidate
+            expanded[str(resolved)] = resolved
+    return [expanded[key] for key in sorted(expanded)]
+
+
 def merge_reports(
     paths: Iterable[str | Path], *, repo_root: str | Path | None = None
 ) -> MergedReport:
     findings: list[Finding] = []
     sources: list[ReportSource] = []
     versions: dict[str, str] = {"commit-guard": __version__}
-    for path in paths:
+    for path in expand_report_inputs(paths):
         try:
             report_findings, source = load_report(path, repo_root=repo_root)
         except IngestError as exc:

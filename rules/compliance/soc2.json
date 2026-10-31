@@ -1,0 +1,43 @@
+{
+  "id": "soc2-2017",
+  "name": "SOC 2 Trust Services Criteria (technical evidence subset)",
+  "version": "2017",
+  "disclaimer": "Mapping is not certification. SOC 2 opinions depend on organizational controls, policies, monitoring, and auditor evidence that CommitGuard does not produce.",
+  "controls": [
+    {
+      "id": "CC6.1",
+      "title": "Logical access security and software protection",
+      "cwes": ["CWE-22", "CWE-89", "CWE-78", "CWE-95", "CWE-918"],
+      "tags": ["injection", "path-traversal", "ssrf", "rce"],
+      "categories": ["sast", "secret"],
+      "confidence": "medium",
+      "note": "Technical evidence only; access provisioning and review are organizational."
+    },
+    {
+      "id": "CC6.6",
+      "title": "Protection against external threats",
+      "cwes": ["CWE-79", "CWE-352", "CWE-434", "CWE-502", "CWE-1104"],
+      "tags": ["xss", "csrf", "deserialization", "dependency"],
+      "categories": ["sast", "dependency", "iac"],
+      "confidence": "medium",
+      "note": "Requires corroborating monitoring and incident-response evidence."
+    },
+    {
+      "id": "CC7.1",
+      "title": "Detection and monitoring of vulnerabilities",
+      "cwes": ["CWE-1104", "CWE-1395"],
+      "tags": ["dependency", "sca", "secret"],
+      "categories": ["dependency", "secret"],
+      "confidence": "medium",
+      "note": "CommitGuard provides scan evidence, not continuous monitoring certification."
+    },
+    {
+      "id": "CC8.1",
+      "title": "Change management",
+      "tags": ["ci", "iac", "policy"],
+      "categories": ["iac", "policy"],
+      "confidence": "low",
+      "note": "Technical gate evidence only; change approval and segregation of duties are organizational."
+    }
+  ]
+}

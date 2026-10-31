@@ -1,0 +1,27 @@
+{
+  "version": "3.0.0",
+  "description": "Offline-first local security control plane for secrets, SAST, SCA, and policy",
+  "homepage": "https://github.com/CommitGuard-Sec/CommitGuard",
+  "license": "Apache-2.0",
+  "depends": ["python", "git"],
+  "url": "https://files.pythonhosted.org/packages/source/c/commit-guard/commit-guard-3.0.0.tar.gz",
+  "hash": "REPLACE_WITH_RELEASE_SHA256",
+  "extract_dir": "commit-guard-3.0.0",
+  "installer": {
+    "script": [
+      "python -m pip install --user --no-warn-script-location .",
+      "if (!(Test-Path \"$dir\\commit-guard.cmd\")) { @'",
+      "@echo off",
+      "python -m install_hook %*",
+      "'@ | Out-File -Encoding ascii \"$dir\\commit-guard.cmd\" }"
+    ]
+  },
+  "bin": ["bin\\commit-guard.cmd"],
+  "checkver": {
+    "github": "https://github.com/CommitGuard-Sec/CommitGuard"
+  },
+  "autoupdate": {
+    "url": "https://files.pythonhosted.org/packages/source/c/commit-guard/commit-guard-$version.tar.gz",
+    "extract_dir": "commit-guard-$version"
+  }
+}

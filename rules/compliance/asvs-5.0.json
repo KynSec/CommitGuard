@@ -1,0 +1,26 @@
+{
+  "id": "asvs-5.0",
+  "name": "OWASP Application Security Verification Standard",
+  "version": "5.0",
+  "disclaimer": "Mapping is not certification. ASVS verification requires assessor evidence, configuration review, and process controls that a source scan cannot supply.",
+  "controls": [
+    {"id": "V1.2", "title": "Encoding and Sanitization", "cwes": ["CWE-79", "CWE-89", "CWE-77", "CWE-78"], "tags": ["xss", "sqli", "injection"], "confidence": "medium"},
+    {"id": "V1.3", "title": "Injection Prevention", "cwes": ["CWE-89", "CWE-78", "CWE-94", "CWE-917"], "tags": ["injection", "command-injection"], "confidence": "high"},
+    {"id": "V2.1", "title": "Password Security", "cwes": ["CWE-259", "CWE-798"], "tags": ["secret", "password"], "confidence": "medium"},
+    {"id": "V2.2", "title": "Authentication", "cwes": ["CWE-287", "CWE-307"], "tags": ["authentication"], "confidence": "medium"},
+    {"id": "V3.1", "title": "Session Management", "cwes": ["CWE-384", "CWE-613"], "tags": ["session"], "confidence": "medium"},
+    {"id": "V4.1", "title": "Access Control", "cwes": ["CWE-284", "CWE-285", "CWE-862", "CWE-863"], "categories": ["authz"], "confidence": "medium"},
+    {"id": "V5.1", "title": "Input Validation", "cwes": ["CWE-20"], "confidence": "medium"},
+    {"id": "V5.2", "title": "File Handling", "cwes": ["CWE-22", "CWE-434"], "tags": ["path-traversal", "upload"], "confidence": "medium"},
+    {"id": "V6.1", "title": "Cryptography", "cwes": ["CWE-327", "CWE-328", "CWE-330"], "tags": ["crypto"], "confidence": "high"},
+    {"id": "V7.1", "title": "Error Handling and Logging", "cwes": ["CWE-209", "CWE-532"], "tags": ["logging"], "confidence": "low"},
+    {"id": "V8.1", "title": "Data Protection", "cwes": ["CWE-311", "CWE-312", "CWE-319", "CWE-798"], "categories": ["secret"], "confidence": "medium"},
+    {"id": "V9.1", "title": "Communication Security", "cwes": ["CWE-295", "CWE-319"], "tags": ["tls"], "confidence": "high"},
+    {"id": "V10.1", "title": "Malicious Code", "cwes": ["CWE-506", "CWE-829"], "categories": ["supply-chain"], "confidence": "medium"},
+    {"id": "V11.1", "title": "Business Logic", "categories": ["logic"], "confidence": "low", "note": "Business logic requires human review."},
+    {"id": "V12.1", "title": "Files and Resources", "cwes": ["CWE-22", "CWE-918"], "tags": ["path-traversal", "ssrf"], "confidence": "medium"},
+    {"id": "V13.1", "title": "API Security", "cwes": ["CWE-918", "CWE-639"], "categories": ["web", "authz"], "confidence": "medium"},
+    {"id": "V14.1", "title": "Configuration", "cwes": ["CWE-16", "CWE-942"], "categories": ["iac", "container"], "confidence": "medium"},
+    {"id": "V15.1", "title": "Secure Build and Dependencies", "cwes": ["CWE-937", "CWE-1104"], "categories": ["dependency"], "confidence": "high"}
+  ]
+}

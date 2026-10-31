@@ -98,6 +98,9 @@ pending. Pin a release tag or commit SHA for production use.
 | Source | `git clone https://github.com/CommitGuard-Sec/CommitGuard.git` | Development and review |
 | pre-commit | `commit-guard install . --no-hook` | Framework-managed hooks |
 | GitHub Action | `uses: CommitGuard-Sec/CommitGuard@<tag-or-sha>` | CI enforcement |
+| Docker | `docker build -t commitguard . && docker run --rm -v "$PWD:/workspace" commitguard scan --staged` | Isolated or CI runs |
+| Homebrew | Formula in `packaging/homebrew/commitguard.rb` | macOS/Linux package management |
+| Scoop | Manifest in `packaging/scoop/commitguard.json` | Windows package management |
 
 Requirements: **Python 3.11+**, **git**, and **PyYAML 6+** (installed
 automatically). Linux, macOS, Windows, Git worktrees, and custom
@@ -110,9 +113,14 @@ automatically). Linux, macOS, Windows, Git worktrees, and custom
 | Staged commit gate | Scans only added lines with stable exit codes and a policy decision. | Yes |
 | Secret detection | 220+ gitleaks-style rules with entropy, keywords, path filters, and allowlists. Values are redacted by default. | Yes |
 | SAST | 280+ curated native and MIT-licensed DevSkim rules for Python, JS/TS, Go, Java, PHP, Ruby, Rust, C/C++, shell, frameworks, web, CI, Kubernetes, Terraform, and Docker. | Yes |
-| Python taint | Standard-library AST checks for common request/input flows into SQL and shell sinks. | Yes |
+| Python + JS/TS taint | Standard-library AST checks for request/input flows into SQL, shell, code-exec, SSRF, path, and XSS sinks. | Yes |
 | Dependencies | Pinned-dependency checks against an offline OSV snapshot, with opt-in OSV.dev lookup. | Yes / opt-in |
-| Analyzer interop | Normalize and merge SARIF or native output from Semgrep, CodeQL, Trivy, Checkov, Bandit, and gitleaks. | Yes |
+| Analyzer interop | Normalize and merge SARIF or native output from Semgrep, CodeQL, Trivy, Grype, Checkov, Bandit, and gitleaks. | Yes |
+| SBOM and licenses | CycloneDX 1.6, SPDX 2.3, and an allow/deny/review license policy with separate exit status. | Yes |
+| Compliance | Control mapping packs for OWASP Top 10, CWE Top 25, ASVS 5.0, PCI DSS 4.0, and SOC 2 technical evidence, with explicit caveats. | Yes |
+| Editor and watch loops | Stdio LSP diagnostics/code actions and `watch --once` incremental snapshots for local loops. | Yes |
+| Dashboard | Self-contained HTML/JSON with severity, category, owner, trend, and report provenance. | Yes |
+| Plugins | Signed manifests, out-of-process execution, capability limits, timeouts, and output caps. | Yes |
 | Policy engine | `strict`, `balanced`, and `audit` profiles; thresholds, budgets, ratchets, and new-code gating. | Yes |
 | Baseline and triage | Fingerprints, accepted-risk metadata, owners, expiry, stale-entry audits, and committed triage YAML. | Yes |
 | Fix workflow | Preview and apply rule-provided fixes, then re-stage safely. | Yes |
@@ -141,6 +149,19 @@ commit-guard scan --sca
 commit-guard scan --sca --sca-online        # explicit network opt-in
 commit-guard scan --format sarif
 commit-guard scan --format html
+commit-guard sbom . --format cyclonedx --output sbom.json
+commit-guard license . --policy license-policy.toml
+commit-guard dashboard . --output dashboard.html
+
+# Developer loops
+commit-guard watch .                       # incremental re-scan on save
+commit-guard watch . --once --all          # one audit scan, then exit
+commit-guard lsp .                         # stdio language server
+
+# Ecosystem surfaces
+commit-guard compliance . --report report.json --pack owasp-top10-2021
+commit-guard plugin list
+commit-guard plugin validate --dir plugins/example
 
 # Policy, baseline, and triage
 commit-guard gate --staged
@@ -149,7 +170,7 @@ commit-guard triage list
 commit-guard triage audit
 
 # Bring findings from other analyzers into the same gate
-commit-guard ingest semgrep.sarif trivy.json checkov.sarif
+commit-guard ingest semgrep.sarif trivy.json grype.json checkov.sarif
 commit-guard report merge reports/*.sarif --format sarif --output merged.sarif
 
 # Local console and maintenance
@@ -339,6 +360,7 @@ commit-guard scan --staged --no-cache   # debugging or read-only environments
 | [Policy](docs/POLICY.md) | Gates, budgets, ratchets, triage, and exit codes. |
 | [Rules](docs/RULES.md) | Native schema, rule packs, context windows, and validation. |
 | [Interoperability](docs/INTEROP.md) | SARIF/native ingestion and report merging. |
+| [Ecosystem](docs/ECOSYSTEM.md) | SBOM, licenses, dashboard, watch, LSP, compliance, and plugins. |
 | [CI](docs/CI.md) | GitHub Actions, GitLab, Jenkins, and pre-commit. |
 | [Architecture](docs/ARCHITECTURE.md) | Scan flow, modules, caching, and tradeoffs. |
 | [Threat Model](docs/THREAT_MODEL.md) | Assets, adversaries, controls, and abuse cases. |

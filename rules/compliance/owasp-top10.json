@@ -1,0 +1,83 @@
+{
+  "id": "owasp-top10-2021",
+  "name": "OWASP Top 10",
+  "version": "2021",
+  "disclaimer": "Mapping is not certification. OWASP Top 10 categories are awareness categories, not a complete control framework.",
+  "controls": [
+    {
+      "id": "A01:2021",
+      "title": "Broken Access Control",
+      "cwes": ["CWE-22", "CWE-269", "CWE-284", "CWE-285", "CWE-352", "CWE-639", "CWE-862", "CWE-863", "CWE-918"],
+      "categories": ["authz"],
+      "confidence": "medium",
+      "note": "Covers detectable authorization and path-handling defects only."
+    },
+    {
+      "id": "A02:2021",
+      "title": "Cryptographic Failures",
+      "cwes": ["CWE-259", "CWE-295", "CWE-321", "CWE-326", "CWE-327", "CWE-328", "CWE-330", "CWE-798"],
+      "tags": ["crypto", "secret", "tls"],
+      "confidence": "high"
+    },
+    {
+      "id": "A03:2021",
+      "title": "Injection",
+      "cwes": ["CWE-77", "CWE-78", "CWE-79", "CWE-89", "CWE-90", "CWE-91", "CWE-94", "CWE-95", "CWE-611", "CWE-643", "CWE-917"],
+      "tags": ["injection", "sqli", "xss", "command-injection"],
+      "confidence": "high"
+    },
+    {
+      "id": "A04:2021",
+      "title": "Insecure Design",
+      "cwes": ["CWE-209", "CWE-256", "CWE-501", "CWE-522", "CWE-840"],
+      "categories": ["logic"],
+      "confidence": "low",
+      "note": "Technical findings are evidence for review, not proof of an insecure design."
+    },
+    {
+      "id": "A05:2021",
+      "title": "Security Misconfiguration",
+      "cwes": ["CWE-16", "CWE-611", "CWE-942", "CWE-1004", "CWE-1327"],
+      "categories": ["iac", "container", "web"],
+      "tags": ["configuration", "cors", "tls"],
+      "confidence": "medium"
+    },
+    {
+      "id": "A06:2021",
+      "title": "Vulnerable and Outdated Components",
+      "cwes": ["CWE-937", "CWE-1035", "CWE-1104"],
+      "categories": ["dependency"],
+      "confidence": "high"
+    },
+    {
+      "id": "A07:2021",
+      "title": "Identification and Authentication Failures",
+      "cwes": ["CWE-287", "CWE-288", "CWE-290", "CWE-307", "CWE-384", "CWE-798"],
+      "tags": ["authentication", "session", "secret"],
+      "confidence": "medium"
+    },
+    {
+      "id": "A08:2021",
+      "title": "Software and Data Integrity Failures",
+      "cwes": ["CWE-345", "CWE-353", "CWE-426", "CWE-494", "CWE-502", "CWE-829"],
+      "categories": ["supply-chain"],
+      "tags": ["deserialization", "supply-chain", "integrity"],
+      "confidence": "high"
+    },
+    {
+      "id": "A09:2021",
+      "title": "Security Logging and Monitoring Failures",
+      "cwes": ["CWE-117", "CWE-223", "CWE-532", "CWE-778"],
+      "tags": ["logging"],
+      "confidence": "low",
+      "note": "Organizational monitoring controls require evidence outside CommitGuard."
+    },
+    {
+      "id": "A10:2021",
+      "title": "Server-Side Request Forgery",
+      "cwes": ["CWE-918"],
+      "tags": ["ssrf"],
+      "confidence": "high"
+    }
+  ]
+}

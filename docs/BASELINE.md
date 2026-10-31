@@ -65,3 +65,31 @@ Measured on 2026-10-26 after the CommitGuard 3.0 preview implementation:
 
 This is a verification snapshot, not a release tag. The historical 2.1.0
 baseline above remains the comparison point for Phase 0.
+
+## Phase 2/3 implementation snapshot
+
+Measured on 2026-10-29 from the working tree that adds the ecosystem surfaces:
+
+| Item | Value |
+|---|---|
+| Tests | 321 passed, 15 subtests passed |
+| JSON schema | 3 |
+| Active rules | 640 |
+| Skipped rule entries | 2,059 |
+| Corpus samples | 151 |
+| Schema/corpus issues | 0 |
+| Lint / type check | `ruff` clean; `mypy` clean for 43 application sources |
+| Local Python used for measurement | 3.14.7 |
+
+Reproduce this snapshot with:
+
+```bash
+python -m pytest -q
+python main.py --check-rules
+ruff check main.py install_hook.py gui_server.py gui_actions.py gui_page.py core tests scripts benchmarks
+mypy main.py install_hook.py gui_server.py gui_actions.py gui_page.py core
+```
+
+This snapshot covers the Phase 2/3 command surfaces, SBOM/license policy,
+dashboard, watch mode, language server, compliance packs, plugins, Grype
+ingestion, and JavaScript/TypeScript taint flows. It is not a release tag.

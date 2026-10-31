@@ -1,0 +1,17 @@
+.git
+.github
+build
+dist
+*.egg-info
+__pycache__
+*.pyc
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.commit_guard
+.commit_guard_ignore
+commit_guard_reports
+tests
+docs/site
+rules/semgrep_rules
+rules/experimental/owasp_sqli.conf

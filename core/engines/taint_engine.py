@@ -1,11 +1,11 @@
-"""Python AST taint engine wrapper, preserving legacy suppression behaviour."""
+"""Python and JavaScript/TypeScript taint engine wrapper."""
 
 from __future__ import annotations
 
 import time
 from dataclasses import replace
 
-from core.ast_taint import scan_python_taint
+from core.ast_taint import scan_js_taint, scan_python_taint
 from core.engines.base import EngineCapability, EngineResult, ScanContext
 from core.paths import PathMatcher
 from core.scanner import is_inline_suppressed
@@ -17,7 +17,7 @@ class TaintEngine:
     def capability(self) -> EngineCapability:
         return EngineCapability(
             name=self.name,
-            languages=frozenset({"python"}),
+            languages=frozenset({"python", "javascript", "typescript"}),
             categories=frozenset({"sast"}),
             supports_flows=True,
             version="1",
@@ -28,17 +28,30 @@ class TaintEngine:
 
     def run(self, context: ScanContext) -> EngineResult:
         started = time.perf_counter()
-        if not context.python_paths:
+        if not context.changed_paths:
             return EngineResult(engine=self.name)
         changed_lines: dict[str, set[int]] = {}
         for diff_line in context.diff_lines:
             changed_lines.setdefault(diff_line.file_path, set()).add(
                 diff_line.line_number
             )
-        result = scan_python_taint(context.files or {}, changed_lines)
+        python_lines = {
+            path: lines
+            for path, lines in changed_lines.items()
+            if path.lower().endswith((".py", ".pyi"))
+        }
+        js_lines = {
+            path: lines
+            for path, lines in changed_lines.items()
+            if path.lower().endswith((".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx"))
+        }
+        python_result = scan_python_taint(context.files or {}, python_lines)
+        js_result = scan_js_taint(context.files or {}, js_lines)
+        matches = (*python_result.matches, *js_result.matches)
+        warnings = (*python_result.warnings, *js_result.warnings)
         excluded = PathMatcher(context.path_excludes)
         findings = []
-        for match in result.matches:
+        for match in matches:
             finding = match.finding
             lines = (context.files or {}).get(finding.file, [])
             changed = changed_lines.get(finding.file, set())
@@ -96,7 +109,7 @@ class TaintEngine:
             )
         return EngineResult(
             findings=tuple(findings),
-            warnings=result.warnings,
+            warnings=warnings,
             duration_ms=int((time.perf_counter() - started) * 1000),
             engine=self.name,
         )

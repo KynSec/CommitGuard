@@ -1,0 +1,16 @@
+{
+  "id": "pci-dss-4.0",
+  "name": "PCI DSS",
+  "version": "4.0",
+  "disclaimer": "Mapping is not certification. PCI DSS compliance depends on scope, evidence, and a QSA assessment; source findings are only technical inputs.",
+  "controls": [
+    {"id": "2.2", "title": "Secure Configuration", "cwes": ["CWE-16", "CWE-942"], "categories": ["iac", "container"], "confidence": "medium"},
+    {"id": "3.5", "title": "Protect Stored Account Data", "cwes": ["CWE-311", "CWE-312", "CWE-798"], "categories": ["secret"], "confidence": "medium"},
+    {"id": "4.2", "title": "Strong Cryptography for Data in Transit", "cwes": ["CWE-295", "CWE-319"], "tags": ["tls"], "confidence": "high"},
+    {"id": "6.2.4", "title": "Prevent Injection Attacks", "cwes": ["CWE-77", "CWE-78", "CWE-89", "CWE-94"], "tags": ["injection", "sqli", "command-injection"], "confidence": "high"},
+    {"id": "6.3.1", "title": "Identify and Manage Vulnerabilities", "cwes": ["CWE-937", "CWE-1035", "CWE-1104"], "categories": ["dependency"], "confidence": "high"},
+    {"id": "6.4.1", "title": "Public-Facing Web Application Protection", "cwes": ["CWE-79", "CWE-89", "CWE-352"], "tags": ["xss", "sqli", "csrf"], "confidence": "medium"},
+    {"id": "8.2", "title": "User Identification and Authentication", "cwes": ["CWE-287", "CWE-307"], "tags": ["authentication"], "confidence": "medium"},
+    {"id": "10.2", "title": "Audit Logs", "cwes": ["CWE-117", "CWE-778"], "tags": ["logging"], "confidence": "low", "note": "Logging controls require runtime evidence."}
+  ]
+}

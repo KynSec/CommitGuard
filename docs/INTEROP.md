@@ -9,13 +9,16 @@ Quality, Checkstyle, and HTML.
 ./commit-guard ingest report.sarif --tool auto --output external.json
 ./commit-guard ingest semgrep.json --tool semgrep --output semgrep.json
 ./commit-guard ingest gitleaks.json --tool gitleaks --output gitleaks.json
+./commit-guard ingest grype.json --tool grype --output grype.json
 ./commit-guard report merge --output merged.json scan.json external.json
 ```
 
-Supported native formats are Semgrep JSON, gitleaks JSON, Trivy JSON, Checkov
-JSON, and Bandit JSON. SARIF 2.x is supported with `--tool auto` or
-`--tool sarif`. Input is capped at 50 MB and relative paths are confined to the
-repository unless `--allow-outside` is supplied.
+Supported native formats are Semgrep JSON, gitleaks JSON, Trivy JSON, Grype
+JSON, Checkov JSON, and Bandit JSON. SARIF 2.x is supported with `--tool auto`
+or `--tool sarif`. Grype findings are normalized as dependency findings with
+package, installed version, fixed versions, and CWE metadata. Input is capped
+at 50 MB and relative paths are confined to the repository unless
+`--allow-outside` is supplied.
 
 ## Normalization
 

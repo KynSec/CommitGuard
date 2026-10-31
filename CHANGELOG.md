@@ -4,6 +4,29 @@
 
 ### Added
 
+- Phase 2/3 ecosystem surfaces: `sbom`, `license`, `dashboard`, `watch`,
+  `lsp`, `compliance`, and `plugin` CLI commands.
+- Offline CycloneDX 1.6 and SPDX 2.3 SBOM generation with purls, manifests,
+  package metadata, and locally discovered license expressions.
+- Dependency license policy with SPDX-expression normalization, separate
+  allow/deny/review/unknown counts, TOML/JSON policies, and strict mode.
+- Static self-contained HTML/JSON dashboard with severity, category, owner,
+  provenance, and trend summaries.
+- Polling watch mode with snapshots, debounce, `--once`, and whole-tree scope.
+- Stdio JSON-RPC language server with diagnostics, code actions, document sync,
+  and a no-initialization fallback.
+- Compliance mapping packs for OWASP Top 10 2021, CWE Top 25, ASVS 5.0,
+  PCI DSS 4.0, and a SOC 2 technical-evidence subset, with explicit
+  not-certification caveats.
+- Plugin API with manifests, SHA-256 signing, out-of-process execution,
+  capability enforcement, timeouts, and output caps.
+- Grype ingestion and directory expansion for multi-report merges.
+- Optional Semgrep/Opengrep adapter and JavaScript/TypeScript taint flows for
+  code execution, SQL, shell, SSRF, path traversal, and XSS sinks.
+- Dockerfile, Homebrew formula, and Scoop manifest sources.
+- Phase 2/3 tests for SBOM, licenses, dashboard, watch, LSP, compliance,
+  plugins, Grype, and JavaScript taint.
+
 - Commit Guard 3.0 preview: JSON schema v3 with stable IDs, engine/category/
   confidence metadata, spans, fixes, references, code flows, and provenance.
 - Engine protocol, timeout-isolated parallel runner, deterministic dedupe, and
@@ -57,6 +80,25 @@
 - GitHub Action accepts `format: html` and exposes an `html-report` output.
 - Tests for GUI actions, HTTP routes/security, fix application, and installer
   integration.
+
+### Fixed
+
+- License policy now resolves SPDX `OR` expressions before denying the whole
+  alternative set, canonicalizes common license aliases, and normalizes policy
+  entries before comparison.
+- The language server clears diagnostics when a saved document is empty instead
+  of reusing stale text.
+- Grype CWE ingestion accepts strings, numeric IDs, and object-shaped CWE lists;
+  legacy nested npm lockfiles discover licenses recursively.
+- Dashboard and directory-based report merges ignore non-report JSON files such
+  as `history.json`.
+- Compliance category matching is case-insensitive.
+- `license --strict` now fails on unknown licenses as documented, not only on
+  review licenses.
+- `plugin list|validate|run --dir` accepts a directory that is itself a plugin
+  package, matching the documented `--dir plugins/example` workflow.
+- Semgrep/Opengrep availability checks reject configured executables that do
+  not exist instead of attempting to run them.
 
 ### Changed
 

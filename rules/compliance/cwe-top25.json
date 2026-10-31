@@ -1,0 +1,32 @@
+{
+  "id": "cwe-top25",
+  "name": "CWE Top 25",
+  "version": "2024",
+  "disclaimer": "Mapping is not certification. A CWE entry identifies a weakness class; it does not prove exploitability.",
+  "controls": [
+    {"id": "CWE-79", "title": "Improper Neutralization of Input During Web Page Generation (XSS)", "cwes": ["CWE-79"], "tags": ["xss"], "confidence": "high"},
+    {"id": "CWE-89", "title": "Improper Neutralization of Special Elements used in an SQL Command", "cwes": ["CWE-89"], "tags": ["sqli"], "confidence": "high"},
+    {"id": "CWE-78", "title": "Improper Neutralization of Special Elements used in an OS Command", "cwes": ["CWE-78"], "tags": ["command-injection"], "confidence": "high"},
+    {"id": "CWE-22", "title": "Improper Limitation of a Pathname to a Restricted Directory", "cwes": ["CWE-22"], "tags": ["path-traversal"], "confidence": "high"},
+    {"id": "CWE-352", "title": "Cross-Site Request Forgery", "cwes": ["CWE-352"], "tags": ["csrf"], "confidence": "medium"},
+    {"id": "CWE-787", "title": "Out-of-bounds Write", "cwes": ["CWE-787"], "confidence": "low", "note": "CommitGuard's native regex rules do not perform memory-safety proof."},
+    {"id": "CWE-125", "title": "Out-of-bounds Read", "cwes": ["CWE-125"], "confidence": "low", "note": "CommitGuard's native regex rules do not perform memory-safety proof."},
+    {"id": "CWE-20", "title": "Improper Input Validation", "cwes": ["CWE-20"], "confidence": "medium"},
+    {"id": "CWE-416", "title": "Use After Free", "cwes": ["CWE-416"], "confidence": "low", "note": "Requires language-specific analysis outside the native engine."},
+    {"id": "CWE-434", "title": "Unrestricted Upload of File with Dangerous Type", "cwes": ["CWE-434"], "tags": ["upload"], "confidence": "medium"},
+    {"id": "CWE-94", "title": "Improper Control of Generation of Code", "cwes": ["CWE-94"], "tags": ["code-injection"], "confidence": "high"},
+    {"id": "CWE-502", "title": "Deserialization of Untrusted Data", "cwes": ["CWE-502"], "tags": ["deserialization"], "confidence": "high"},
+    {"id": "CWE-77", "title": "Improper Neutralization of Special Elements used in a Command", "cwes": ["CWE-77"], "tags": ["command-injection"], "confidence": "high"},
+    {"id": "CWE-287", "title": "Improper Authentication", "cwes": ["CWE-287"], "tags": ["authentication"], "confidence": "medium"},
+    {"id": "CWE-269", "title": "Improper Privilege Management", "cwes": ["CWE-269"], "categories": ["authz"], "confidence": "medium"},
+    {"id": "CWE-798", "title": "Use of Hard-coded Credentials", "cwes": ["CWE-798"], "categories": ["secret"], "confidence": "high"},
+    {"id": "CWE-918", "title": "Server-Side Request Forgery", "cwes": ["CWE-918"], "tags": ["ssrf"], "confidence": "high"},
+    {"id": "CWE-119", "title": "Improper Restriction of Operations within the Bounds of a Memory Buffer", "cwes": ["CWE-119"], "confidence": "low", "note": "Requires memory-safety analysis outside the native engine."},
+    {"id": "CWE-862", "title": "Missing Authorization", "cwes": ["CWE-862"], "categories": ["authz"], "confidence": "medium"},
+    {"id": "CWE-476", "title": "NULL Pointer Dereference", "cwes": ["CWE-476"], "confidence": "low", "note": "Requires language-specific analysis outside the native engine."},
+    {"id": "CWE-121", "title": "Stack-based Buffer Overflow", "cwes": ["CWE-121", "CWE-787"], "confidence": "low", "note": "Requires memory-safety analysis outside the native engine."},
+    {"id": "CWE-122", "title": "Heap-based Buffer Overflow", "cwes": ["CWE-122", "CWE-787"], "confidence": "low", "note": "Requires memory-safety analysis outside the native engine."},
+    {"id": "CWE-863", "title": "Incorrect Authorization", "cwes": ["CWE-863"], "categories": ["authz"], "confidence": "medium"},
+    {"id": "CWE-284", "title": "Improper Access Control", "cwes": ["CWE-284"], "categories": ["authz"], "confidence": "medium"}
+  ]
+}
