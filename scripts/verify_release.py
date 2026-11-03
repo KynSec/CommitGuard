@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import hmac
 import subprocess
 import sys
 from pathlib import Path
@@ -39,7 +40,7 @@ def verify(directory: Path, *, public_key: Path | None, require_signature: bool)
             failures += 1
             continue
         actual = hashlib.sha256(target.read_bytes()).hexdigest()
-        if not actual == expected:
+        if not hmac.compare_digest(actual, expected):
             print(f"MISMATCH {name}")
             failures += 1
         else:
