@@ -45,13 +45,18 @@ def _needs_cross_file(
 
 
 def _discover_python_sources(
-    repo_root: Path, known: dict[str, list[str]]
+    repo_root: Path,
+    known: dict[str, list[str]],
+    includes: tuple[str, ...] = (),
+    excludes: tuple[str, ...] = (),
 ) -> dict[str, list[str]]:
     """Loads repository Python files for cross-file summaries, within caps."""
     sources: dict[str, list[str]] = {}
     root = Path(repo_root)
     if not root.is_dir():
         return sources
+    include_matcher = PathMatcher(includes) if includes else None
+    exclude_matcher = PathMatcher(excludes) if excludes else None
     try:
         candidates = root.rglob("*.py")
     except OSError:
@@ -67,6 +72,10 @@ def _discover_python_sources(
         if relative in known or any(
             part in _EXCLUDED_DIRECTORIES for part in Path(relative).parts
         ):
+            continue
+        if include_matcher is not None and not include_matcher.matches(relative):
+            continue
+        if exclude_matcher is not None and exclude_matcher.matches(relative):
             continue
         try:
             if candidate.stat().st_size > _MAX_SOURCE_BYTES:
@@ -117,7 +126,10 @@ class TaintEngine:
         analysis_files = dict(context.files or {})
         if python_lines and _needs_cross_file(analysis_files, python_lines):
             for path, lines in _discover_python_sources(
-                context.repo_root, analysis_files
+                context.repo_root,
+                analysis_files,
+                context.path_includes,
+                context.path_excludes,
             ).items():
                 analysis_files.setdefault(path, lines)
         python_result = scan_python_taint(analysis_files, python_lines)
@@ -133,6 +145,10 @@ class TaintEngine:
             if (
                 finding.file in context.ignored_files
                 or finding.rule_id in context.ignored_rule_ids
+                or (
+                    context.enabled_rule_ids is not None
+                    and finding.rule_id not in context.enabled_rule_ids
+                )
                 or excluded.matches(finding.file)
                 or any(
                     pattern.search(finding.file)

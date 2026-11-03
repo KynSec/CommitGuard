@@ -12,6 +12,8 @@ Supported schema:
 
     [scan]
     threshold = "high"          # critical | high | medium | low | info
+    profile = "app-code"        # optional determinant profile from rules/scan_profiles.yaml
+    profiles_file = "rules/scan_profiles.yaml"  # optional override
     format = "markdown"         # markdown | json | sarif | both | junit | gitlab | checkstyle
     report_dir = "commit_guard_reports"
     redact = true               # mask secrets in reports/terminal output
@@ -23,6 +25,7 @@ Supported schema:
     filter_placeholders = true  # ignore obvious example/dummy secret values
 
     [paths]
+    include = ["src/**", "tests/**"]  # empty = all paths
     exclude = ["**/fixtures/**"]
     report_allowlist = ["docs/**"]
 
@@ -84,6 +87,9 @@ class Config:
     soft_fail: bool = False
     fail_on: str = "all"
     filter_placeholders: bool = True
+    profile: str | None = None
+    profiles_file: Path | None = None
+    include: tuple[str, ...] = ()
     dep_graph: bool = False
     dep_graph_format: str = "mermaid"
     dep_graph_max_nodes: int = 250
@@ -204,6 +210,13 @@ def load_config(
             soft_fail=bool(scan.get("soft_fail", False)),
             fail_on=str(scan.get("fail_on", "all")).lower(),
             filter_placeholders=bool(scan.get("filter_placeholders", True)),
+            profile=str(scan["profile"]).strip() if scan.get("profile") else None,
+            profiles_file=(
+                Path(scan["profiles_file"]).expanduser()
+                if scan.get("profiles_file")
+                else None
+            ),
+            include=_as_str_tuple(paths.get("include"), "paths.include"),
             dep_graph=bool(scan.get("dep_graph", False)),
             dep_graph_format=str(scan.get("dep_graph_format", "mermaid")).lower(),
             dep_graph_max_nodes=int(scan.get("dep_graph_max_nodes", 250)),
@@ -237,6 +250,8 @@ format = "markdown"      # markdown | json | sarif | both | junit | gitlab | che
 report_dir = "commit_guard_reports"
 redact = true            # never print raw secrets in reports
 ignore_inline = true     # honor `# commit-guard-ignore` comments
+# profile = "app-code"   # determinant profile from rules/scan_profiles.yaml
+# profiles_file = "rules/scan_profiles.yaml"
 filter_placeholders = true  # ignore obvious example/dummy secret values
 # soft_fail = false      # report findings but exit 0
 # fail_on = "new"        # block only findings not in .commit_guard_ignore
@@ -253,6 +268,11 @@ filter_placeholders = true  # ignore obvious example/dummy secret values
 # fix_dry_run = false      # preview fixes without writing or staging
 
 [paths]
+# Only scan matching files/directories when non-empty.
+include = [
+    # "src/**",
+    # "tests/**",
+]
 # Extra globs to skip (defaults already exclude lockfiles, vendor/, node_modules/).
 exclude = [
     # "**/fixtures/**",

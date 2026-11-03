@@ -304,6 +304,17 @@ class GuiServerTests(unittest.TestCase):
         self.assertEqual(status, 200, rules)
         self.assertIn("total", rules)
 
+    def test_scan_profile_routes(self):
+        status, data, _ = self._request(
+            "/api/scan/profiles?repo=" + urllib.parse.quote(str(self.root))
+        )
+        self.assertEqual(status, 200, data)
+        self.assertEqual(data["profiles"], [])
+        self.assertFalse(data["exists"])
+        status, docs, _ = self._request("/api/docs/scan-profiles")
+        self.assertEqual(status, 200, docs)
+        self.assertIn("Determinant scan profiles", docs["text"])
+
     def test_rule_pack_download_route(self):
         payload = (
             b"rules:\n  - id: server-download\n    description: Downloaded\n"

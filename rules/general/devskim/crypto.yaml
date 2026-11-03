@@ -205,7 +205,7 @@ rules:
   - devskim
   - crypto
   - cryptography.symmetric.weakorbrokenalgorithm
-  regex: (?:DES)
+  regex: (?:\bDES\b)
   languages:
   - code
 - id: devskim-DS106864

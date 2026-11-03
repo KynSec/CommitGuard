@@ -74,7 +74,7 @@ from core.paths import glob_to_regex
 SEVERITY_ORDER = {"critical": 4, "high": 3, "medium": 2, "low": 1, "info": 0}
 
 _RULE_FILE_SUFFIXES = (".toml", ".yaml", ".yml", ".conf")
-_CACHE_VERSION = 9
+_CACHE_VERSION = 10
 _CACHE_ENV = "COMMIT_GUARD_CACHE_DIR"
 
 
@@ -479,6 +479,24 @@ def _load_semgrep_yaml_file(path: Path, skipped: list[SkippedRule]) -> list[Rule
             for lang in raw_languages:
                 exts.extend(_SEMGREP_LANG_TO_EXT.get(str(lang).lower(), ()))
 
+        raw_paths = entry.get("paths", [])
+        included_paths: object = raw_paths
+        excluded_paths: object = []
+        if isinstance(raw_paths, dict):
+            included_paths = raw_paths.get("include", [])
+            excluded_paths = raw_paths.get("exclude", [])
+
+        def compile_paths(raw: object) -> tuple[re.Pattern[str], ...]:
+            if isinstance(raw, str):
+                raw = [raw]
+            if not isinstance(raw, list):
+                return ()
+            return tuple(
+                glob_to_regex(glob)
+                for glob in raw
+                if isinstance(glob, str) and glob.strip()
+            )
+
         metadata = entry.get("metadata", {}) or {}
         if not isinstance(metadata, dict):
             metadata = {}
@@ -493,6 +511,8 @@ def _load_semgrep_yaml_file(path: Path, skipped: list[SkippedRule]) -> list[Rule
                 pattern=compiled,
                 source=source,
                 languages=tuple(exts),
+                path_regexes=compile_paths(included_paths),
+                allowlist_path_regexes=compile_paths(excluded_paths),
                 tags=tags,
                 cwe=_first_string(metadata.get("cwe")),
             )

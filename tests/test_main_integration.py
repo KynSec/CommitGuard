@@ -146,6 +146,42 @@ class MainIntegrationTests(unittest.TestCase):
         markdown = (self.root / "commit_guard_reports" / "report.md").read_text()
         self.assertIn("aB3xQ9zL0mN2pR7vT4yU6iO8", markdown)
 
+    def test_scan_profile_limits_paths_rules_and_records_selection(self):
+        rules = self.root / "rules"
+        rules.mkdir()
+        (rules / "custom_rules.yaml").write_text(
+            "rules:\n"
+            "  - id: cg-test-token\n"
+            "    description: Test token\n"
+            "    severity: high\n"
+            "    category: secret\n"
+            "    regex: 'TOKEN_[A-Z]{4}'\n",
+            encoding="utf-8",
+        )
+        (rules / "scan_profiles.yaml").write_text(
+            "profiles:\n"
+            "  src-only:\n"
+            "    mode: repo\n"
+            "    paths:\n"
+            "      include: [\"src/**\"]\n"
+            "    rules:\n"
+            "      include: [\"cg-test-*\"]\n",
+            encoding="utf-8",
+        )
+        self.stage("src/app.py", "TOKEN_ABCD\n")
+        self.stage("other/app.py", "TOKEN_WXYZ\n")
+        self.assertEqual(
+            self.scan(format="json", rules_dir=rules, profile="src-only"), 1
+        )
+        report = json.loads(
+            (self.root / "commit_guard_reports" / "report.json").read_text()
+        )
+        self.assertEqual([finding["file"] for finding in report["findings"]], ["src/app.py"])
+        self.assertEqual(report["selection"]["profile"], "src-only")
+        self.assertEqual(report["selection"]["mode"], "repo")
+        self.assertEqual(report["selection"]["paths"]["include"], ["src/**"])
+        self.assertEqual(report["selection"]["rules"]["include"], ["cg-test-*"])
+
     def test_config_threshold_is_honored(self):
         (self.root / ".commit_guard.toml").write_text('[scan]\nthreshold = "critical"\n')
         self.stage("app.py", 'API_KEY = "aB3xQ9zL0mN2pR7vT4yU6iO8"\n')

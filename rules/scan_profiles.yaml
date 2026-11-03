@@ -1,0 +1,116 @@
+# Commit Guard determinant scan profiles.
+#
+# Edit this file to define named selections for the CLI and GUI. A profile can
+# choose the scan mode, limit files/directories, and choose rules. Explicit CLI
+# or GUI values override the profile; excludes are additive.
+#
+# Path globs are repo-relative and case-insensitive. Directories use `dir/**`.
+# Prefix `!` re-includes a path after an earlier exclusion (last match wins).
+# Rule ids accept shell-style globs such as `gitleaks-*` or `cg-python-*`.
+# Sources can be `gitleaks`, `custom`, `nuclei`, `devskim`, `semgrep`,
+# `semgrep:semgrep_python`, `python_ast`, or `javascript_ast`.
+version: 1
+
+profiles:
+  default:
+    description: "Every bundled rule over the selected scan mode (normally staged)."
+    mode: inherit
+    paths:
+      include: []
+      exclude: []
+    rules:
+      sources: []
+      include: []
+      exclude: []
+      severities: []
+
+  full-repo:
+    description: "Audit every tracked and untracked text file in the repository."
+    mode: repo
+    paths:
+      include: []
+      exclude:
+        - "**/generated/**"
+        - "**/vendor/**"
+    rules:
+      sources: []
+      include: []
+      exclude: []
+      severities: []
+
+  app-code:
+    description: "First-party application and test code only."
+    mode: inherit
+    paths:
+      include:
+        - "src/**"
+        - "app/**"
+        - "lib/**"
+        - "tests/**"
+      exclude:
+        - "**/generated/**"
+        - "**/migrations/**"
+    rules:
+      sources: []
+      include: []
+      exclude: []
+      severities: []
+
+  secrets-only:
+    description: "Secret and credential rules across the whole repository."
+    mode: repo
+    paths:
+      include: []
+      exclude:
+        - "**/fixtures/**"
+        - "**/testdata/**"
+    rules:
+      sources:
+        - "gitleaks"
+        - "nuclei"
+      include: []
+      exclude: []
+      severities: []
+
+  python-security:
+    description: "Python regex and taint rules for application source."
+    mode: inherit
+    paths:
+      include:
+        - "src/**"
+        - "app/**"
+        - "lib/**"
+      exclude:
+        - "**/generated/**"
+    rules:
+      sources:
+        - "semgrep:semgrep_python"
+        - "python_ast"
+        - "custom"
+      include: []
+      exclude: []
+      severities:
+        - "critical"
+        - "high"
+        - "medium"
+
+  sast-high:
+    description: "High-signal SAST rules only, no secrets or low-severity noise."
+    mode: inherit
+    paths:
+      include: []
+      exclude:
+        - "**/fixtures/**"
+        - "**/testdata/**"
+    rules:
+      sources:
+        - "semgrep"
+        - "python_ast"
+        - "javascript_ast"
+        - "custom"
+      include: []
+      exclude: []
+      severities:
+        - "critical"
+        - "high"
+        - "medium"

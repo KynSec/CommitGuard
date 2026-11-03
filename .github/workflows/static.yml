@@ -27,6 +27,9 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
+      - name: Include scan profile guide
+        run: cp docs/SCAN_PROFILES.md docs/site/scan-profiles.md
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

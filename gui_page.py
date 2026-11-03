@@ -508,6 +508,20 @@ body.focus-mode #gitPopoutBtn{display:none}
 .pipeline-console{max-height:460px;overflow:auto;white-space:pre-wrap;word-break:break-word}
 .gate-reason{border-left:3px solid var(--bad);background:color-mix(in srgb,var(--bad) 8%,var(--panel));border-radius:8px;padding:8px 10px;margin-top:6px;font-size:12px}
 .gate-pass{border-left:3px solid var(--ok);background:color-mix(in srgb,var(--ok) 8%,var(--panel));border-radius:8px;padding:10px 12px;font-size:12.5px}
+.profiles-doc{max-width:980px;line-height:1.7;font-size:13.5px}
+.profiles-doc h1,.profiles-doc h2,.profiles-doc h3,.profiles-doc h4{margin:22px 0 8px;line-height:1.25;letter-spacing:-.01em}
+.profiles-doc h1{font-size:24px}.profiles-doc h2{font-size:19px;padding-top:12px;border-top:1px solid var(--line)}
+.profiles-doc h3{font-size:15.5px}.profiles-doc p{margin:8px 0;color:var(--muted)}
+.profiles-doc ul,.profiles-doc ol{margin:8px 0 8px 22px;padding:0;color:var(--muted)}
+.profiles-doc li{margin:4px 0}
+.profiles-doc code{font-family:var(--mono);font-size:12px;background:var(--panel3);border:1px solid var(--line);border-radius:5px;padding:1px 5px;color:var(--accent)}
+.profiles-doc pre{background:var(--panel2);border:1px solid var(--line2);border-radius:10px;padding:12px 14px;overflow:auto;font-size:12px;line-height:1.55}
+.profiles-doc pre code{background:none;border:0;padding:0;color:var(--text)}
+.profiles-doc blockquote{margin:10px 0;padding:8px 12px;border-left:3px solid var(--accent);background:var(--accent-soft);color:var(--muted)}
+.profiles-doc table{width:100%;border-collapse:collapse;margin:12px 0;font-size:12.5px}
+.profiles-doc th,.profiles-doc td{border:1px solid var(--line2);padding:7px 9px;text-align:left;vertical-align:top}
+.profiles-doc th{background:var(--panel3);color:var(--text)}
+.profiles-doc a{color:var(--accent)}
 </style>
 </head>
 <body>
@@ -561,6 +575,10 @@ body.focus-mode #gitPopoutBtn{display:none}
         <button type="button" data-tab="rules" title="Rules">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>
           <span class="nav-label-text">Rules</span>
+        </button>
+        <button type="button" data-tab="profiles" title="Determinant scan profiles">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h7M4 12h12M4 17h7"/><path d="m16 14 2.2 2.2L22 12.5"/></svg>
+          <span class="nav-label-text">Profiles</span>
         </button>
         <button type="button" data-tab="reports" title="Reports">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l4 4v14H6V3Z"/><path d="M14 3v4h4M9 12h6M9 16h6"/></svg>
@@ -666,12 +684,30 @@ body.focus-mode #gitPopoutBtn{display:none}
 
     <section id="tab-scan" class="hidden">
       <div class="card">
+        <h2>Determinant selection</h2>
+        <p class="hint">Choose a named profile from <code>rules/scan_profiles.yaml</code>, then narrow files or rules. Explicit values override profile defaults; excludes are additive.</p>
+        <div class="grid g3">
+          <div class="field"><label for="scanProfile">Scan profile</label>
+            <select id="scanProfile"><option value="">No profile (config/default)</option></select>
+          </div>
+          <div class="field"><label for="includePaths">Include files/directories</label><input id="includePaths" placeholder="src/**, tests/*.py"></div>
+          <div class="field"><label for="excludePaths">Exclude files/directories</label><input id="excludePaths" placeholder="**/generated/**, vendor/**"></div>
+          <div class="field"><label for="ruleInclude">Only rules</label><input id="ruleInclude" placeholder="gitleaks-*, cg-python-*"></div>
+          <div class="field"><label for="ruleExclude">Skip rules</label><input id="ruleExclude" placeholder="semgrep-*, devskim-*"></div>
+          <div class="field"><label for="ruleSources">Rule sources</label><input id="ruleSources" placeholder="gitleaks, custom, python_ast"></div>
+          <div class="field"><label for="ruleSeverities">Rule severities</label><input id="ruleSeverities" placeholder="critical, high"></div>
+        </div>
+        <p class="hint" id="scanProfileInfo">No profile loaded yet.</p>
+      </div>
+
+      <div class="card">
         <h2>Scan your changes</h2>
         <p class="hint">Scans staged changes by default. Everything runs locally; secrets are redacted unless you explicitly opt in.</p>
         <div class="grid g3">
           <div class="field"><label for="mode">Scan mode</label>
             <select id="mode">
               <option value="staged">Staged changes (what a commit would include)</option>
+              <option value="profile">Profile-defined mode</option>
               <option value="all">Whole working tree</option>
               <option value="history">Commit history</option>
               <option value="diff">Revision range</option>
@@ -1108,6 +1144,20 @@ env = { DEPLOY_ENV = "staging" }</pre>
       </div>
     </section>
 
+    <section id="tab-profiles" class="hidden">
+      <div class="card">
+        <div class="row" style="justify-content:space-between;margin-bottom:10px">
+          <div>
+            <h2 style="margin-bottom:4px">Determinant scan profiles</h2>
+            <p class="hint" style="margin:0">Edit <code>rules/scan_profiles.yaml</code> to define named file and rule selections. The same profiles appear in the Scan tab and CLI.</p>
+          </div>
+          <button class="btn small" id="reloadProfilesDocBtn">Refresh guide</button>
+        </div>
+        <p class="hint" id="profilesDocPath"></p>
+        <article id="profilesDoc" class="profiles-doc"><p class="hint">Loading guide...</p></article>
+      </div>
+    </section>
+
     <section id="tab-reports" class="hidden">
       <div class="card">
         <h2>Generate &amp; download reports</h2>
@@ -1188,6 +1238,7 @@ env = { DEPLOY_ENV = "staging" }</pre>
           <tr><td><b>Pull requests</b></td><td>Publish a report PR or post inline fix suggestions to an existing PR.</td></tr>
           <tr><td><b>Baseline</b></td><td>Accept findings, add owner/expiry metadata, audit stale suppressions.</td></tr>
           <tr><td><b>Rules</b></td><td>Browse active rules, inspect patterns, validate the rule pack, and download/update opt-in packs.</td></tr>
+          <tr><td><b>Profiles</b></td><td>Choose deterministic file/rule selections from <code>rules/scan_profiles.yaml</code>, or preview the guide.</td></tr>
           <tr><td><b>Reports</b></td><td>Download HTML, JSON, SARIF, JUnit, GitLab, Checkstyle, or Markdown.</td></tr>
           <tr><td><b>Maintenance</b></td><td>Install, update, enable/disable the hook, run doctor, uninstall.</td></tr>
           <tr><td><b>Configuration</b></td><td>Edit <code>.commit_guard.toml</code> with validation and backup.</td></tr>
@@ -1217,13 +1268,94 @@ const FOCUS_MODE = new URLSearchParams(location.search).get("focus") === "1";
 if(FOCUS_MODE) document.body.classList.add("focus-mode");
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
-const state = { repo: INITIAL_REPO, info: null, report: null, options: null, rules: [], lastFixes: [], pipelines: null, policy: null, triage: null };
+const state = { repo: INITIAL_REPO, info: null, report: null, options: null, rules: [], profiles: [], lastFixes: [], pipelines: null, policy: null, triage: null };
 let ghToken = "";
 
 function esc(value){
   return String(value === undefined || value === null ? "" : value)
     .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
     .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+
+function mdInline(value){
+  let text = esc(value);
+  text = text.replace(/`([^`]+)`/g, "<code>$1</code>");
+  text = text.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (m, label, href) => {
+    const safe = /^(https?:\/\/|#|\/)/i.test(href) ? href : "#";
+    return '<a href="' + safe + '" rel="noopener noreferrer" target="_blank">' + label + "</a>";
+  });
+  return text;
+}
+function markdownToHtml(md){
+  const lines = String(md || "").replace(/\r\n/g, "\n").split("\n");
+  const out = [];
+  let index = 0;
+  let inCode = false;
+  let code = [];
+  let listType = null;
+  let paragraph = [];
+  const flushParagraph = () => {
+    if(paragraph.length){ out.push("<p>" + mdInline(paragraph.join(" ")) + "</p>"); paragraph = []; }
+  };
+  const closeList = () => {
+    if(listType){ out.push("</" + listType + ">"); listType = null; }
+  };
+  while(index < lines.length){
+    const line = lines[index];
+    if(line.startsWith("```")){
+      flushParagraph(); closeList();
+      if(inCode){ out.push("<pre><code>" + esc(code.join("\n")) + "</code></pre>"); code = []; inCode = false; }
+      else { inCode = true; }
+      index += 1; continue;
+    }
+    if(inCode){ code.push(line); index += 1; continue; }
+    if(!line.trim()){ flushParagraph(); closeList(); index += 1; continue; }
+    const heading = line.match(/^(#{1,4})\s+(.*)$/);
+    if(heading){
+      flushParagraph(); closeList();
+      const level = heading[1].length;
+      out.push("<h" + level + ">" + mdInline(heading[2]) + "</h" + level + ">");
+      index += 1; continue;
+    }
+    if(/^>\s?/.test(line)){
+      flushParagraph(); closeList();
+      const quote = [];
+      while(index < lines.length && /^>\s?/.test(lines[index])){
+        quote.push(lines[index].replace(/^>\s?/, "")); index += 1;
+      }
+      out.push("<blockquote>" + mdInline(quote.join(" ")) + "</blockquote>");
+      continue;
+    }
+    if(line.includes("|") && index + 1 < lines.length && /^\s*\|?[\s:|-]+\|[\s:|-]*$/.test(lines[index + 1])){
+      flushParagraph(); closeList();
+      const headers = line.replace(/^\||\|$/g, "").split("|").map((item) => item.trim());
+      index += 2;
+      const rows = [];
+      while(index < lines.length && lines[index].includes("|") && lines[index].trim()){
+        rows.push(lines[index].replace(/^\||\|$/g, "").split("|").map((item) => item.trim()));
+        index += 1;
+      }
+      out.push("<table><thead><tr>" + headers.map((item) => "<th>" + mdInline(item) + "</th>").join("") + "</tr></thead><tbody>" +
+        rows.map((row) => "<tr>" + headers.map((_, cell) => "<td>" + mdInline(row[cell] || "") + "</td>").join("") + "</tr>").join("") +
+        "</tbody></table>");
+      continue;
+    }
+    const unordered = line.match(/^\s*[-*]\s+(.*)$/);
+    const ordered = line.match(/^\s*\d+[.)]\s+(.*)$/);
+    if(unordered || ordered){
+      flushParagraph();
+      const type = unordered ? "ul" : "ol";
+      if(listType !== type){ closeList(); out.push("<" + type + ">"); listType = type; }
+      out.push("<li>" + mdInline((unordered || ordered)[1]) + "</li>");
+      index += 1; continue;
+    }
+    paragraph.push(line.trim());
+    index += 1;
+  }
+  flushParagraph(); closeList();
+  if(inCode) out.push("<pre><code>" + esc(code.join("\n")) + "</code></pre>");
+  return out.join("\n");
 }
 function fmtBytes(n){ if(n<1024) return n+" B"; if(n<1048576) return (n/1024).toFixed(1)+" KB"; return (n/1048576).toFixed(1)+" MB"; }
 function fmtTime(ts){ try { return new Date(ts*1000).toLocaleString(); } catch(e){ return ts; } }
@@ -1273,6 +1405,7 @@ const TAB_META = {
   pr: ["Pull requests", "Publish security reports and inline fix suggestions to GitHub with a session-only token."],
   baseline: ["Baseline & suppressions", "Accept known findings, attach ownership and expiry, and audit stale suppressions."],
   rules: ["Rule library", "Search active rules, validate coverage, and download trusted rule packs on demand."],
+  profiles: ["Determinant profiles", "Choose named file and rule selections from rules/scan_profiles.yaml, or preview the guide."],
   reports: ["Reports", "Export the last scan as HTML, JSON, SARIF, JUnit, GitLab, Checkstyle, or Markdown."],
   maintenance: ["Maintenance", "Install, update, and repair Commit Guard, or control the repository hook."],
   config: ["Configuration", "Edit the validated .commit_guard.toml configuration with automatic backups."],
@@ -1333,6 +1466,10 @@ function showTab(name){
   if(name === "baseline") loadBaseline().catch(()=>{});
   if(name === "config") loadConfig().catch(()=>{});
   if(name === "rules" && !state.rules.length) loadRules().catch(()=>{});
+  if(name === "profiles"){
+    loadProfiles().catch((e) => notify(e.message, "bad"));
+    loadProfilesDoc().catch((e) => notify(e.message, "bad"));
+  }
   if(name === "git" && state.repo) loadGit().catch((e) => notify(e.message, "bad"));
 }
 $$("#nav button").forEach((b) => {
@@ -1379,6 +1516,7 @@ async function loadRepo(repo){
     $("#repoPath").value = info.root;
     try { localStorage.setItem("commitguard.repo", info.root); } catch(e){}
     setChips();
+    loadProfiles().catch((e) => notify(e.message, "bad"));
     const snap = await api("/api/state?repo=" + encodeURIComponent(info.root));
     if(snap && snap.repo === info.root && snap.report){
       state.report = snap.report;
@@ -1425,6 +1563,13 @@ function gatherOptions(){
     verbose_rules: $("#optVerboseRules").checked,
     config_path: $("#configPath").value.trim(),
     rules_dir: $("#rulesDir").value.trim(),
+    profile: $("#scanProfile").value,
+    include: $("#includePaths").value.trim(),
+    exclude: $("#excludePaths").value.trim(),
+    rule_include: $("#ruleInclude").value.trim(),
+    rule_exclude: $("#ruleExclude").value.trim(),
+    rule_sources: $("#ruleSources").value.trim(),
+    rule_severities: $("#ruleSeverities").value.trim(),
     baseline_path: $("#baselinePath").value.trim(),
     fix: $("#optFixApply").checked,
     fix_dry_run: $("#optFixDryRun").checked,
@@ -2028,6 +2173,45 @@ $("#auditBtn").addEventListener("click", async () => {
     : '<div class="notice"><b>' + data.issues.length + ' issue(s):</b><ul>' + data.issues.map((i) => '<li>' + esc(i) + '</li>').join("") + '</ul></div>';
 });
 
+async function loadProfiles(){
+  if(!state.repo) return;
+  const data = await api("/api/scan/profiles?repo=" + encodeURIComponent(state.repo));
+  state.profiles = data.profiles || [];
+  const select = $("#scanProfile");
+  const current = select.value || data.selected || "";
+  select.innerHTML = '<option value="">No profile (config/default)</option>' + state.profiles.map((profile) =>
+    '<option value="' + esc(profile.name) + '">' + esc(profile.name) + '</option>'
+  ).join("");
+  select.value = state.profiles.some((profile) => profile.name === current) ? current : "";
+  if(!select.value && data.selected && state.profiles.some((profile) => profile.name === data.selected)) select.value = data.selected;
+  renderProfileInfo();
+  $("#profilesDocPath").textContent = data.profiles_file + (data.exists ? "" : " (missing; no profiles available)");
+}
+function renderProfileInfo(){
+  const name = $("#scanProfile").value;
+  const profile = state.profiles.find((item) => item.name === name);
+  const info = $("#scanProfileInfo");
+  if(!profile){ info.textContent = "No profile selected. Explicit filters below still apply."; return; }
+  const bits = [profile.description || "", "mode=" + profile.mode];
+  if(profile.paths && profile.paths.include && profile.paths.include.length) bits.push("include=" + profile.paths.include.join(", "));
+  if(profile.paths && profile.paths.exclude && profile.paths.exclude.length) bits.push("exclude=" + profile.paths.exclude.join(", "));
+  if(profile.rules && profile.rules.sources && profile.rules.sources.length) bits.push("sources=" + profile.rules.sources.join(", "));
+  if(profile.rules && profile.rules.include && profile.rules.include.length) bits.push("rules=" + profile.rules.include.join(", "));
+  if(profile.rules && profile.rules.exclude && profile.rules.exclude.length) bits.push("skip rules=" + profile.rules.exclude.join(", "));
+  if(profile.rules && profile.rules.severities && profile.rules.severities.length) bits.push("severities=" + profile.rules.severities.join(", "));
+  info.textContent = bits.filter(Boolean).join(" · ");
+}
+async function loadProfilesDoc(){
+  const target = $("#profilesDoc");
+  if(!target) return;
+  target.innerHTML = '<p class="hint"><span class="spinner"></span> Loading guide...</p>';
+  try{
+    const data = await api("/api/docs/scan-profiles");
+    target.innerHTML = markdownToHtml(data.text || "");
+  }catch(err){
+    target.innerHTML = '<div class="notice">' + esc(err.message) + '</div>';
+  }
+}
 async function loadRules(){
   const data = await api("/api/rules?repo=" + encodeURIComponent(state.repo));
   state.rules = data.rules;
@@ -2060,6 +2244,8 @@ function renderRules(){
   $("#rulesCount").textContent = rows.length + " rule(s) shown.";
 }
 $("#loadRulesBtn").addEventListener("click", () => loadRules().catch((e) => notify(e.message, "bad")));
+if($("#scanProfile")) $("#scanProfile").addEventListener("change", renderProfileInfo);
+if($("#reloadProfilesDocBtn")) $("#reloadProfilesDocBtn").addEventListener("click", () => loadProfilesDoc().catch((e) => notify(e.message, "bad")));
 ["ruleSearch","ruleSource","ruleFixable"].forEach((id) => document.getElementById(id).addEventListener(id === "ruleSearch" ? "input" : "change", renderRules));
 $("#checkRulesBtn").addEventListener("click", async () => {
   try{

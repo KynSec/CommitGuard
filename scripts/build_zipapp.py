@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Builds the single-file CommitGuard zipapp.
 
-The archive contains the scan engine, the read-only command surfaces, and the
-bundled native rules.  Semgrep packs stay out because their upstream license
-forbids redistribution.  Rules are extracted to the user cache on first run so
-the scan engine can keep using normal filesystem paths.
+The archive contains the scan engine, the read-only command surfaces, the
+bundled native rules, and the Markdown documentation package.  Semgrep packs
+stay out because their upstream license forbids redistribution.  Rules are
+extracted to the user cache when the archive changes so the scan engine can
+keep using normal filesystem paths.
 """
 
 from __future__ import annotations
@@ -25,6 +26,8 @@ INCLUDE = (
     "gui_page.py",
 )
 INCLUDE_DIRS = ("core", "rules")
+DOCS_DIR = "docs"
+DOCS_PACKAGE = "commit_guard_docs"
 EXCLUDE_NAMES = {"__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache"}
 EXCLUDE_RULE_DIRS = {"semgrep_rules"}
 
@@ -46,16 +49,22 @@ def _extract_rules() -> Path | None:
         or Path.home() / ".cache" / "commitguard"
     )
     target = cache_root / "rules"
+    stat = archive.stat()
+    stamp = f"{stat.st_size}:{stat.st_mtime_ns}"
     marker = cache_root / ".complete"
     if marker.is_file():
-        return target
+        try:
+            if marker.read_text(encoding="utf-8").strip() == stamp:
+                return target
+        except OSError:
+            pass
     try:
         cache_root.mkdir(parents=True, exist_ok=True)
         with zipfile.ZipFile(archive) as bundle:
             for name in bundle.namelist():
                 if name == "rules" or name.startswith("rules/"):
                     bundle.extract(name, cache_root)
-        marker.write_text("ok\\n", encoding="utf-8")
+        marker.write_text(stamp + "\\n", encoding="utf-8")
         return target
     except OSError:
         fallback = Path(tempfile.mkdtemp(prefix="commitguard-rules-"))
@@ -109,6 +118,8 @@ def _ignore(directory: str, names: list[str]) -> set[str]:
     ignored = {name for name in names if name in EXCLUDE_NAMES}
     if Path(directory).name == "rules":
         ignored.update(name for name in names if name in EXCLUDE_RULE_DIRS)
+    if Path(directory).name == DOCS_DIR:
+        ignored.add("site")
     return ignored
 
 
@@ -127,6 +138,10 @@ def build(output: Path) -> Path:
             if not source.is_dir():
                 raise SystemExit(f"missing required directory: {source}")
             shutil.copytree(source, staging / name, ignore=_ignore)
+        docs_source = ROOT / DOCS_DIR
+        if not docs_source.is_dir():
+            raise SystemExit(f"missing required directory: {docs_source}")
+        shutil.copytree(docs_source, staging / DOCS_PACKAGE, ignore=_ignore)
         (staging / "__main__.py").write_text(BOOTSTRAP, encoding="utf-8")
         zipapp.create_archive(
             staging,

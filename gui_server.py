@@ -209,6 +209,12 @@ def _make_handler(state: AppState, token: str):
                 if path == "/api/rules":
                     self._send_json(actions.list_rules(query.get("repo") or state.repo or "", state.engine))
                     return
+                if path == "/api/scan/profiles":
+                    self._send_json(actions.scan_profiles(query.get("repo") or state.repo or "", state.engine))
+                    return
+                if path == "/api/docs/scan-profiles":
+                    self._send_json(actions.scan_profiles_doc())
+                    return
                 if path == "/api/rules/explain":
                     repo = query.get("repo") or state.repo or ""
                     rule_id = query.get("id") or ""

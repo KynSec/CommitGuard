@@ -10,6 +10,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 import install_hook
 from core.compliance import (
@@ -272,6 +273,17 @@ class DeveloperSurfaceTests(unittest.TestCase):
             stdout,
         )
         self.assertEqual(server.diagnostics[uri], [])
+
+    def test_lsp_scan_errors_are_reported(self) -> None:
+        uri = (self.root / "app.py").as_uri()
+        errors = io.StringIO()
+        with (
+            patch("core.lsp.scan_diff", side_effect=ValueError("broken rule")),
+            contextlib.redirect_stderr(errors),
+        ):
+            diagnostics = LanguageServer(self.root)._diagnostics_for("x = 1", uri)
+        self.assertEqual(diagnostics, [])
+        self.assertIn("broken rule", errors.getvalue())
 
     def test_dashboard_and_compliance(self) -> None:
         report = self.root / "commit_guard_reports" / "report.json"

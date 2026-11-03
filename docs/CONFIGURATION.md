@@ -15,7 +15,7 @@ configuration entirely with `--no-config`. CLI flags always win over the file.
 ## Precedence
 
 ```text
-CLI flag  >  .commit_guard.toml  >  built-in default
+CLI flag  >  scan profile  >  .commit_guard.toml  >  built-in default
 ```
 
 Examples:
@@ -55,8 +55,11 @@ soft_fail = false                  # report findings but exit 0
 fail_on = "all"                    # all | new (new requires a baseline)
 filter_placeholders = true         # skip obvious example/dummy secret values
 rules_dir = ""                     # optional; relative to the repo root
+profile = ""                       # optional determinant profile name
+profiles_file = ""                 # optional custom scan_profiles.yaml path
 
 [paths]
+include = []                       # optional globs to scan (empty = all)
 exclude = []                       # extra globs to skip entirely
 report_allowlist = []              # visible in reports, never blocking
 
@@ -106,6 +109,8 @@ max_new = { critical = 0, high = 0, medium = 25, low = 100 }
 | `fail_on` | string | `"all"` | `all` blocks every finding. `new` blocks only findings not present in `.commit_guard_ignore`; baselined findings stay visible with `baselineState: unchanged`. |
 | `filter_placeholders` | bool | `true` | Drop secret matches whose value is an obvious placeholder (`your_token_here`, `changeme`, `<...>`). |
 | `rules_dir` | string | unset | Alternate rules directory. Relative paths resolve against the repo root. |
+| `profile` | string | unset | Default determinant scan profile from `rules/scan_profiles.yaml`. CLI `--profile` overrides it. |
+| `profiles_file` | string | unset | Alternate scan-profile file. Relative paths resolve against the repo root. CLI `--profiles-file` overrides it. |
 
 ### `[gate]`
 
@@ -154,7 +159,8 @@ pipeline can run any executable your user account can run.
 
 | Key | Type | Description |
 |---|---|---|
-| `exclude` | list of globs | Added to the built-in exclusions. Excluded paths are not scanned at all. |
+| `include` | list of globs | Restricts scanning to matching files or directories. Empty means all paths. A selected profile's `paths.include` is used when this is empty; explicit `--include` overrides both. |
+| `exclude` | list of globs | Added to the built-in exclusions. Excluded paths are not scanned at all. Profile and CLI excludes are additive. |
 | `report_allowlist` | list of globs | Findings are still reported (marked non-blocking) but cannot fail a commit. |
 
 ### `[allowlist]`
@@ -175,6 +181,25 @@ Override a rule's severity without editing the upstream rule pack:
 ```
 
 The value must be one of the five severity names.
+
+---
+
+## Determinant scan profiles
+
+`rules/scan_profiles.yaml` defines named, version-controlled selections of scan
+mode, paths, rule sources, rule-id globs, and severities. Select one with
+`[scan].profile` or `--profile`, or list them with `--list-profiles`.
+
+```toml
+[scan]
+profile = "app-code"
+profiles_file = "config/team-profiles.yaml"  # optional
+```
+
+Profiles select from the rules that are already loaded; they do not replace
+the rule files or policy thresholds. The full schema, precedence rules, bundled
+profiles, and GUI workflow are documented in
+[SCAN_PROFILES.md](SCAN_PROFILES.md).
 
 ---
 

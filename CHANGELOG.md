@@ -1,5 +1,24 @@
 # Changelog
 
+## 3.1.0 - 2026-11-03
+
+### Added
+
+- Determinant scan profiles: human-editable `rules/scan_profiles.yaml` selects
+  staged/whole-tree mode, include/exclude paths, rule sources, rule-id globs,
+  and severities. CLI flags (`--profile`, `--profiles-file`, `--include`,
+  `--exclude`, `--rule`, `--skip-rule`, `--rule-source`, `--rule-severity`,
+  `--staged`, `--list-profiles`) and the GUI Scan tab use the same selections,
+  with profile/path/rule metadata recorded in Markdown and JSON reports.
+- GUI **Profiles** tab with an in-app rendered guide, and a Determinant
+  selection card with explicit override inputs.
+- `docs/SCAN_PROFILES.md`, packaged as the `commit_guard_docs` module for PyPI
+  and bundled into the zipapp so the guide and profiles work in installed
+  copies.
+- VS Code extension 0.1.1 with workspace-aware language-server startup,
+  debounced document synchronization, clearer recovery, and expanded language
+  activation.
+
 ## Unreleased
 
 ### Added

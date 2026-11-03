@@ -79,6 +79,7 @@ def build_markdown_report(
     show_secrets: bool = False,
     truncated: bool = False,
     dependency_graph: str | None = None,
+    selection: dict[str, Any] | None = None,
 ) -> str:
     """Renders the full Markdown report as a string."""
     counts = _severity_counts(findings)
@@ -91,6 +92,20 @@ def build_markdown_report(
     lines.append(f"**Commit Guard:** v{__version__}")
     lines.append(f"**Status:** {'❌ FAILED (commit blocked)' if blocked else '✅ PASSED'}")
     lines.append(f"**Block threshold:** `{block_threshold}` and above")
+    if selection:
+        profile = selection.get("profile") or "none"
+        lines.append(f"**Scan profile:** `{profile}`")
+        selected_paths = selection.get("paths") or {}
+        if isinstance(selected_paths, dict):
+            include = selected_paths.get("include") or []
+            files = selected_paths.get("files")
+            if include:
+                lines.append(f"**Path include:** `{', '.join(map(str, include))}`")
+            if files is not None:
+                lines.append(f"**Files scanned:** `{files}`")
+        selected_rules = selection.get("rules") or {}
+        if isinstance(selected_rules, dict) and selected_rules.get("active") is not None:
+            lines.append(f"**Active rules:** `{selected_rules['active']}`")
     if findings:
         from core.scoring import calculate_commit_risk_index, calculate_security_debt
 
@@ -184,6 +199,7 @@ def build_json_report(
     *,
     show_secrets: bool = False,
     truncated: bool = False,
+    selection: dict[str, Any] | None = None,
 ) -> str:
     """
     Renders findings as stable, CI-friendly JSON.  Structure is documented
@@ -207,6 +223,8 @@ def build_json_report(
             for finding in _sorted(findings)
         ],
     }
+    if selection is not None:
+        payload["selection"] = selection
     return json.dumps(payload, indent=2) + "\n"
 
 
@@ -520,6 +538,7 @@ def write_markdown_report(
     show_secrets: bool = False,
     truncated: bool = False,
     dependency_graph: str | None = None,
+    selection: dict[str, Any] | None = None,
 ) -> Path:
     return _write(
         output_path,
@@ -529,6 +548,7 @@ def write_markdown_report(
             show_secrets=show_secrets,
             truncated=truncated,
             dependency_graph=dependency_graph,
+            selection=selection,
         ),
     )
 
@@ -540,11 +560,16 @@ def write_json_report(
     *,
     show_secrets: bool = False,
     truncated: bool = False,
+    selection: dict[str, Any] | None = None,
 ) -> Path:
     return _write(
         output_path,
         build_json_report(
-            findings, block_threshold, show_secrets=show_secrets, truncated=truncated  # commit-guard-ignore
+            findings,
+            block_threshold,
+            show_secrets=show_secrets,
+            truncated=truncated,
+            selection=selection,
         ),
     )
 

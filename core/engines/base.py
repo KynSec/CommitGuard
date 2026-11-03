@@ -46,9 +46,11 @@ class ScanContext:
     line_allowlist: tuple[re.Pattern[str], ...] = ()
     path_allowlist: tuple[re.Pattern[str], ...] = ()
     path_excludes: tuple[str, ...] = ()
+    path_includes: tuple[str, ...] = ()
     ignore_inline: bool = True
     ignored_files: frozenset[str] = frozenset()
     ignored_rule_ids: frozenset[str] = frozenset()
+    enabled_rule_ids: frozenset[str] | None = None
     filter_placeholders: bool = True
     max_findings: int = 0
     file_lines: dict[str, list[str]] | None = None

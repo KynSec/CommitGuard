@@ -647,6 +647,38 @@ body.nav-open .drawer {
 }
 .code-copy { position: absolute; top: 15px; right: 18px; }
 .cli-empty { text-align: center; color: var(--muted); font-size: 14px; padding: 24px 0 0; }
+.profiles-preview {
+  max-width: 980px; margin: 0 auto; padding: clamp(18px, 3vw, 30px);
+  background: linear-gradient(180deg, #111a2b 0%, #0b1220 100%);
+  border: 1px solid var(--line); border-radius: 14px;
+}
+.profiles-preview h1,.profiles-preview h2,.profiles-preview h3,.profiles-preview h4 {
+  margin: 22px 0 8px; line-height: 1.25; color: #fff;
+}
+.profiles-preview h1 { margin-top: 0; font-size: 25px; }
+.profiles-preview h2 { padding-top: 12px; border-top: 1px solid var(--line); font-size: 20px; }
+.profiles-preview h3 { font-size: 16px; }
+.profiles-preview p,.profiles-preview ul,.profiles-preview ol { color: var(--muted); }
+.profiles-preview li { margin: 4px 0; }
+.profiles-preview code {
+  font-size: .9em; color: #a5d8ff; background: #0c1421;
+  border: 1px solid var(--line); border-radius: 5px; padding: .12em .4em;
+}
+.profiles-preview pre {
+  overflow: auto; padding: 14px; background: var(--code-bg);
+  border: 1px solid var(--line); border-radius: 10px; line-height: 1.55;
+}
+.profiles-preview pre code { padding: 0; border: 0; background: transparent; color: #cfe3ff; }
+.profiles-preview blockquote {
+  margin: 12px 0; padding: 8px 14px; border-left: 3px solid var(--accent);
+  background: rgba(56,189,248,.08); color: var(--muted);
+}
+.profiles-preview table { width: 100%; margin: 12px 0; border-collapse: collapse; font-size: 13px; }
+.profiles-preview th,.profiles-preview td {
+  padding: 8px 10px; border: 1px solid var(--line2); text-align: left; vertical-align: top;
+}
+.profiles-preview .profiles-status { color: var(--muted); }
+.profiles-preview .profiles-error { color: #fca5a5; }
 
 /* Pipeline + interactive preview */
 .pipeline {
@@ -1101,6 +1133,7 @@ footer {
       <a href="#features" data-nav="features">Features</a>
       <a href="#control-center" data-nav="control-center">Control Center</a>
       <a href="#cli" data-nav="cli">CLI Reference</a>
+      <a href="#profiles" data-nav="profiles">Profiles</a>
       <a href="https://github.com/CommitGuard-Sec/CommitGuard" target="_blank" rel="noopener noreferrer" class="btn small">
         <svg height="16" width="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
         GitHub
@@ -1124,6 +1157,7 @@ footer {
     <a href="#features" class="drawer-link" data-nav="features">Features <span aria-hidden="true">&rarr;</span></a>
     <a href="#control-center" class="drawer-link" data-nav="control-center">Control Center <span aria-hidden="true">&rarr;</span></a>
     <a href="#cli" class="drawer-link" data-nav="cli">CLI Reference <span aria-hidden="true">&rarr;</span></a>
+    <a href="#profiles" class="drawer-link" data-nav="profiles">Profiles <span aria-hidden="true">&rarr;</span></a>
     <a href="#faq" class="drawer-link" data-nav="faq">FAQ <span aria-hidden="true">&rarr;</span></a>
   </nav>
   <div class="drawer-actions">
@@ -1534,11 +1568,28 @@ footer {
   </div>
 </section>
 
+<!-- Determinant scan profiles -->
+<section id="profiles" class="section">
+  <div class="container">
+    <div class="section-header">
+      <span class="eyebrow">06 &middot; Scan Profiles</span>
+      <h2>Choose What to Scan</h2>
+      <p>Define repeatable file and rule selections in <code>rules/scan_profiles.yaml</code>, then use them from the CLI or Control Center.</p>
+    </div>
+    <div class="profiles-preview" id="profilesPreview" aria-live="polite">
+      <p class="profiles-status">Loading the scan profile guide&hellip;</p>
+    </div>
+    <p class="small muted" style="text-align:center;margin-top:12px">
+      <a href="https://github.com/KynSec/CommitGuard/blob/main/docs/SCAN_PROFILES.md" target="_blank" rel="noopener noreferrer">Open the source guide on GitHub</a>
+    </p>
+  </div>
+</section>
+
 <!-- FAQ -->
 <section id="faq" class="section">
   <div class="container">
     <div class="section-header">
-      <span class="eyebrow">06 &middot; FAQ</span>
+      <span class="eyebrow">07 &middot; FAQ</span>
       <h2>Questions, Answered</h2>
       <p>What to expect before running CommitGuard on a real repository.</p>
     </div>
@@ -2091,6 +2142,147 @@ function onScroll() {
 window.addEventListener('scroll', onScroll, { passive: true });
 window.addEventListener('resize', onScroll);
 onScroll();
+
+/* Scan profile guide preview */
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function markdownInline(value) {
+  let text = escapeHtml(value);
+  text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
+  text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, label, href) => {
+    const safeHref = /^(https?:\/\/|#|\/)/i.test(href) ? href : '#';
+    return '<a href="' + safeHref + '" rel="noopener noreferrer" target="_blank">' + label + '</a>';
+  });
+  return text;
+}
+
+function renderMarkdown(markdown) {
+  const lines = String(markdown || '').replace(/\r\n/g, '\n').split('\n');
+  const output = [];
+  let code = [];
+  let paragraph = [];
+  let listType = '';
+  let inCode = false;
+  let index = 0;
+  const flushParagraph = () => {
+    if (paragraph.length) output.push('<p>' + markdownInline(paragraph.join(' ')) + '</p>');
+    paragraph = [];
+  };
+  const closeList = () => {
+    if (listType) output.push('</' + listType + '>');
+    listType = '';
+  };
+  while (index < lines.length) {
+    const line = lines[index];
+    if (line.startsWith('```')) {
+      flushParagraph();
+      closeList();
+      if (inCode) {
+        output.push('<pre><code>' + escapeHtml(code.join('\n')) + '</code></pre>');
+        code = [];
+        inCode = false;
+      } else {
+        inCode = true;
+      }
+      index += 1;
+      continue;
+    }
+    if (inCode) {
+      code.push(line);
+      index += 1;
+      continue;
+    }
+    if (!line.trim()) {
+      flushParagraph();
+      closeList();
+      index += 1;
+      continue;
+    }
+    const heading = line.match(/^(#{1,4})\s+(.*)$/);
+    if (heading) {
+      flushParagraph();
+      closeList();
+      const level = heading[1].length;
+      output.push('<h' + level + '>' + markdownInline(heading[2]) + '</h' + level + '>');
+      index += 1;
+      continue;
+    }
+    if (/^>\s?/.test(line)) {
+      flushParagraph();
+      closeList();
+      const quote = [];
+      while (index < lines.length && /^>\s?/.test(lines[index])) {
+        quote.push(lines[index].replace(/^>\s?/, ''));
+        index += 1;
+      }
+      output.push('<blockquote>' + markdownInline(quote.join(' ')) + '</blockquote>');
+      continue;
+    }
+    if (line.includes('|') && index + 1 < lines.length &&
+        /^\s*\|?[\s:|-]+\|[\s:|-]*$/.test(lines[index + 1])) {
+      flushParagraph();
+      closeList();
+      const headers = line.replace(/^\||\|$/g, '').split('|').map((item) => item.trim());
+      index += 2;
+      const rows = [];
+      while (index < lines.length && lines[index].includes('|') && lines[index].trim()) {
+        rows.push(lines[index].replace(/^\||\|$/g, '').split('|').map((item) => item.trim()));
+        index += 1;
+      }
+      output.push('<table><thead><tr>' + headers.map((item) => '<th>' + markdownInline(item) + '</th>').join('') +
+        '</tr></thead><tbody>' + rows.map((row) => '<tr>' +
+          headers.map((_, cell) => '<td>' + markdownInline(row[cell] || '') + '</td>').join('') +
+          '</tr>').join('') + '</tbody></table>');
+      continue;
+    }
+    const unordered = line.match(/^\s*[-*]\s+(.*)$/);
+    const ordered = line.match(/^\s*\d+[.)]\s+(.*)$/);
+    if (unordered || ordered) {
+      flushParagraph();
+      const type = unordered ? 'ul' : 'ol';
+      if (listType !== type) {
+        closeList();
+        output.push('<' + type + '>');
+        listType = type;
+      }
+      output.push('<li>' + markdownInline((unordered || ordered)[1]) + '</li>');
+      index += 1;
+      continue;
+    }
+    paragraph.push(line.trim());
+    index += 1;
+  }
+  flushParagraph();
+  closeList();
+  if (inCode) output.push('<pre><code>' + escapeHtml(code.join('\n')) + '</code></pre>');
+  return output.join('\n');
+}
+
+async function loadProfilesGuide() {
+  const target = $('#profilesPreview');
+  try {
+    let response = await fetch('./scan-profiles.md');
+    if (!response.ok) response = await fetch('../SCAN_PROFILES.md');
+    if (!response.ok) throw new Error('The scan profile guide could not be loaded.');
+    target.innerHTML = renderMarkdown(await response.text());
+  } catch (error) {
+    target.innerHTML = '<p class="profiles-error">' + escapeHtml(error.message) +
+      ' Use the <a href="https://github.com/KynSec/CommitGuard/blob/main/docs/SCAN_PROFILES.md" target="_blank" rel="noopener noreferrer">source guide on GitHub</a>.</p>';
+  }
+}
+
+$$('[data-nav="profiles"]').forEach((link) => {
+  link.addEventListener('click', () => loadProfilesGuide());
+});
+if (location.hash === '#profiles') loadProfilesGuide();
 
 /* CLI filter */
 const searchInput = $('#cliSearch');

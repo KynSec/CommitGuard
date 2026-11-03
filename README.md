@@ -144,6 +144,12 @@ commit-guard scan --diff origin/main...HEAD
 commit-guard scan --history 50
 commit-guard scan --all
 
+# Determinant profiles and explicit file/rule selection
+commit-guard scan --list-profiles
+commit-guard scan --profile app-code
+commit-guard scan --profile python-security --include "src/**" --rule "cg-python-*"
+commit-guard scan --profile secrets-only --exclude "tests/fixtures/**"
+
 # Dependencies and reports
 commit-guard scan --sca
 commit-guard scan --sca --sca-online        # explicit network opt-in
@@ -267,9 +273,10 @@ commit-guard gui --port 0
 commit-guard gui --report-only --report-path out/report.html
 ```
 
-The console includes overview, scan controls, policy gate, triage, pipelines,
-fix preview/apply, report PRs, baseline management, Git operations, rule
-inspection, reports, maintenance, and a validated config editor.
+The console includes overview, scan controls, determinant profile/file/rule
+selection, policy gate, triage, pipelines, fix preview/apply, report PRs,
+baseline management, Git operations, rule inspection, an in-app profiles
+guide, reports, maintenance, and a validated config editor.
 
 Security defaults: binds to `127.0.0.1`, requires a per-run token, validates the
 `Host` header, caps request bodies, keeps secrets redacted, and runs pipelines
@@ -359,7 +366,8 @@ commit-guard scan --staged --no-cache   # debugging or read-only environments
 |---|---|
 | [Configuration](docs/CONFIGURATION.md) | Every setting, default, profile, and precedence rule. |
 | [Policy](docs/POLICY.md) | Gates, budgets, ratchets, triage, and exit codes. |
-| [Rules](docs/RULES.md) | Native schema, rule packs, context windows, and validation. |
+| [Rules](docs/RULES.md) | Native schema, rule packs, context windows, selection, and validation. |
+| [Scan profiles](docs/SCAN_PROFILES.md) | Determinant file/rule selections in `rules/scan_profiles.yaml`, CLI/GUI usage, and PyPI packaging. |
 | [Interoperability](docs/INTEROP.md) | SARIF/native ingestion and report merging. |
 | [Ecosystem](docs/ECOSYSTEM.md) | SBOM, licenses, dashboard, watch, LSP, compliance, and plugins. |
 | [CI](docs/CI.md) | GitHub Actions, GitLab, Jenkins, and pre-commit. |

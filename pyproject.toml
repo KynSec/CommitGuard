@@ -41,14 +41,18 @@ Security = "https://github.com/CommitGuard-Sec/CommitGuard/security/policy"
 
 [tool.setuptools]
 py-modules = ["main", "install_hook", "gui_server", "gui_actions", "gui_page"]
-packages = ["core", "core.engines", "rules", "rules.ai_security", "rules.iac"]
+packages = ["core", "core.engines", "rules", "rules.ai_security", "rules.iac", "commit_guard_docs"]
 include-package-data = true
 
 [tool.setuptools.dynamic]
 version = {attr = "core.__version__"}
 
+[tool.setuptools.package-dir]
+commit_guard_docs = "docs"
+
 [tool.setuptools.package-data]
 rules = ["*.toml", "*.yaml", "*.yml", "*.json", "**/*.toml", "**/*.yaml", "**/*.yml", "**/*.json", "**/*.txt"]
+commit_guard_docs = ["*.md"]
 
 [tool.setuptools.exclude-package-data]
 # Semgrep Rules License v1.0 forbids redistribution. The packs stay in the

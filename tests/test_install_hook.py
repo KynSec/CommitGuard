@@ -84,6 +84,28 @@ class InstallerTests(unittest.TestCase):
         self.assertTrue(args.no_open)
         args = parser.parse_args(["scan", "--format", "html"])
         self.assertEqual(args.format, "html")
+        args = parser.parse_args(
+            [
+                "scan",
+                "--profile",
+                "app-code",
+                "--include",
+                "src/**",
+                "--rule",
+                "cg-*",
+                "--rule-source",
+                "custom",
+                "--rule-severity",
+                "high",
+                "--staged",
+            ]
+        )
+        self.assertEqual(args.profile, "app-code")
+        self.assertEqual(args.include, ["src/**"])
+        self.assertEqual(args.rule, ["cg-*"])
+        self.assertEqual(args.rule_source, ["custom"])
+        self.assertEqual(args.rule_severity, ["high"])
+        self.assertTrue(args.staged)
         gui_args = parser.parse_args(["gui", "--repo", "."])
         self.assertEqual(gui_args.repo_opt, ".")
 
