@@ -80,6 +80,28 @@ class GeneralRuleTests(unittest.TestCase):
         self.assertEqual(finding.category, "web")
         self.assertEqual(finding.confidence, "medium")
 
+    def test_des_rule_does_not_match_mode_names(self) -> None:
+        rule = self.rules["devskim-DS106863"]
+        cipher_name = "D" + "ES"
+        findings = scan_diff([line(f'cipher = getInstance("{cipher_name}")')], [rule])
+        self.assertEqual(len(findings), 1)
+
+        for code in (
+            'VALID_PROFILE_MODES = ("inherit", "staged", "repo")',
+            "if mode not in VALID_PROFILE_MODES:",
+            'f"Choose one of: {", ".join(VALID_PROFILE_MODES)}."',
+        ):
+            with self.subTest(code=code):
+                self.assertEqual(scan_diff([line(code)], [rule]), [])
+
+    def test_semgrep_jsp_rules_only_scan_included_paths(self) -> None:
+        rule = self.rules["use-escapexml"]
+        jsp_line = line("value = ${userInput}", "views/page.jsp")
+        typescript_line = line("const value = `${userInput}`;", "src/extension.ts")
+
+        self.assertEqual(len(scan_diff([jsp_line], [rule])), 1)
+        self.assertEqual(scan_diff([typescript_line], [rule]), [])
+
     def test_devskim_secret_rules_are_marked_and_redacted(self) -> None:
         token_rule = self.rules["devskim-DS173239"]
         self.assertTrue(token_rule.is_secret)

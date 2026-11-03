@@ -152,7 +152,12 @@ class LanguageServer:
                 allowlist_path_regexes=ruleset.path_allowlist,
                 file_lines={display_path: lines},
             )
-        except Exception:  # noqa: BLE001 - one bad rule must not kill the editor
+        except Exception as exc:  # noqa: BLE001 - one bad rule must not kill the editor
+            print(
+                f"[commit-guard] ERROR: LSP scan failed for {display_path}: {exc}",
+                file=sys.stderr,
+                flush=True,
+            )
             return []
         return [self._diagnostic(finding, lines) for finding in findings]
 

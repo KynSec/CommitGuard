@@ -1,10 +1,15 @@
 {
-  "name": "commitguard",
-  "displayName": "CommitGuard",
+  "name": "commitguard-kynsec",
+  "displayName": "CommitGuard Security Scanner (KynSec)",
   "description": "Offline-first CommitGuard security diagnostics and quick fixes.",
-  "version": "0.1.0",
-  "publisher": "CommitGuard-Sec",
+  "version": "0.1.1",
+  "publisher": "AmrKhaledEldhshan",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/KynSec/CommitGuard.git",
+    "directory": "editors/vscode"
+  },
   "engines": {
     "vscode": "^1.85.0"
   },
@@ -16,6 +21,18 @@
     "onLanguage:typescript",
     "onLanguage:javascriptreact",
     "onLanguage:typescriptreact",
+    "onLanguage:go",
+    "onLanguage:rust",
+    "onLanguage:java",
+    "onLanguage:c",
+    "onLanguage:cpp",
+    "onLanguage:csharp",
+    "onLanguage:ruby",
+    "onLanguage:php",
+    "onLanguage:yaml",
+    "onLanguage:json",
+    "onLanguage:dockerfile",
+    "onLanguage:shellscript",
     "workspaceContains:.commit_guard.toml",
     "workspaceContains:.commit_guard"
   ],
@@ -53,12 +70,14 @@
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
+    "package": "vsce package",
     "watch": "tsc -watch -p ./"
   },
   "dependencies": {
     "vscode-languageclient": "^9.0.1"
   },
   "devDependencies": {
+    "@vscode/vsce": "^3.6.0",
     "@types/node": "^20.11.0",
     "@types/vscode": "^1.85.0",
     "typescript": "^5.4.0"

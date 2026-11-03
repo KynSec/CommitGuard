@@ -33,7 +33,7 @@ TOOLKIT_DIR = Path(__file__).resolve().parent
 DEFAULT_TIMEOUT = 600
 MAINTENANCE_TIMEOUT = 300
 
-VALID_MODES = ("staged", "all", "history", "diff")
+VALID_MODES = ("staged", "profile", "all", "history", "diff")
 VALID_THRESHOLDS = ("critical", "high", "medium", "low", "info")
 VALID_POLICY_PROFILES = ("strict", "balanced", "audit")
 VALID_DEP_GRAPH_FORMATS = ("mermaid", "json", "dot", "all")
@@ -179,10 +179,7 @@ def _load_config(repo: Path):
 
 
 def resolve_rules_dir(repo: Path, engine: Path) -> Path:
-    try:
-        config = _load_config(repo)
-    except ActionError:
-        config = None
+    config = _load_config(repo)
     if config is not None and config.rules_dir is not None:
         path = config.rules_dir.expanduser()
         if not path.is_absolute():
@@ -240,6 +237,9 @@ def _config_summary(config) -> dict:
         "soft_fail": config.soft_fail,
         "fail_on": config.fail_on,
         "filter_placeholders": config.filter_placeholders,
+        "profile": config.profile,
+        "profiles_file": str(config.profiles_file) if config.profiles_file else None,
+        "include": list(config.include),
         "dep_graph": config.dep_graph,
         "dep_graph_format": config.dep_graph_format,
         "sca": config.sca,
@@ -1389,6 +1389,31 @@ def _path_option(value: object, label: str) -> str:
     return text
 
 
+def _list_option(value: object, label: str) -> list[str]:
+    if value is None:
+        return []
+    if isinstance(value, str):
+        raw = re.split(r"[\n,]", value)
+    elif isinstance(value, (list, tuple)):
+        raw = [str(item) for item in value]
+    else:
+        raise ActionError(f"{label} must be a string or a list.")
+    items: list[str] = []
+    for item in raw:
+        text = item.strip()
+        if not text:
+            continue
+        if "\x00" in text or text.startswith("-"):
+            raise ActionError(f"Invalid {label} value: {text!r}")
+        items.append(text)
+    return items
+
+
+def _append_list_options(command: list[str], opts: dict, key: str, flag: str) -> None:
+    for item in _list_option(opts.get(key), key.replace("_", " ")):
+        command.extend([flag, item])
+
+
 def build_scan_command(
     engine: Path,
     repo: Path,
@@ -1419,6 +1444,8 @@ def build_scan_command(
     ]
     if mode == "all":
         command.append("--all")
+    elif mode == "staged":
+        command.append("--staged")
     elif mode == "history":
         history = _as_int(opts.get("history"), 0)
         if history is None or history < 0:
@@ -1436,6 +1463,18 @@ def build_scan_command(
         command.append("--no-baseline")
     if _as_bool(opts.get("no_cache")):
         command.append("--no-cache")
+    profile = str(opts.get("profile") or "").strip()
+    if profile:
+        command.extend(["--profile", profile])
+    profiles_file = _path_option(opts.get("profiles_file"), "profiles")
+    if profiles_file:
+        command.extend(["--profiles-file", profiles_file])
+    _append_list_options(command, opts, "include", "--include")
+    _append_list_options(command, opts, "exclude", "--exclude")
+    _append_list_options(command, opts, "rule_include", "--rule")
+    _append_list_options(command, opts, "rule_exclude", "--skip-rule")
+    _append_list_options(command, opts, "rule_sources", "--rule-source")
+    _append_list_options(command, opts, "rule_severities", "--rule-severity")
     if _as_bool(opts.get("no_placeholder_filter")):
         command.append("--no-placeholder-filter")
     if _as_bool(opts.get("no_config")):
@@ -1819,6 +1858,55 @@ def list_rules(target: str | Path, engine: str | Path | None = None) -> dict:
         "rules_dir": str(rules_dir),
         "skipped": len(ruleset.skipped),
     }
+
+
+def scan_profiles(target: str | Path, engine: str | Path | None = None) -> dict:
+    """Lists determinant profiles plus the effective profile file."""
+    repo = find_repo_root(target)
+    engine_path = resolve_engine(repo, engine)
+    rules_dir = resolve_rules_dir(repo, engine_path)
+    from core.scan_profiles import PROFILE_FILENAME, ProfileError, load_scan_profiles
+
+    try:
+        config = _load_config(repo)
+    except ActionError:
+        config = None
+    profiles_file = (
+        config.profiles_file if config is not None and config.profiles_file else None
+    )
+    explicit = profiles_file is not None
+    if profiles_file is not None:
+        profiles_file = profiles_file.expanduser()
+        if not profiles_file.is_absolute():
+            profiles_file = (repo / profiles_file).resolve()
+    else:
+        profiles_file = rules_dir / PROFILE_FILENAME
+    try:
+        profiles = load_scan_profiles(
+            rules_dir, profiles_file if explicit else None
+        )
+    except ProfileError as exc:
+        raise ActionError(str(exc)) from exc
+    return {
+        "ok": True,
+        "repo": str(repo),
+        "rules_dir": str(rules_dir),
+        "profiles_file": str(profiles_file),
+        "exists": profiles_file.is_file(),
+        "selected": config.profile if config is not None else None,
+        "profiles": [profiles[name].to_dict() for name in sorted(profiles)],
+    }
+
+
+def scan_profiles_doc() -> dict:
+    """Returns the bundled scan-profile guide for the GUI preview tab."""
+    from core.scan_profiles import ProfileError, scan_profiles_doc_text
+
+    try:
+        text = scan_profiles_doc_text()
+    except ProfileError as exc:
+        raise ActionError(str(exc), status=500) from exc
+    return {"ok": True, "text": text}
 
 
 # --------------------------------------------------------------------------

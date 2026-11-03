@@ -5,7 +5,7 @@
 # redistribution. Run `python -m unittest tests.test_provenance` after changing
 # a rule file or adding a pack.
 schema_version: 1
-updated: 2026-10-28
+updated: 2026-11-03
 checksum_algorithm: sha256
 policy:
   release_rule: "Only sources with status 'cleared' and redistribution 'allowed' may ship in a release artifact."
@@ -209,3 +209,6 @@ sources:
       - path: rules/nuclei_generic_key.yaml
         sha256: 6d5ae7e2e6f1d204f0dd761a021067f3249c818cc9517cab83011f696b5e0366
         notes: Original nuclei-style template authored for CommitGuard; no upstream template is copied.
+      - path: rules/scan_profiles.yaml
+        sha256: 8958ea72a6e305adb97b02953b435cbe4cb5ea3066c5ae0bb3c6d0db9e0c64d2
+        notes: Project-authored determinant file/path/rule selection profiles; not a detection pack.

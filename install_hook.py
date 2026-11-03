@@ -948,7 +948,17 @@ def run_manual_scan(
     soft_fail: bool = False,
     history: int | None = None,
     scan_all: bool = False,
+    staged: bool = False,
     pre_push: bool = False,
+    profile: str | None = None,
+    profiles_file: Path | None = None,
+    include: list[str] | None = None,
+    exclude: list[str] | None = None,
+    rule_include: list[str] | None = None,
+    rule_exclude: list[str] | None = None,
+    rule_sources: list[str] | None = None,
+    rule_severities: list[str] | None = None,
+    list_profiles: bool = False,
     update_baseline: bool = False,
     fail_on: str | None = None,
     baseline_owner: str | None = None,
@@ -1008,8 +1018,28 @@ def run_manual_scan(
         command.extend(["--history", str(history)])
     if scan_all:
         command.append("--all")
+    if staged:
+        command.append("--staged")
     if pre_push:
         command.append("--pre-push")
+    if profile:
+        command.extend(["--profile", profile])
+    if profiles_file:
+        command.extend(["--profiles-file", str(profiles_file)])
+    for value in include or ():
+        command.extend(["--include", value])
+    for value in exclude or ():
+        command.extend(["--exclude", value])
+    for value in rule_include or ():
+        command.extend(["--rule", value])
+    for value in rule_exclude or ():
+        command.extend(["--skip-rule", value])
+    for value in rule_sources or ():
+        command.extend(["--rule-source", value])
+    for value in rule_severities or ():
+        command.extend(["--rule-severity", value])
+    if list_profiles:
+        command.append("--list-profiles")
     if update_baseline:
         command.append("--update-baseline")
     if fail_on:
@@ -1192,6 +1222,25 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_scan = sub.add_parser("scan", help="Run a manual scan without committing.")
     p_scan.add_argument("repo", nargs="?", default=".")
+    p_scan.add_argument("--profile", metavar="NAME", default=None,
+                        help="Determinant scan profile from rules/scan_profiles.yaml.")
+    p_scan.add_argument("--profiles-file", type=Path, default=None,
+                        help="Explicit scan profile file.")
+    p_scan.add_argument("--include", action="append", default=[], metavar="GLOB",
+                        help="Only scan matching files/directories (repeatable).")
+    p_scan.add_argument("--exclude", action="append", default=[], metavar="GLOB",
+                        help="Skip matching files/directories (repeatable).")
+    p_scan.add_argument("--rule", action="append", default=[], metavar="ID_GLOB",
+                        help="Only load matching rule ids (repeatable).")
+    p_scan.add_argument("--skip-rule", action="append", default=[], metavar="ID_GLOB",
+                        help="Skip matching rule ids (repeatable).")
+    p_scan.add_argument("--rule-source", action="append", default=[], metavar="SOURCE",
+                        help="Only load rules from this source (repeatable).")
+    p_scan.add_argument("--rule-severity", action="append", default=[],
+                        choices=("critical", "high", "medium", "low", "info"),
+                        help="Only load rules at this severity (repeatable).")
+    p_scan.add_argument("--list-profiles", action="store_true",
+                        help="Print available determinant scan profiles and exit.")
     p_scan.add_argument("--staged", action="store_true",
                         help="Scan staged changes (the default).")
     p_scan.add_argument("--threshold", choices=("critical", "high", "medium", "low", "info"), default=None)
@@ -1485,7 +1534,17 @@ def main(argv: list[str] | None = None) -> int:
                 soft_fail=args.soft_fail,
                 history=args.history,
                 scan_all=args.all,
+                staged=args.staged,
                 pre_push=args.pre_push,
+                profile=args.profile,
+                profiles_file=args.profiles_file,
+                include=args.include,
+                exclude=args.exclude,
+                rule_include=args.rule,
+                rule_exclude=args.skip_rule,
+                rule_sources=args.rule_source,
+                rule_severities=args.rule_severity,
+                list_profiles=args.list_profiles,
                 update_baseline=args.update_baseline,
                 fail_on=args.fail_on,
                 baseline_owner=args.baseline_owner,

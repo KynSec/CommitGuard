@@ -30,6 +30,16 @@ model sanitizers.
 
 ---
 
+## Selecting rules and paths
+
+Use `rules/scan_profiles.yaml` to define named selections of sources, rule-id
+globs, severities, and file paths. Profiles are available through
+`--profile`/`--list-profiles` and the GUI **Profiles** tab. They only filter the
+loaded ruleset; the rule packs and schemas on this page remain unchanged. See
+[SCAN_PROFILES.md](SCAN_PROFILES.md) for the schema and examples.
+
+---
+
 ## Downloading and enabling rule packs
 
 The GUI **Rules** tab can fetch packs on demand. Network access is never

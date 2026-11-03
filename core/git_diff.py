@@ -22,6 +22,8 @@ import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
+from core.paths import PathMatcher
+
 _MAX_CONTEXT_FILE_BYTES = 2 * 1024 * 1024
 _MAX_CONTEXT_LINES = 50_000
 
@@ -320,8 +322,17 @@ def get_history_diff(
     return _parse_diff(result.stdout)
 
 
-def get_all_files(repo_dir: Path) -> list[DiffLine]:
-    """Returns every line of every tracked/untracked, non-ignored text file."""
+def get_all_files(
+    repo_dir: Path,
+    *,
+    include: tuple[str, ...] | list[str] = (),
+    exclude: tuple[str, ...] | list[str] = (),
+) -> list[DiffLine]:
+    """Returns every line of every tracked/untracked, non-ignored text file.
+
+    ``include`` limits reads to matching repo-relative paths. ``exclude`` uses
+    Commit Guard glob semantics, including ``!pattern`` re-includes.
+    """
     try:
         result = subprocess.run(
             [
@@ -346,8 +357,14 @@ def get_all_files(repo_dir: Path) -> list[DiffLine]:
         raise GitDiffError(f"git ls-files failed: {message or 'unknown error'}")
 
     paths = sorted({path for path in result.stdout.decode("utf-8", "replace").split("\0") if path})
+    includes = PathMatcher(include) if include else None
+    excludes = PathMatcher(exclude) if exclude else None
     lines: list[DiffLine] = []
     for relative in paths:
+        if includes is not None and not includes.matches(relative):
+            continue
+        if excludes is not None and excludes.matches(relative):
+            continue
         full_path = repo_dir / relative
         try:
             if not full_path.is_file() or full_path.stat().st_size > _MAX_CONTEXT_FILE_BYTES:
