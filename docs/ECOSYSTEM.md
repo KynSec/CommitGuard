@@ -17,6 +17,10 @@ commit-guard license . --policy license-policy.toml --format json
 and locally available license metadata. A missing license is `NOASSERTION`, not
 a guessed permissive license.
 
+Offline OSV snapshots can carry an HMAC-SHA256 sidecar. A present `.sig` file
+is always verified, and `--sca-require-signature` makes unsigned snapshots a
+error for CI. See [RELEASING.md](RELEASING.md) for signing.
+
 `license` is a separate gate from the security threshold. The default policy
 allows common permissive licenses, denies strong copyleft and source-available
 licenses, and sends weak copyleft to review. Unknown, review, and denied
@@ -32,6 +36,12 @@ review = ["MPL-2.0", "EPL-2.0"]
 
 Use `--strict` to fail on review and unknown entries. The license report never
 changes the security report or its exit status silently.
+
+## Editor loop
+
+`commit-guard lsp` is a stdio language server with diagnostics and quick
+fixes. `editors/vscode/` contains the Phase 2 VS Code extension skeleton that
+starts it automatically for Python, JavaScript, and TypeScript files.
 
 ## Dashboard
 

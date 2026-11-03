@@ -81,6 +81,14 @@ jobs:
           main.py install_hook.py gui_server.py gui_actions.py gui_page.py
           core
 
+      - name: Fixed-commit accuracy gate
+        run: python benchmarks/accuracy_benchmark.py --json --output accuracy-report.json
+
+      - name: Build zipapp and smoke test
+        run: |
+          python scripts/build_zipapp.py --output dist/commit-guard.pyz
+          python dist/commit-guard.pyz --version
+
       - name: Build package
         run: python -m build
 
@@ -115,8 +123,21 @@ jobs:
           print("release artifacts exclude blocked rule packs and include license notices")
           PY
 
+      - name: Dogfood strict scan
+        run: |
+          mkdir -p commit_guard_reports
+          python main.py --all --gate --policy-profile strict --format json \
+            --report-path commit_guard_reports/dogfood.json --soft-fail --quiet
+
       - name: Upload package
         uses: actions/upload-artifact@v4
         with:
           name: commit-guard-dist
           path: dist/
+
+      - name: Upload dogfood report
+        uses: actions/upload-artifact@v4
+        with:
+          name: commit-guard-dogfood
+          path: commit_guard_reports/dogfood.json
+          if-no-files-found: ignore

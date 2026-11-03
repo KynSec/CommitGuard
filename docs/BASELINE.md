@@ -93,3 +93,20 @@ mypy main.py install_hook.py gui_server.py gui_actions.py gui_page.py core
 This snapshot covers the Phase 2/3 command surfaces, SBOM/license policy,
 dashboard, watch mode, language server, compliance packs, plugins, Grype
 ingestion, and JavaScript/TypeScript taint flows. It is not a release tag.
+
+## Phase 2 completion snapshot
+
+Measured on 2026-11-03 after closing the Phase 2 exit items:
+
+| Item | Value |
+|---|---|
+| Tests | 336 passed, 15 subtests passed |
+| JSON schema | 3 |
+| Accuracy corpus | 14/14 checks (7 vulnerable + 7 fixed cases) |
+| Staged benchmark | ~1.33 s median (120 files x 20 lines) |
+| Lint / type check | `ruff` clean; `mypy` clean for 44 application sources |
+| Zipapp smoke test | `--version` and `sbom` succeed |
+
+This snapshot adds cross-file Python taint summaries, signed OSV snapshots,
+GitLab MR publishing, the VS Code extension skeleton, the zipapp and release
+workflow, the accuracy gate, upgrade end-to-end tests, and CI dogfooding.

@@ -77,7 +77,7 @@ interactive version of the same results.
 ```json
 {
   "schema_version": 3,
-  "tool": {"name": "CommitGuard", "version": "2.1.0"},
+  "tool": {"name": "CommitGuard", "version": "3.0.0"},
   "generated": "2026-01-01 12:00:00 UTC",
   "block_threshold": "high",
   "blocked": true,
@@ -218,7 +218,7 @@ python install_hook.py install . --no-hook
 # .pre-commit-config.yaml
 repos:
   - repo: https://github.com/CommitGuard-Sec/CommitGuard
-    rev: v2.1.0
+    rev: v3.0.0
     hooks:
       - id: commit-guard
       - id: commit-guard-push   # optional; runs on git push
@@ -247,6 +247,7 @@ commit-guard:
         --diff "origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME...HEAD" \
         --format gitlab \
         --report-path gl-code-quality-report.json \
+        --create-pr --review-pr --platform gitlab \
         --quiet
   artifacts:
     when: always
@@ -256,8 +257,10 @@ commit-guard:
       - commit_guard_reports/
 ```
 
-A non-zero exit code fails the job. If you vendor Commit Guard as a git
-submodule, check it out before `before_script`.
+A non-zero exit code fails the job. `--create-pr` publishes a marker-based MR
+summary and `--review-pr` posts inline fix suggestions; see
+[GITLAB.md](GITLAB.md) for tokens and automatic variables. If you vendor Commit
+Guard as a git submodule, check it out before `before_script`.
 
 ---
 
