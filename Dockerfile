@@ -16,6 +16,7 @@ WORKDIR /src
 COPY pyproject.toml README.md LICENSE NOTICE THIRD_PARTY_NOTICES.md ./
 COPY core ./core
 COPY rules ./rules
+COPY docs ./docs
 COPY main.py install_hook.py gui_server.py gui_actions.py gui_page.py ./
 RUN pip install --no-cache-dir .
 
