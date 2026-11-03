@@ -10,7 +10,9 @@ no API key.  Network failures become warnings so a scan still completes.
 from __future__ import annotations
 
 import hashlib
+import hmac
 import json
+import os
 import re
 import tomllib
 import urllib.error
@@ -23,12 +25,16 @@ from datetime import UTC
 from pathlib import Path
 from typing import Any
 
+from core import __version__
 from core.dep_graph import _read_text, _repo_files
 from core.scanner import Finding
 
 OSV_BATCH_URL = "https://api.osv.dev/v1/querybatch"
 OSV_VULN_URL = "https://api.osv.dev/v1/vulns"
 DEFAULT_SNAPSHOT = ".commit_guard_osv.json"
+SIGNATURE_SUFFIX = ".sig"
+SIGNING_KEY_ENV = "COMMITGUARD_OSV_SIGNING_KEY"  # commit-guard-ignore: generic-api-key
+_SIGNATURE_PREFIX = "hmac-sha256:"
 
 _VERSION_RE = re.compile(r"^v?[0-9][0-9A-Za-z.+!_-]*$")
 _EXACT_RE = re.compile(
@@ -164,7 +170,7 @@ def generate_cyclonedx_sbom(
         "version": 1,
         "metadata": {
             "timestamp": datetime.now(UTC).isoformat(),
-            "tools": [{"vendor": "CommitGuard", "name": "CommitGuard", "version": "2.1.0"}],
+            "tools": [{"vendor": "CommitGuard", "name": "CommitGuard", "version": __version__}],
             "component": {
                 "type": "application",
                 "name": project_name,
@@ -219,7 +225,7 @@ def generate_spdx_sbom(
         "documentNamespace": f"https://commitguard.local/spdx/{uuid.uuid4()}",
         "creationInfo": {
             "created": datetime.now(UTC).isoformat(),
-            "creators": ["Tool: CommitGuard-2.1.0"],
+            "creators": [f"Tool: CommitGuard-{__version__}"],
         },
         "packages": package_list,
         "relationships": relationships,
@@ -736,7 +742,73 @@ def _to_vulnerability(raw: dict, package: Package) -> Vulnerability:
     )
 
 
-def _load_snapshot(path: Path) -> dict[str, list[dict]] | list[dict]:
+def snapshot_signature_path(path: str | Path) -> Path:
+    snapshot = Path(path)
+    return snapshot.with_name(snapshot.name + SIGNATURE_SUFFIX)
+
+
+def sign_snapshot(path: str | Path, key: str | None = None) -> Path:
+    """Writes an HMAC-SHA256 sidecar signature for an OSV snapshot."""
+    snapshot = Path(path)
+    secret = key or os.environ.get(SIGNING_KEY_ENV, "")
+    if not secret:
+        raise SCAError(
+            f"No OSV signing key; set {SIGNING_KEY_ENV} or pass an explicit key."
+        )
+    try:
+        payload = snapshot.read_bytes()
+    except OSError as exc:
+        raise SCAError(f"Could not read OSV snapshot '{snapshot}': {exc}") from exc
+    digest = hmac.new(secret.encode("utf-8"), payload, hashlib.sha256).hexdigest()
+    signature = snapshot_signature_path(snapshot)
+    try:
+        signature.write_text(f"{_SIGNATURE_PREFIX}{digest}\n", encoding="utf-8")
+    except OSError as exc:
+        raise SCAError(f"Could not write signature '{signature}': {exc}") from exc
+    return signature
+
+
+def verify_snapshot_signature(
+    path: str | Path,
+    key: str | None = None,
+    *,
+    required: bool = False,
+) -> tuple[bool, str]:
+    """Verifies the optional sidecar signature; unsigned is allowed by default."""
+    snapshot = Path(path)
+    signature = snapshot_signature_path(snapshot)
+    if not signature.is_file():
+        if required:
+            return False, f"OSV snapshot '{snapshot}' is unsigned."
+        return True, "unsigned snapshot accepted"
+    secret = key or os.environ.get(SIGNING_KEY_ENV, "")
+    if not secret:
+        return False, f"OSV snapshot '{snapshot}' is signed but no key is configured."
+    try:
+        expected_line = signature.read_text(encoding="utf-8").strip()
+        payload = snapshot.read_bytes()
+    except OSError as exc:
+        return False, f"Could not read OSV snapshot signature: {exc}"
+    if not expected_line.startswith(_SIGNATURE_PREFIX):
+        return False, "OSV snapshot signature uses an unsupported algorithm."
+    expected = expected_line[len(_SIGNATURE_PREFIX):]
+    actual = hmac.new(secret.encode("utf-8"), payload, hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(expected, actual):
+        return False, "OSV snapshot signature does not match the snapshot."
+    return True, "signature verified"
+
+
+def _load_snapshot(
+    path: Path,
+    *,
+    key: str | None = None,
+    require_signature: bool = False,
+) -> dict[str, list[dict]] | list[dict]:
+    verified, reason = verify_snapshot_signature(
+        path, key, required=require_signature  # commit-guard-ignore: generic-api-key
+    )
+    if not verified:
+        raise SCAError(reason)
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
@@ -860,6 +932,8 @@ def scan_dependencies(
     online: bool = False,
     snapshot_path: Path | None = None,
     timeout: int = 20,
+    snapshot_key: str | None = None,
+    require_snapshot_signature: bool = False,
 ) -> SCAResult:
     """Collects packages and returns matched vulnerabilities; never raises for I/O."""
     packages = collect_packages(repo_root)
@@ -882,7 +956,11 @@ def scan_dependencies(
             )
             return SCAResult(packages=packages, vulnerabilities=(), warnings=tuple(warnings))
         try:
-            snapshot = _load_snapshot(path)
+            snapshot = _load_snapshot(
+                path,
+                key=snapshot_key,
+                require_signature=require_snapshot_signature,
+            )
         except SCAError as exc:
             return SCAResult(packages=packages, vulnerabilities=(), warnings=(str(exc),))
         if isinstance(snapshot, dict):

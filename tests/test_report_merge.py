@@ -5,6 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from core import __version__
 from core.report_merge import MergeError, load_report, merge_reports, write_merged_json
 from core.reporter import build_json_report
 from core.scanner import Finding
@@ -40,7 +41,7 @@ class ReportMergeTests(unittest.TestCase):
         self.assertEqual(source.format, "commitguard-json")
         self.assertEqual(source.finding_count, 1)
         self.assertEqual(len(source.digest), 16)
-        self.assertEqual(source.tool_versions["CommitGuard"], "2.1.0")
+        self.assertEqual(source.tool_versions["CommitGuard"], __version__)
 
     def test_merge_deduplicates_same_finding(self):
         with tempfile.TemporaryDirectory() as directory:

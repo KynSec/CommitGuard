@@ -96,6 +96,15 @@ try:
         get_staged_diff,
         is_inside_git_repo,
     )
+    from core.gitlab_mr import (
+        GitLabAPIError,
+        GitLabClient,
+        build_gitlab_inline_suggestions,
+        build_gitlab_summary,
+        gitlab_options_from_environment,
+        publish_gitlab_inline_suggestions,
+        publish_gitlab_summary,
+    )
     from core.pr_creator import (
         GitHubAPIError,
         GitHubClient,
@@ -155,7 +164,12 @@ except ImportError as exc:  # missing PyYAML or a corrupted install
     )
     raise SystemExit(2) from exc
 
-DEFAULT_RULES_DIR = _PROJECT_ROOT / "rules"
+_ENV_RULES_DIR = os.environ.get("COMMITGUARD_RULES_DIR")
+DEFAULT_RULES_DIR = (
+    Path(_ENV_RULES_DIR).expanduser()
+    if _ENV_RULES_DIR
+    else _PROJECT_ROOT / "rules"
+)
 BASELINE_FILENAME = ".commit_guard_ignore"
 
 
@@ -434,6 +448,79 @@ def _maybe_review_pr(findings: list, rules: tuple) -> int:
     return 0
 
 
+def _effective_platform(platform: str | None) -> str:
+    """Selects GitHub or GitLab for PR/MR publishing."""
+    if platform and platform != "auto":
+        return platform
+    if (
+        os.environ.get("GITLAB_CI", "").lower() == "true"
+        or os.environ.get("CI_MERGE_REQUEST_IID")
+    ):
+        return "gitlab"
+    return "github"
+
+
+def _maybe_create_gitlab_summary(
+    findings: list,
+    dependency_markdown: str | None,
+    threshold: str,
+) -> int:
+    """Publishes a GitLab MR summary note and returns 0 or 2."""
+    try:
+        options = gitlab_options_from_environment()
+        if not options.token:
+            raise GitLabAPIError(
+                "GITLAB_TOKEN or CI_JOB_TOKEN is required for GitLab MR publishing."
+            )
+        client = GitLabClient(options.token, base_url=options.base_url)
+        body = build_gitlab_summary(
+            findings,
+            block_threshold=threshold,
+            dependency_graph=dependency_markdown,
+        )
+        result = publish_gitlab_summary(client, options, body)
+    except GitLabAPIError as exc:
+        print(
+            f"[commit-guard] ERROR: could not publish GitLab MR summary: {exc}",
+            file=sys.stderr,
+        )
+        return 2
+    for warning in result.warnings:
+        print(f"[commit-guard] WARNING: {warning}", file=sys.stderr)
+    action = "Created" if result.posted else "Updated"
+    print(f"[commit-guard] {action} GitLab MR summary note.")
+    return 0
+
+
+def _maybe_review_gitlab(findings: list, rules: tuple) -> int:
+    """Posts inline suggestions on a GitLab MR and returns 0 or 2."""
+    try:
+        options = gitlab_options_from_environment()
+        if not options.token:
+            raise GitLabAPIError(
+                "GITLAB_TOKEN or CI_JOB_TOKEN is required for GitLab MR publishing."
+            )
+        client = GitLabClient(options.token, base_url=options.base_url)
+        suggestions = build_gitlab_inline_suggestions(findings, rules)
+        result = publish_gitlab_inline_suggestions(client, options, suggestions)
+    except GitLabAPIError as exc:
+        print(
+            f"[commit-guard] ERROR: could not post GitLab inline suggestions: {exc}",
+            file=sys.stderr,
+        )
+        return 2
+    for warning in result.warnings:
+        print(f"[commit-guard] WARNING: {warning}", file=sys.stderr)
+    if result.posted:
+        print(
+            f"[commit-guard] Posted {result.posted} inline suggestion(s) "
+            "on the GitLab merge request."
+        )
+    else:
+        print("[commit-guard] No auto-fixable GitLab inline suggestions.")
+    return 0
+
+
 def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="commit-guard-scan",
@@ -501,6 +588,9 @@ def build_arg_parser() -> argparse.ArgumentParser:
                         help="Offline OSV JSON snapshot (default: <repo>/.commit_guard_osv.json).")
     parser.add_argument("--sca-timeout", type=int, metavar="SECONDS", default=None,
                         help="Timeout for OSV.dev requests (default: 20).")
+    parser.add_argument("--sca-require-signature", action="store_true",
+                        help=("Require a matching HMAC signature for offline OSV snapshots "
+                              "(key: COMMITGUARD_OSV_SIGNING_KEY)."))
     fix_group = parser.add_mutually_exclusive_group()
     fix_group.add_argument("--fix", action="store_true", dest="fix", default=None,
                         help="Apply safe rule auto-fixes and re-stage modified files.")
@@ -515,7 +605,9 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--pr-title", metavar="TITLE", default=None,
                         help="Title for the generated pull request.")
     parser.add_argument("--review-pr", action="store_true",
-                        help="Post inline auto-fix suggestions on the originating pull request.")
+                        help="Post inline auto-fix suggestions on the originating pull/merge request.")
+    parser.add_argument("--platform", choices=("auto", "github", "gitlab"), default="auto",
+                        help="PR/MR platform for --create-pr/--review-pr (default: auto-detect).")
     parser.add_argument("--gate", action="store_true", dest="use_policy",
                         help="Evaluate policy v1 after scanning (threshold, budgets, ratchet).")
     parser.add_argument("--policy", type=Path, default=None,
@@ -665,6 +757,7 @@ def run_scan(
     sca_online: bool | None = None,
     sca_snapshot: Path | None = None,
     sca_timeout: int | None = None,
+    sca_require_signature: bool = False,
     fix: bool | None = None,
     fix_dry_run: bool | None = None,
     use_policy: bool = False,
@@ -675,6 +768,7 @@ def run_scan(
     pr_branch: str | None = None,
     pr_title: str | None = None,
     review_pr: bool = False,
+    platform: str | None = None,
 ) -> int:
     """Executes a full scan cycle. Returns the process exit code."""
     started = time.perf_counter()
@@ -1046,6 +1140,7 @@ def run_scan(
             online=config.sca_online,
             snapshot_path=sca_snapshot_path,
             timeout=config.sca_timeout,
+            require_snapshot_signature=sca_require_signature,
         )
         findings.extend(sca_result.to_findings())
         if not quiet:
@@ -1266,21 +1361,30 @@ def run_scan(
             findings, effective_threshold, show_secrets=effective_show_secrets
         )
 
+    selected_platform = _effective_platform(platform)
     if create_pr:
-        pr_code = _maybe_create_pr(
-            findings,
-            dependency_markdown,
-            effective_threshold,
-            base=pr_base,
-            branch=pr_branch,
-            title=pr_title,
-            report_dir=config.report_dir,
-        )
+        if selected_platform == "gitlab":
+            pr_code = _maybe_create_gitlab_summary(
+                findings, dependency_markdown, effective_threshold
+            )
+        else:
+            pr_code = _maybe_create_pr(
+                findings,
+                dependency_markdown,
+                effective_threshold,
+                base=pr_base,
+                branch=pr_branch,
+                title=pr_title,
+                report_dir=config.report_dir,
+            )
         if pr_code:
             return pr_code
 
     if review_pr:
-        review_code = _maybe_review_pr(findings, ruleset.rules)
+        if selected_platform == "gitlab":
+            review_code = _maybe_review_gitlab(findings, ruleset.rules)
+        else:
+            review_code = _maybe_review_pr(findings, ruleset.rules)
         if review_code:
             return review_code
 
@@ -1362,6 +1466,7 @@ def main(argv: list[str] | None = None) -> int:
         sca_online=args.sca_online,
         sca_snapshot=args.sca_snapshot,
         sca_timeout=args.sca_timeout,
+        sca_require_signature=args.sca_require_signature,
         fix=args.fix,
         fix_dry_run=args.fix_dry_run,
         create_pr=args.create_pr,
@@ -1369,6 +1474,7 @@ def main(argv: list[str] | None = None) -> int:
         pr_branch=args.pr_branch,
         pr_title=args.pr_title,
         review_pr=args.review_pr,
+        platform=args.platform,
         use_policy=bool(args.use_policy),
         policy_path=args.policy,
         policy_profile=args.policy_profile,

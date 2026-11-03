@@ -1,4 +1,4 @@
-"""Conservative, intraprocedural Python AST taint checks."""
+"""Conservative Python AST taint checks with cross-file function summaries."""
 
 from __future__ import annotations
 
@@ -89,6 +89,49 @@ class TaintResult:
     warnings: tuple[str, ...] = ()
 
 
+_PARAM_MARKER_BASE = 10_000_000
+
+
+@dataclass(frozen=True)
+class FunctionSummary:
+    """Conservative cross-file behaviour for one function definition."""
+
+    name: str
+    param_names: tuple[str, ...] = ()
+    sink_params: tuple[tuple[str, int], ...] = ()
+    return_params: frozenset[int] = frozenset()
+    returns_source: bool = False
+
+
+def _call_name(call: ast.Call) -> str | None:
+    function = call.func
+    if isinstance(function, ast.Name):
+        return function.id
+    if isinstance(function, ast.Attribute):
+        return function.attr
+    return None
+
+
+def _argument_at(call: ast.Call, names: tuple[str, ...], index: int) -> ast.AST | None:
+    if index < len(call.args):
+        return call.args[index]
+    if index < len(names):
+        name = names[index]
+        for keyword in call.keywords:
+            if keyword.arg == name:
+                return keyword.value
+    return None
+
+
+def _function_params(node: ast.FunctionDef | ast.AsyncFunctionDef) -> tuple[str, ...]:
+    arguments = node.args
+    names = [argument.arg for argument in (*arguments.posonlyargs, *arguments.args)]
+    if names and names[0] in {"self", "cls"}:
+        names = names[1:]
+    names.extend(argument.arg for argument in arguments.kwonlyargs)
+    return tuple(names)
+
+
 def _attribute_chain(node: ast.AST) -> list[str]:
     parts: list[str] = []
     current = node
@@ -172,11 +215,68 @@ def _merge_states(*states: dict[str, set[int]]) -> dict[str, set[int]]:
 
 
 class _TaintAnalyzer:
-    def __init__(self, path: str, lines: list[str], changed: set[int]) -> None:
+    def __init__(
+        self,
+        path: str,
+        lines: list[str],
+        changed: set[int],
+        *,
+        summaries: dict[str, tuple[FunctionSummary, ...]] | None = None,
+        record_all: bool = False,
+        track_returns: bool = False,
+    ) -> None:
         self.path = path
         self.lines = lines
         self.changed = changed
+        self.summaries = summaries or {}
+        self.record_all = record_all
+        self.track_returns = track_returns
+        self.return_sources: set[int] = set()
         self.matches: dict[tuple[str, int], TaintMatch] = {}
+
+    def _value_sources(
+        self, node: ast.AST, tainted: dict[str, set[int]]
+    ) -> set[int]:
+        """Like `_is_tainted`, plus cross-file call summaries."""
+        sources = set(_is_tainted(node, tainted))
+        if not self.summaries:
+            return sources
+        for candidate in ast.walk(node):
+            if not isinstance(candidate, ast.Call):
+                continue
+            name = _call_name(candidate)
+            if name is None:
+                continue
+            for summary in self.summaries.get(name, ()):
+                if summary.returns_source:
+                    sources.add(getattr(candidate, "lineno", 1))
+                for index in summary.return_params:
+                    argument = _argument_at(candidate, summary.param_names, index)
+                    if argument is not None:
+                        sources.update(_is_tainted(argument, tainted))
+        return sources
+
+    def _summary_sink(
+        self, call: ast.Call, tainted: dict[str, set[int]]
+    ) -> tuple[str, set[int]] | None:
+        name = _call_name(call)
+        if name is None:
+            return None
+        for summary in self.summaries.get(name, ()):
+            for rule_id, index in summary.sink_params:
+                argument = _argument_at(call, summary.param_names, index)
+                if argument is None:
+                    continue
+                sources = self._value_sources(argument, tainted)
+                if (
+                    not sources
+                    and isinstance(argument, ast.Name)
+                    and argument.id in {"request", "req"}
+                ):
+                    sources = {getattr(argument, "lineno", 1)}
+                if sources:
+                    return rule_id, sources
+        return None
 
     def _record(
         self,
@@ -188,23 +288,31 @@ class _TaintAnalyzer:
             return
         sink_line = getattr(call, "lineno", 1)
         sink_end = getattr(call, "end_lineno", sink_line)
-        changed_sink_lines = sorted(
-            line for line in self.changed if sink_line <= line <= sink_end
-        )
-        changed_source_lines = sorted(sources & self.changed)
-        if not changed_sink_lines and not changed_source_lines:
-            return
+        if self.record_all:
+            finding_line = sink_line
+            flagged = (
+                self.lines[finding_line - 1].strip()
+                if 1 <= finding_line <= len(self.lines)
+                else "<cross-file>"
+            )
+        else:
+            changed_sink_lines = sorted(
+                line for line in self.changed if sink_line <= line <= sink_end
+            )
+            changed_source_lines = sorted(sources & self.changed)
+            if not changed_sink_lines and not changed_source_lines:
+                return
 
-        finding_line = (
-            changed_sink_lines[0]
-            if changed_sink_lines
-            else changed_source_lines[-1]
-        )
-        if not 1 <= finding_line <= len(self.lines):
-            return
-        flagged = self.lines[finding_line - 1].strip()
-        if not flagged:
-            return
+            finding_line = (
+                changed_sink_lines[0]
+                if changed_sink_lines
+                else changed_source_lines[-1]
+            )
+            if not 1 <= finding_line <= len(self.lines):
+                return
+            flagged = self.lines[finding_line - 1].strip()
+            if not flagged:
+                return
         details = TAINT_RULES[rule_id]
         description = (
             f"{details['description']} (sink at line {sink_line}; "
@@ -255,7 +363,7 @@ class _TaintAnalyzer:
             "executemany",
         }:
             query = _call_argument(call, {"sql", "query"})
-            sources = _is_tainted(query, tainted) if query is not None else set()
+            sources = self._value_sources(query, tainted) if query is not None else set()
             return ("cg-python-ast-sqli-taint", sources) if sources else None
 
         is_os_shell = (
@@ -270,7 +378,7 @@ class _TaintAnalyzer:
         )
         if is_os_shell:
             command = _call_argument(call, {"command"})
-            sources = _is_tainted(command, tainted) if command is not None else set()
+            sources = self._value_sources(command, tainted) if command is not None else set()
             return ("cg-python-ast-shell-taint", sources) if sources else None
         if is_subprocess and any(
             keyword.arg == "shell"
@@ -279,7 +387,7 @@ class _TaintAnalyzer:
             for keyword in call.keywords
         ):
             command = _call_argument(call, {"args"})
-            sources = _is_tainted(command, tainted) if command is not None else set()
+            sources = self._value_sources(command, tainted) if command is not None else set()
             return ("cg-python-ast-shell-taint", sources) if sources else None
 
         # 3. SSRF (requests, httpx, urllib, etc.)
@@ -294,7 +402,7 @@ class _TaintAnalyzer:
         )
         if is_http_client:
             url_arg = _call_argument(call, {"url"})
-            sources = _is_tainted(url_arg, tainted) if url_arg is not None else set()
+            sources = self._value_sources(url_arg, tainted) if url_arg is not None else set()
             return ("cg-python-ast-ssrf-taint", sources) if sources else None
 
         # 4. Path traversal (open, os.remove/unlink/rmdir/listdir, shutil...)
@@ -315,7 +423,7 @@ class _TaintAnalyzer:
         )
         if is_file_open:
             path_arg = _call_argument(call, {"file", "path", "filename"})
-            sources = _is_tainted(path_arg, tainted) if path_arg is not None else set()
+            sources = self._value_sources(path_arg, tainted) if path_arg is not None else set()
             return ("cg-python-ast-path-traversal-taint", sources) if sources else None
 
         # 5. XSS / Server-side Template Rendering
@@ -331,7 +439,7 @@ class _TaintAnalyzer:
         )
         if is_xss_sink:
             xss_arg = _call_argument(call, {"source", "s", "template"})
-            sources = _is_tainted(xss_arg, tainted) if xss_arg is not None else set()
+            sources = self._value_sources(xss_arg, tainted) if xss_arg is not None else set()
             return ("cg-python-ast-xss-taint", sources) if sources else None
 
         # 6. Dynamic Code Execution (eval / exec)
@@ -344,10 +452,10 @@ class _TaintAnalyzer:
         )
         if is_code_exec:
             code_arg = _call_argument(call, {"source", "code"})
-            sources = _is_tainted(code_arg, tainted) if code_arg is not None else set()
+            sources = self._value_sources(code_arg, tainted) if code_arg is not None else set()
             return ("cg-python-ast-llm-code-exec-taint", sources) if sources else None
 
-        return None
+        return self._summary_sink(call, tainted)
 
     def _assign(self, target: ast.AST, sources: set[int], state: dict[str, set[int]]) -> None:
         for name in _target_names(target):
@@ -372,19 +480,19 @@ class _TaintAnalyzer:
                 continue
             if isinstance(statement, ast.Assign):
                 self._check_expression(statement.value, current)
-                sources = _is_tainted(statement.value, current)
+                sources = self._value_sources(statement.value, current)
                 for target in statement.targets:
                     self._assign(target, sources, current)
             elif isinstance(statement, ast.AnnAssign):
                 if statement.value is not None:
                     self._check_expression(statement.value, current)
                     self._assign(
-                        statement.target, _is_tainted(statement.value, current), current
+                        statement.target, self._value_sources(statement.value, current), current
                     )
             elif isinstance(statement, ast.AugAssign):
                 self._check_expression(statement.value, current)
-                sources = _is_tainted(statement.target, current)
-                sources.update(_is_tainted(statement.value, current))
+                sources = self._value_sources(statement.target, current)
+                sources.update(self._value_sources(statement.value, current))
                 self._assign(statement.target, sources, current)
             elif isinstance(statement, ast.If):
                 self._check_expression(statement.test, current)
@@ -395,7 +503,7 @@ class _TaintAnalyzer:
                 self._check_expression(statement.iter, current)
                 body_state = current.copy()
                 self._assign(
-                    statement.target, _is_tainted(statement.iter, current), body_state
+                    statement.target, self._value_sources(statement.iter, current), body_state
                 )
                 body_state = self._block(statement.body, body_state)
                 else_state = self._block(statement.orelse, current.copy())
@@ -411,7 +519,7 @@ class _TaintAnalyzer:
                     if item.optional_vars is not None:
                         self._assign(
                             item.optional_vars,
-                            _is_tainted(item.context_expr, current),
+                            self._value_sources(item.context_expr, current),
                             current,
                         )
                 current = self._block(statement.body, current)
@@ -428,6 +536,13 @@ class _TaintAnalyzer:
                 current = self._block(statement.finalbody, _merge_states(*branches))
             elif isinstance(statement, ast.Expr):
                 self._check_expression(statement.value, current)
+            elif isinstance(statement, ast.Return):
+                if statement.value is not None:
+                    self._check_expression(statement.value, current)
+                    if self.track_returns:
+                        self.return_sources.update(
+                            self._value_sources(statement.value, current)
+                        )
             else:
                 self._check_expression(statement, current)
         return current
@@ -441,13 +556,73 @@ class _TaintAnalyzer:
         return tuple(self.matches.values())
 
 
+def _summarize_functions(
+    files: dict[str, list[str]],
+) -> dict[str, tuple[FunctionSummary, ...]]:
+    """Builds cross-file summaries from every available Python source file."""
+    summaries: dict[str, list[FunctionSummary]] = {}
+    for path, lines in files.items():
+        if not path.lower().endswith((".py", ".pyi")):
+            continue
+        try:
+            tree = ast.parse("\n".join(lines), filename=path)
+        except (SyntaxError, ValueError, RecursionError):
+            continue
+        for node in ast.walk(tree):
+            if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                continue
+            names = _function_params(node)
+            sink_params: set[tuple[str, int]] = set()
+            return_params: set[int] = set()
+            for index in range(len(names)):
+                analyzer = _TaintAnalyzer(
+                    path,
+                    lines,
+                    set(),
+                    record_all=True,
+                    track_returns=True,
+                )
+                analyzer._block(
+                    node.body,
+                    {names[index]: {_PARAM_MARKER_BASE + index}},
+                )
+                sink_params.update(
+                    (rule_id, index) for rule_id, _line in analyzer.matches
+                )
+                if analyzer.return_sources:
+                    return_params.add(index)
+            bare = _TaintAnalyzer(
+                path,
+                lines,
+                set(),
+                record_all=True,
+                track_returns=True,
+            )
+            bare._block(node.body, {})
+            summary = FunctionSummary(
+                name=node.name,
+                param_names=names,
+                sink_params=tuple(sorted(sink_params)),
+                return_params=frozenset(return_params),
+                returns_source=bool(bare.return_sources),
+            )
+            summaries.setdefault(node.name, []).append(summary)
+    return {name: tuple(items) for name, items in summaries.items()}
+
+
 def scan_python_taint(
     files: dict[str, list[str]],
     changed_lines: dict[str, set[int]],
 ) -> TaintResult:
-    """Find changed Python flows from request/input data into SQL or shell sinks."""
+    """Find changed Python flows from request/input data into SQL or shell sinks.
+
+    Function summaries are derived from every file supplied by the caller, so
+    wrapper functions and helpers in other modules propagate taint into the
+    changed file without requiring a whole-program call graph.
+    """
     matches: list[TaintMatch] = []
     warnings: list[str] = []
+    summaries = _summarize_functions(files)
     for path, changed in sorted(changed_lines.items()):
         if not path.endswith((".py", ".pyi")):
             continue
@@ -456,7 +631,9 @@ def scan_python_taint(
             warnings.append(f"{path}: staged/current file content was unavailable")
             continue
         try:
-            matches.extend(_TaintAnalyzer(path, lines, changed).analyze())
+            matches.extend(
+                _TaintAnalyzer(path, lines, changed, summaries=summaries).analyze()
+            )
         except ValueError as exc:
             warnings.append(f"{path}: {exc}")
     return TaintResult(tuple(matches), tuple(warnings))

@@ -1,0 +1,66 @@
+{
+  "name": "commitguard",
+  "displayName": "CommitGuard",
+  "description": "Offline-first CommitGuard security diagnostics and quick fixes.",
+  "version": "0.1.0",
+  "publisher": "CommitGuard-Sec",
+  "license": "Apache-2.0",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Linters", "Other"],
+  "keywords": ["security", "sast", "secrets", "lsp", "commitguard"],
+  "activationEvents": [
+    "onLanguage:python",
+    "onLanguage:javascript",
+    "onLanguage:typescript",
+    "onLanguage:javascriptreact",
+    "onLanguage:typescriptreact",
+    "workspaceContains:.commit_guard.toml",
+    "workspaceContains:.commit_guard"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "commitguard.restartServer",
+        "title": "CommitGuard: Restart Language Server"
+      }
+    ],
+    "configuration": {
+      "title": "CommitGuard",
+      "properties": {
+        "commitguard.executable": {
+          "type": "string",
+          "default": "commit-guard",
+          "description": "CommitGuard executable used to start the language server."
+        },
+        "commitguard.extraArgs": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "Extra arguments passed before the lsp subcommand."
+        },
+        "commitguard.trace.server": {
+          "type": "string",
+          "enum": ["off", "messages", "verbose"],
+          "default": "off",
+          "description": "Traces the LSP transport for troubleshooting."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.4.0"
+  }
+}

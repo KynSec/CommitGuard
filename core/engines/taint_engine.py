@@ -4,11 +4,80 @@ from __future__ import annotations
 
 import time
 from dataclasses import replace
+from pathlib import Path
 
 from core.ast_taint import scan_js_taint, scan_python_taint
 from core.engines.base import EngineCapability, EngineResult, ScanContext
 from core.paths import PathMatcher
 from core.scanner import is_inline_suppressed
+
+_EXCLUDED_DIRECTORIES = {
+    ".git",
+    ".hg",
+    ".svn",
+    ".venv",
+    "venv",
+    "env",
+    "node_modules",
+    "site-packages",
+    "dist",
+    "build",
+    "__pycache__",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".commit_guard",
+    ".tox",
+}
+_MAX_SOURCE_BYTES = 512 * 1024
+_MAX_SOURCE_FILES = 750
+
+
+def _needs_cross_file(
+    files: dict[str, list[str]], python_lines: dict[str, set[int]]
+) -> bool:
+    for path in python_lines:
+        for line in files.get(path, ())[:200]:
+            stripped = line.strip()
+            if stripped.startswith(("import ", "from ")):
+                return True
+    return False
+
+
+def _discover_python_sources(
+    repo_root: Path, known: dict[str, list[str]]
+) -> dict[str, list[str]]:
+    """Loads repository Python files for cross-file summaries, within caps."""
+    sources: dict[str, list[str]] = {}
+    root = Path(repo_root)
+    if not root.is_dir():
+        return sources
+    try:
+        candidates = root.rglob("*.py")
+    except OSError:
+        return sources
+    seen = 0
+    for candidate in candidates:
+        if seen >= _MAX_SOURCE_FILES:
+            break
+        try:
+            relative = candidate.relative_to(root).as_posix()
+        except ValueError:
+            continue
+        if relative in known or any(
+            part in _EXCLUDED_DIRECTORIES for part in Path(relative).parts
+        ):
+            continue
+        try:
+            if candidate.stat().st_size > _MAX_SOURCE_BYTES:
+                continue
+            sources[relative] = candidate.read_text(
+                encoding="utf-8", errors="replace"
+            ).splitlines()
+        except OSError:
+            continue
+        seen += 1
+    return sources
 
 
 class TaintEngine:
@@ -45,7 +114,13 @@ class TaintEngine:
             for path, lines in changed_lines.items()
             if path.lower().endswith((".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx"))
         }
-        python_result = scan_python_taint(context.files or {}, python_lines)
+        analysis_files = dict(context.files or {})
+        if python_lines and _needs_cross_file(analysis_files, python_lines):
+            for path, lines in _discover_python_sources(
+                context.repo_root, analysis_files
+            ).items():
+                analysis_files.setdefault(path, lines)
+        python_result = scan_python_taint(analysis_files, python_lines)
         js_result = scan_js_taint(context.files or {}, js_lines)
         matches = (*python_result.matches, *js_result.matches)
         warnings = (*python_result.warnings, *js_result.warnings)
