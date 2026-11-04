@@ -166,6 +166,26 @@ class LSPTests(unittest.TestCase):
         self.assertEqual(output[0]["id"], 1)
         self.assertEqual(output[0]["result"]["serverInfo"]["name"], "commitguard-lsp")
 
+    def test_main_lsp_entrypoint_accepts_client_stdio_flag(self):
+        process = subprocess.run(
+            [
+                sys.executable,
+                str(ROOT / "install_hook.py"),
+                "lsp",
+                str(self.root),
+                "--stdio",
+            ],
+            input=frame({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}})
+            + frame({"jsonrpc": "2.0", "method": "exit"}),
+            capture_output=True,
+            timeout=30,
+            check=False,
+        )
+        self.assertEqual(process.returncode, 0, process.stderr.decode("utf-8", "replace"))
+        output = messages(process.stdout)
+        self.assertEqual(output[0]["id"], 1)
+        self.assertEqual(output[0]["result"]["serverInfo"]["name"], "commitguard-lsp")
+
 
 if __name__ == "__main__":
     unittest.main()

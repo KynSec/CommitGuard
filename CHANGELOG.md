@@ -44,6 +44,9 @@
   actionable error listing every checked command. Workspace-local launchers are
   only used in trusted workspaces, and Windows `.cmd` launchers are quoted
   safely.
+- `commit-guard lsp` now accepts the `--stdio` flag that
+  `vscode-languageclient` appends, so the VS Code extension can start the
+  language server.
 
 ### Added
 

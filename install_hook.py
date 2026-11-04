@@ -1451,6 +1451,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_lsp = sub.add_parser("lsp", help="Run the stdio language server.")
     p_lsp.add_argument("repo", nargs="?", default=".")
+    p_lsp.add_argument(
+        "--stdio",
+        action="store_true",
+        help="Accepted for compatibility with LSP clients that pass --stdio.",
+    )
 
     p_compliance = sub.add_parser("compliance", help="Map findings to compliance controls.")
     p_compliance.add_argument("repo", nargs="?", default=".")
