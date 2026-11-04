@@ -14,6 +14,26 @@ state, and whether config/baseline files are present.
 
 ---
 
+## VS Code extension does not start
+
+The extension starts the CommitGuard stdio language server from the workspace
+root. If it reports that no launcher was found:
+
+1. Open a folder and confirm the workspace is trusted. The extension does not
+   run in restricted mode.
+2. Install the CLI (`pipx install "git+https://github.com/CommitGuard-Sec/CommitGuard.git"`)
+   or keep a working `commit-guard` wrapper in the repository.
+3. Set `commitguard.pythonPath` to the interpreter that has CommitGuard
+   installed, or set `commitguard.executable` to the absolute launcher path.
+4. Run **CommitGuard: Restart Language Server** from the Command Palette. The
+   **CommitGuard** output channel lists the commands that were checked.
+
+If the scan panel is hidden, run **CommitGuard: Open Scan Panel**. Selecting
+**Run selected scan** requires at least one rule database. **Open CommitGuard
+GUI** runs `./commit-guard gui` in an integrated terminal.
+
+---
+
 ## The hook is not running
 
 1. Confirm the hook exists and is executable:

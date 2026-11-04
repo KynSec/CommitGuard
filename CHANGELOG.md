@@ -34,6 +34,8 @@
   rule databases, scan the whole repository or staged changes, review findings,
   jump to source lines, and launch `commit-guard gui` from an integrated
   terminal.
+- The project site, README, ecosystem guide, release guide, and troubleshooting
+  docs now cover the extension, its Marketplace listing, and the scan panel.
 
 ### Fixed
 
