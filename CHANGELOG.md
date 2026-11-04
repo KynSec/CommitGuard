@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.1.1 - 2026-11-04
+
+### Fixed
+
+- Restored provenance validation after the DevSkim crypto rule hardening by
+  recording the updated checksum and documenting the local word-boundary change.
+
 ## 3.1.0 - 2026-11-03
 
 ### Added
