@@ -7,6 +7,8 @@ import {
   Trace,
   TransportKind,
 } from "vscode-languageclient/node";
+import { serverLaunch, workspaceFolder } from "./cli";
+import { ScanPanelProvider } from "./panel";
 
 const LANGUAGE_IDS = [
   "python",
@@ -100,46 +102,25 @@ function createChangeMiddleware(): Middleware {
   };
 }
 
-function workspaceFolder(): vscode.WorkspaceFolder | undefined {
-  const activeDocument = vscode.window.activeTextEditor?.document;
-  return (
-    (activeDocument &&
-      vscode.workspace.getWorkspaceFolder(activeDocument.uri)) ||
-    vscode.workspace.workspaceFolders?.[0]
-  );
-}
-
 function serverOptions(): ServerOptions {
-  const configuration = vscode.workspace.getConfiguration("commitguard");
-  const executable = configuration
-    .get<string>("executable", "commit-guard")
-    .trim();
-  if (!executable) {
-    throw new Error(
-      "Set commitguard.executable to the CommitGuard CLI executable.",
-    );
-  }
-  const extraArgs = configuration.get<unknown>("extraArgs", []);
-  if (
-    !Array.isArray(extraArgs) ||
-    !extraArgs.every((arg) => typeof arg === "string")
-  ) {
-    throw new Error("commitguard.extraArgs must be an array of strings.");
-  }
-  const folder = workspaceFolder();
-  const args = [...extraArgs, "lsp"];
-  if (folder) args.push(folder.uri.fsPath);
-  const options = folder ? { cwd: folder.uri.fsPath } : undefined;
+  const launch = serverLaunch();
+  const options =
+    launch.cwd || launch.windowsVerbatimArguments
+      ? {
+          cwd: launch.cwd,
+          windowsVerbatimArguments: launch.windowsVerbatimArguments,
+        }
+      : undefined;
   return {
     run: {
-      command: executable,
-      args,
+      command: launch.command,
+      args: launch.args,
       options,
       transport: TransportKind.stdio,
     },
     debug: {
-      command: executable,
-      args,
+      command: launch.command,
+      args: launch.args,
       options,
       transport: TransportKind.stdio,
     },
@@ -211,7 +192,8 @@ async function startServer(): Promise<void> {
       );
       await client.start();
       status.text = "$(shield) CommitGuard";
-      status.tooltip = "CommitGuard language server is running";
+      status.tooltip = "Open the CommitGuard scan panel";
+      status.command = "commitguard.openPanel";
       output.appendLine("Language server started.");
     } catch (error) {
       const failedClient = client;
@@ -253,14 +235,26 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     vscode.StatusBarAlignment.Left,
     10,
   );
-  status.command = "commitguard.restartServer";
+  status.command = "commitguard.openPanel";
   status.text = "$(sync~spin) CommitGuard";
-  status.tooltip = "Starting CommitGuard language server";
+  status.tooltip = "Open the CommitGuard scan panel";
   status.show();
 
+  const panel = new ScanPanelProvider(context, output);
   context.subscriptions.push(
     output,
     status,
+    vscode.window.registerWebviewViewProvider(
+      ScanPanelProvider.viewType,
+      panel,
+      { webviewOptions: { retainContextWhenHidden: true } },
+    ),
+    vscode.commands.registerCommand("commitguard.openPanel", () =>
+      panel.focus(),
+    ),
+    vscode.commands.registerCommand("commitguard.openGui", () =>
+      panel.openGui(),
+    ),
     vscode.commands.registerCommand("commitguard.restartServer", startServer),
     vscode.commands.registerCommand("commitguard.explain", explainFinding),
     vscode.workspace.onDidChangeConfiguration((event) => {

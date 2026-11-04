@@ -51,6 +51,46 @@ jobs:
       - name: Staged-diff benchmark
         run: python benchmarks/scan_benchmark.py --iterations 3 --max-median-ms 2000
 
+  extension:
+    name: VS Code extension
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: editors/vscode/package-lock.json
+
+      - name: Install runtime dependency
+        run: python -m pip install pyyaml
+
+      - name: Install extension dependencies
+        run: npm ci --prefix editors/vscode
+
+      - name: Compile and test extension
+        run: |
+          npm run compile --prefix editors/vscode
+          npm test --prefix editors/vscode
+
+      - name: Package extension
+        run: npm run package --prefix editors/vscode
+
+      - name: Upload VSIX
+        uses: actions/upload-artifact@v4
+        with:
+          name: commitguard-vscode
+          path: editors/vscode/*.vsix
+
   quality:
     name: Lint, types, and package
     runs-on: ubuntu-latest

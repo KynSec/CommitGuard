@@ -30,6 +30,21 @@
 
 ### Added
 
+- VS Code extension 0.2.0 Activity Bar scan panel: choose any combination of
+  rule databases, scan the whole repository or staged changes, review findings,
+  jump to source lines, and launch `commit-guard gui` from an integrated
+  terminal.
+
+### Fixed
+
+- VS Code extension 0.1.2 auto-detects a workspace wrapper, a configured or
+  detected Python interpreter (`python -m install_hook`), and `PATH`, with an
+  actionable error listing every checked command. Workspace-local launchers are
+  only used in trusted workspaces, and Windows `.cmd` launchers are quoted
+  safely.
+
+### Added
+
 - Phase 2 completion: cross-file Python taint summaries for helper sinks and
   source-returning wrappers, with repository discovery capped by size.
 - HMAC-SHA256 signed offline OSV snapshots (`.sig` sidecars),
