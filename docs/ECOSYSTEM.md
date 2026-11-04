@@ -40,8 +40,14 @@ changes the security report or its exit status silently.
 ## Editor loop
 
 `commit-guard lsp` is a stdio language server with diagnostics and quick
-fixes. `editors/vscode/` contains the Phase 2 VS Code extension skeleton that
-starts it automatically for Python, JavaScript, and TypeScript files.
+fixes. `editors/vscode/` contains the VS Code extension that starts it for the
+supported languages and adds a CommitGuard Activity Bar panel. The panel can
+run a scan limited to any selected rule databases, show clickable findings, and
+open `commit-guard gui` in an integrated terminal. The extension auto-detects a
+workspace wrapper, a Python installation (`python -m install_hook`), or
+`commit-guard` on `PATH`; set `commitguard.executable` or
+`commitguard.pythonPath` to override detection. Workspace-local launchers are
+only used in trusted workspaces.
 
 ## Dashboard
 

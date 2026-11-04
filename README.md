@@ -117,7 +117,7 @@ automatically). Linux, macOS, Windows, Git worktrees, and custom
 | Analyzer interop | Normalize and merge SARIF or native output from Semgrep, CodeQL, Trivy, Grype, Checkov, Bandit, and gitleaks. | Yes |
 | SBOM and licenses | CycloneDX 1.6, SPDX 2.3, and an allow/deny/review license policy with separate exit status. | Yes |
 | Compliance | Control mapping packs for OWASP Top 10, CWE Top 25, ASVS 5.0, PCI DSS 4.0, and SOC 2 technical evidence, with explicit caveats. | Yes |
-| Editor and watch loops | Stdio LSP diagnostics/code actions, a VS Code extension skeleton, and `watch --once` incremental snapshots. | Yes |
+| Editor and watch loops | Stdio LSP diagnostics/code actions, a VS Code extension, and `watch --once` incremental snapshots. | Yes |
 | Dashboard | Self-contained HTML/JSON with severity, category, owner, trend, and report provenance. | Yes |
 | Plugins | Signed manifests, out-of-process execution, capability limits, timeouts, and output caps. | Yes |
 | Policy engine | `strict`, `balanced`, and `audit` profiles; thresholds, budgets, ratchets, and new-code gating. | Yes |

@@ -1,8 +1,8 @@
 {
   "name": "commitguard-kynsec",
   "displayName": "CommitGuard Security Scanner (KynSec)",
-  "description": "Offline-first CommitGuard security diagnostics and quick fixes.",
-  "version": "0.1.1",
+  "description": "Offline-first CommitGuard security diagnostics, rule-database scans, and GUI launcher.",
+  "version": "0.2.0",
   "publisher": "AmrKhaledEldhshan",
   "license": "Apache-2.0",
   "repository": {
@@ -13,8 +13,17 @@
   "engines": {
     "vscode": "^1.85.0"
   },
-  "categories": ["Linters", "Other"],
-  "keywords": ["security", "sast", "secrets", "lsp", "commitguard"],
+  "categories": [
+    "Linters",
+    "Other"
+  ],
+  "keywords": [
+    "security",
+    "sast",
+    "secrets",
+    "lsp",
+    "commitguard"
+  ],
   "activationEvents": [
     "onLanguage:python",
     "onLanguage:javascript",
@@ -34,7 +43,10 @@
     "onLanguage:dockerfile",
     "onLanguage:shellscript",
     "workspaceContains:.commit_guard.toml",
-    "workspaceContains:.commit_guard"
+    "workspaceContains:.commit_guard",
+    "onView:commitguard.scanView",
+    "onCommand:commitguard.openPanel",
+    "onCommand:commitguard.openGui"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -42,6 +54,15 @@
       {
         "command": "commitguard.restartServer",
         "title": "CommitGuard: Restart Language Server"
+      },
+      {
+        "command": "commitguard.openPanel",
+        "title": "CommitGuard: Open Scan Panel"
+      },
+      {
+        "command": "commitguard.openGui",
+        "title": "CommitGuard: Open GUI",
+        "icon": "$(browser)"
       }
     ],
     "configuration": {
@@ -49,29 +70,68 @@
       "properties": {
         "commitguard.executable": {
           "type": "string",
-          "default": "commit-guard",
-          "description": "CommitGuard executable used to start the language server."
+          "default": "",
+          "description": "Optional absolute path or command for the CommitGuard CLI. Leave empty to auto-detect the workspace wrapper, a Python installation, or commit-guard on PATH."
+        },
+        "commitguard.pythonPath": {
+          "type": "string",
+          "default": "",
+          "description": "Optional Python interpreter used to launch CommitGuard with -m install_hook when the commit-guard launcher is not on PATH."
         },
         "commitguard.extraArgs": {
           "type": "array",
-          "items": { "type": "string" },
+          "items": {
+            "type": "string"
+          },
           "default": [],
           "description": "Extra arguments passed before the lsp subcommand."
         },
         "commitguard.trace.server": {
           "type": "string",
-          "enum": ["off", "messages", "verbose"],
+          "enum": [
+            "off",
+            "messages",
+            "verbose"
+          ],
           "default": "off",
           "description": "Traces the LSP transport for troubleshooting."
         }
       }
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "commitguard",
+          "title": "CommitGuard",
+          "icon": "media/commitguard.svg"
+        }
+      ]
+    },
+    "views": {
+      "commitguard": [
+        {
+          "id": "commitguard.scanView",
+          "name": "Scan",
+          "type": "webview"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "commitguard.openGui",
+          "when": "view == commitguard.scanView",
+          "group": "navigation"
+        }
+      ]
     }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "package": "vsce package",
-    "watch": "tsc -watch -p ./"
+    "watch": "tsc -watch -p ./",
+    "test": "node test/resolve.test.js && node test/scan.test.js && node test/panel.test.js"
   },
   "dependencies": {
     "vscode-languageclient": "^9.0.1"
@@ -81,5 +141,11 @@
     "@types/node": "^20.11.0",
     "@types/vscode": "^1.85.0",
     "typescript": "^5.4.0"
+  },
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": false,
+      "description": "CommitGuard starts a local language server and executes workspace tools."
+    }
   }
 }
