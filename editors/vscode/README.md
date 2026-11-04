@@ -1,5 +1,12 @@
 # CommitGuard VS Code Extension
 
+## Install
+
+Install [CommitGuard Security Scanner (KynSec)](https://marketplace.visualstudio.com/items?itemName=AmrKhaledEldhshan.commitguard-kynsec)
+from the VS Code Marketplace. To test a local build, run `npm run package` in
+this directory and install the generated `.vsix` with **Extensions: Install
+from VSIX...**.
+
 The extension connects VS Code to the CommitGuard stdio language server. It
 provides live diagnostics and safe quick fixes for Python, JavaScript,
 TypeScript, Go, Rust, Java, C/C++, C#, Ruby, PHP, YAML, JSON, Dockerfiles, and

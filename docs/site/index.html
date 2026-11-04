@@ -599,6 +599,120 @@ body.nav-open .drawer {
   color: #38bdf8; font-size: 13px; max-width: 100%; overflow-x: auto;
 }
 
+/* VS Code extension */
+.vscode-layout {
+  max-width: 1000px; margin: 0 auto;
+  display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(0, .92fr);
+  gap: clamp(18px, 3vw, 28px); align-items: start;
+}
+.vscode-mock {
+  background: #0b111c; border: 1px solid var(--line2); border-radius: 14px;
+  overflow: hidden; box-shadow: 0 20px 60px rgba(0, 0, 0, .55);
+}
+.vscode-titlebar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 10px 14px; background: #0f1726; border-bottom: 1px solid var(--line);
+}
+.vscode-titlebar .terminal-dots { flex: 0 0 auto; }
+.vscode-title { margin-left: 2px; color: #fff; font-size: 12.5px; font-weight: 700; }
+.vscode-trust {
+  margin-left: auto; font-size: 10px; font-weight: 800; letter-spacing: .06em;
+  text-transform: uppercase; color: #86efac; background: rgba(52, 211, 153, .08);
+  border: 1px solid rgba(52, 211, 153, .28); border-radius: 999px; padding: 3px 8px;
+}
+.vscode-window {
+  display: grid; grid-template-columns: 42px minmax(0, 178px) minmax(0, 1fr);
+  min-height: 360px;
+}
+.vscode-rail {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 12px 7px; background: #080e18; border-right: 1px solid var(--line);
+}
+.vscode-rail-logo {
+  width: 26px; height: 26px; border-radius: 7px; display: grid; place-items: center;
+  background: linear-gradient(135deg, #38bdf8, #818cf8); color: #08101c;
+  font-weight: 900; font-size: 10px; margin-bottom: 4px;
+}
+.vscode-rail-item {
+  width: 28px; height: 28px; border-radius: 7px; display: grid; place-items: center;
+  color: #6b7d96; border: 1px solid transparent; font-size: 12px;
+}
+.vscode-rail-item.active { color: #7dd3fc; background: #14243a; border-color: #24405f; }
+.vscode-sidebar {
+  background: #0d1522; border-right: 1px solid var(--line); padding: 13px 12px;
+}
+.vscode-side-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding-bottom: 10px; border-bottom: 1px solid var(--line); margin-bottom: 12px;
+}
+.vscode-side-head strong { font-size: 12px; color: #fff; letter-spacing: .01em; }
+.vscode-mini-btn {
+  font-size: 9.5px; font-weight: 800; color: #7dd3fc; border: 1px solid #24405f;
+  background: #14243a; border-radius: 5px; padding: 2px 6px;
+}
+.vscode-side-label {
+  margin: 0 0 7px; font-size: 9.5px; font-weight: 800; letter-spacing: .08em;
+  text-transform: uppercase; color: #6b7d96;
+}
+.vscode-db {
+  display: flex; align-items: center; gap: 7px; padding: 5px 0;
+  color: #b6c6dc; font-size: 11.5px; min-width: 0;
+}
+.vscode-db input { accent-color: #38bdf8; margin: 0; flex: 0 0 auto; }
+.vscode-db span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vscode-segment {
+  display: grid; grid-template-columns: 1fr 1fr; background: #080e18;
+  border: 1px solid var(--line); border-radius: 7px; padding: 3px; margin-bottom: 11px;
+}
+.vscode-segment span {
+  text-align: center; font-size: 10.5px; font-weight: 700;
+  color: #6b7d96; padding: 5px 4px; border-radius: 5px;
+}
+.vscode-segment .active { background: #1e293b; color: #fff; }
+.vscode-run {
+  display: block; width: 100%; text-align: center; border-radius: 7px;
+  padding: 8px 6px; font-size: 11px; font-weight: 800; color: #fff;
+  background: linear-gradient(135deg, #0284c7, #6366f1);
+}
+.vscode-main { min-width: 0; padding: 14px; background: var(--code-bg); }
+.vscode-main-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  flex-wrap: wrap; padding-bottom: 11px; margin-bottom: 12px;
+  border-bottom: 1px solid var(--line); color: #fff; font-size: 12px; font-weight: 700;
+}
+.vscode-finding {
+  display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px;
+  align-items: start; padding: 12px; border: 1px solid var(--line);
+  border-radius: 9px; background: #0d1522; margin-bottom: 9px; min-width: 0;
+}
+.vscode-finding code { display: block; color: #a5d8ff; font-size: 11px; overflow-wrap: anywhere; }
+.vscode-finding p { margin: 5px 0 0; color: var(--muted); font-size: 11px; }
+.vscode-copy h3 {
+  margin: 0 0 10px; font-size: clamp(19px, 2.2vw, 23px);
+  color: #fff; letter-spacing: -.01em;
+}
+.vscode-copy > p { margin: 0 0 14px; color: var(--muted); font-size: 14px; line-height: 1.65; }
+.vscode-copy > p code { font-size: 12.5px; }
+.vscode-list { list-style: none; margin: 0 0 16px; padding: 0; display: grid; gap: 9px; }
+.vscode-list li {
+  position: relative; padding-left: 22px; color: var(--muted);
+  font-size: 13.5px; line-height: 1.55;
+}
+.vscode-list li::before {
+  content: ""; position: absolute; left: 0; top: .5em; width: 8px; height: 8px;
+  border-radius: 50%; background: #34d399;
+  box-shadow: 0 0 10px rgba(52, 211, 153, .55);
+}
+.vscode-list strong { color: #fff; }
+.vscode-db-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 18px; }
+.vscode-db-chips span {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 10.5px; color: #a5d8ff; background: #0c1421;
+  border: 1px solid var(--line); border-radius: 5px; padding: 3px 7px;
+}
+.vscode-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-bottom: 10px; }
+.vscode-note { margin: 0; color: #6b7d96; font-size: 12px; line-height: 1.5; }
+
 /* CLI */
 .cli-tools { display: flex; justify-content: center; margin-bottom: 22px; }
 .search { position: relative; width: min(460px, 100%); }
@@ -990,7 +1104,7 @@ footer {
 .footer-sign { color: #6ee7b7; font-weight: 700; margin-top: 10px; }
 
 /* Responsive */
-@media (max-width: 900px) {
+@media (max-width: 1040px) {
   .nav-links { display: none; }
   .menu-btn { display: inline-flex; }
 }
@@ -1068,6 +1182,11 @@ footer {
   .fix-foot { flex-direction: column-reverse; }
   .fix-foot .btn { width: 100%; }
 }
+@media (max-width: 620px) {
+  .vscode-window { grid-template-columns: 1fr; }
+  .vscode-rail { display: none; }
+  .vscode-sidebar { border-right: 0; border-bottom: 1px solid var(--line); }
+}
 @media (max-width: 520px) {
   .hero-actions { flex-direction: column; align-items: stretch; }
   .hero-actions .btn { width: 100%; }
@@ -1083,6 +1202,7 @@ footer {
 /* Responsive additions */
 @media (max-width: 900px) {
   .pipeline { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .vscode-layout { grid-template-columns: 1fr; }
 }
 @media (max-width: 860px) {
   .demo-grid { grid-template-columns: 1fr; }
@@ -1132,6 +1252,7 @@ footer {
       <a href="#demo" data-nav="demo">Demo</a>
       <a href="#features" data-nav="features">Features</a>
       <a href="#control-center" data-nav="control-center">Control Center</a>
+      <a href="#vscode" data-nav="vscode">VS Code</a>
       <a href="#cli" data-nav="cli">CLI Reference</a>
       <a href="#profiles" data-nav="profiles">Profiles</a>
       <a href="https://github.com/CommitGuard-Sec/CommitGuard" target="_blank" rel="noopener noreferrer" class="btn small">
@@ -1156,6 +1277,7 @@ footer {
     <a href="#demo" class="drawer-link" data-nav="demo">Demo <span aria-hidden="true">&rarr;</span></a>
     <a href="#features" class="drawer-link" data-nav="features">Features <span aria-hidden="true">&rarr;</span></a>
     <a href="#control-center" class="drawer-link" data-nav="control-center">Control Center <span aria-hidden="true">&rarr;</span></a>
+    <a href="#vscode" class="drawer-link" data-nav="vscode">VS Code <span aria-hidden="true">&rarr;</span></a>
     <a href="#cli" class="drawer-link" data-nav="cli">CLI Reference <span aria-hidden="true">&rarr;</span></a>
     <a href="#profiles" class="drawer-link" data-nav="profiles">Profiles <span aria-hidden="true">&rarr;</span></a>
     <a href="#faq" class="drawer-link" data-nav="faq">FAQ <span aria-hidden="true">&rarr;</span></a>
@@ -1236,7 +1358,7 @@ footer {
             <span data-label>Copy</span>
           </button>
         </div>
-        <p class="quick-note">Downloads the installer, then runs it from the root of the Git repository you want to protect. Prefer to inspect it first? Use the download button below.</p>
+        <p class="quick-note">Downloads the installer, then runs it from the root of the Git repository you want to protect. Prefer to inspect it first? Use the download button below. Using VS Code? <a href="https://marketplace.visualstudio.com/items?itemName=AmrKhaledEldhshan.commitguard-kynsec" target="_blank" rel="noopener noreferrer">Install the CommitGuard extension from the Marketplace</a> for live diagnostics and the scan panel.</p>
       </div>
 
       <div class="terminal-window">
@@ -1515,11 +1637,110 @@ footer {
   </div>
 </section>
 
+<!-- VS Code Extension Section -->
+<section id="vscode" class="section">
+  <div class="container">
+    <div class="section-header">
+      <span class="eyebrow">05 &middot; VS Code</span>
+      <h2>Scan Without Leaving Your Editor</h2>
+      <p>The CommitGuard extension adds live diagnostics and an Activity Bar scan panel with rule-database selection, clickable findings, and one-click GUI launch.</p>
+    </div>
+
+    <div class="vscode-layout">
+      <div class="vscode-mock" aria-hidden="true">
+        <div class="vscode-titlebar">
+          <span class="terminal-dots">
+            <span class="dot red"></span>
+            <span class="dot yellow"></span>
+            <span class="dot green"></span>
+          </span>
+          <span class="vscode-title">CommitGuard &mdash; Scan</span>
+          <span class="vscode-trust">Trusted workspace</span>
+        </div>
+        <div class="vscode-window">
+          <div class="vscode-rail">
+            <span class="vscode-rail-logo">CG</span>
+            <span class="vscode-rail-item">&#9776;</span>
+            <span class="vscode-rail-item">&#128269;</span>
+            <span class="vscode-rail-item active">&#128737;</span>
+            <span class="vscode-rail-item">&#9881;</span>
+          </div>
+          <div class="vscode-sidebar">
+            <div class="vscode-side-head">
+              <strong>CommitGuard</strong>
+              <span class="vscode-mini-btn">GUI</span>
+            </div>
+            <p class="vscode-side-label">Rule databases</p>
+            <label class="vscode-db"><input type="checkbox" checked disabled><span>Gitleaks secrets</span></label>
+            <label class="vscode-db"><input type="checkbox" checked disabled><span>Python AST / taint</span></label>
+            <label class="vscode-db"><input type="checkbox" checked disabled><span>Semgrep Python</span></label>
+            <label class="vscode-db"><input type="checkbox" disabled><span>DevSkim</span></label>
+            <label class="vscode-db"><input type="checkbox" disabled><span>Nuclei secrets</span></label>
+            <p class="vscode-side-label" style="margin-top:14px">Scan scope</p>
+            <div class="vscode-segment"><span class="active">Repository</span><span>Staged</span></div>
+            <span class="vscode-run">Run selected scan</span>
+          </div>
+          <div class="vscode-main">
+            <div class="vscode-main-head">
+              <span>Scan results</span>
+              <span class="badge high">2 findings</span>
+            </div>
+            <div class="vscode-finding">
+              <span class="badge crit">critical</span>
+              <div>
+                <code>gitleaks-aws-access-key</code>
+                <p>deploy/creds.py:12</p>
+              </div>
+            </div>
+            <div class="vscode-finding">
+              <span class="badge high">high</span>
+              <div>
+                <code>python-yaml-unsafe-load</code>
+                <p>src/config.py:42</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="vscode-copy">
+        <h3>Choose exactly which rule databases run</h3>
+        <p>
+          Start the local language server for live diagnostics, or open the CommitGuard
+          Activity Bar panel to scan the repository or just the staged diff. Findings are
+          clickable and jump straight to the reported file and line.
+        </p>
+        <ul class="vscode-list">
+          <li><strong>Any combination:</strong> select one database or all eight before a scan.</li>
+          <li><strong>Editor-first workflow:</strong> debounced diagnostics and safe quick fixes while you type.</li>
+          <li><strong>GUI in one click:</strong> launches <code>commit-guard gui</code> in an integrated terminal.</li>
+          <li><strong>Workspace-safe:</strong> auto-detects the repo wrapper, Python install, or PATH and runs only in trusted workspaces.</li>
+        </ul>
+        <div class="vscode-db-chips">
+          <span>custom</span>
+          <span>gitleaks</span>
+          <span>nuclei</span>
+          <span>devskim</span>
+          <span>semgrep</span>
+          <span>semgrep:semgrep_python</span>
+          <span>python_ast</span>
+          <span>javascript_ast</span>
+        </div>
+        <div class="vscode-actions">
+          <a href="https://marketplace.visualstudio.com/items?itemName=AmrKhaledEldhshan.commitguard-kynsec" target="_blank" rel="noopener noreferrer" class="btn primary">Install from Marketplace</a>
+          <a href="https://github.com/KynSec/CommitGuard/tree/main/editors/vscode" target="_blank" rel="noopener noreferrer" class="btn">Extension Guide</a>
+        </div>
+        <p class="vscode-note">Requires VS Code 1.85+ and Python 3.11+. Set <code>commitguard.executable</code> or <code>commitguard.pythonPath</code> if auto-detection cannot find your install.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- CLI Quick Reference -->
 <section id="cli" class="section">
   <div class="container">
     <div class="section-header">
-      <span class="eyebrow">05 &middot; CLI Reference</span>
+      <span class="eyebrow">06 &middot; CLI Reference</span>
       <h2>Command-Line Reference</h2>
       <p>Use the lightweight <code>./commit-guard</code> wrapper or invoke <code>main.py</code> directly.</p>
     </div>
@@ -1553,6 +1774,10 @@ footer {
         <pre><code>./commit-guard gui
 ./commit-guard gui --port 8765</code></pre>
       </div>
+      <div class="cli-card" data-keywords="lsp editor vscode language server diagnostics quick fixes">
+        <h3>Editor Language Server</h3>
+        <pre><code>./commit-guard lsp .</code></pre>
+      </div>
       <div class="cli-card" data-keywords="doctor status health repository diagnose">
         <h3>Repository Health Doctor</h3>
         <pre><code>./commit-guard doctor
@@ -1572,7 +1797,7 @@ footer {
 <section id="profiles" class="section">
   <div class="container">
     <div class="section-header">
-      <span class="eyebrow">06 &middot; Scan Profiles</span>
+      <span class="eyebrow">07 &middot; Scan Profiles</span>
       <h2>Choose What to Scan</h2>
       <p>Define repeatable file and rule selections in <code>rules/scan_profiles.yaml</code>, then use them from the CLI or Control Center.</p>
     </div>
@@ -1589,7 +1814,7 @@ footer {
 <section id="faq" class="section">
   <div class="container">
     <div class="section-header">
-      <span class="eyebrow">07 &middot; FAQ</span>
+      <span class="eyebrow">08 &middot; FAQ</span>
       <h2>Questions, Answered</h2>
       <p>What to expect before running CommitGuard on a real repository.</p>
     </div>
@@ -1618,6 +1843,10 @@ footer {
       <details class="faq-item">
         <summary>Does it work in CI?</summary>
         <p>The same CLI runs in GitHub Actions, emits SARIF for code scanning, and can annotate pull requests or open fix PRs with <code>--create-pr</code> and <code>--review-pr</code>.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Does CommitGuard work inside VS Code?</summary>
+        <p>Yes. Install the <a href="https://marketplace.visualstudio.com/items?itemName=AmrKhaledEldhshan.commitguard-kynsec" target="_blank" rel="noopener noreferrer">CommitGuard extension</a>, then use the CommitGuard Activity Bar panel to choose rule databases, scan the repository or staged changes, and open findings in the editor. The extension also starts the local language server and can launch the GUI in an integrated terminal. It runs only in trusted workspaces.</p>
       </details>
     </div>
   </div>
@@ -1649,6 +1878,7 @@ footer {
       <a href="#demo">Demo</a>
       <a href="#features">Features</a>
       <a href="#control-center">Control Center</a>
+      <a href="#vscode">VS Code</a>
       <a href="#cli">CLI Reference</a>
       <a href="#faq">FAQ</a>
       <a href="https://github.com/CommitGuard-Sec/CommitGuard" target="_blank" rel="noopener noreferrer">GitHub</a>
@@ -2114,7 +2344,7 @@ document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape' && document.body.classList.contains('nav-open')) closeNav();
 });
 window.addEventListener('resize', () => {
-  if (window.innerWidth > 900 && document.body.classList.contains('nav-open')) closeNav(false);
+  if (window.innerWidth > 1040 && document.body.classList.contains('nav-open')) closeNav(false);
 });
 
 /* Scroll progress + active nav link */

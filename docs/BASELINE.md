@@ -108,5 +108,6 @@ Measured on 2026-11-03 after closing the Phase 2 exit items:
 | Zipapp smoke test | `--version` and `sbom` succeed |
 
 This snapshot adds cross-file Python taint summaries, signed OSV snapshots,
-GitLab MR publishing, the VS Code extension skeleton, the zipapp and release
-workflow, the accuracy gate, upgrade end-to-end tests, and CI dogfooding.
+GitLab MR publishing, the VS Code extension with an Activity Bar scan panel,
+the zipapp and release workflow, the accuracy gate, upgrade end-to-end tests,
+and CI dogfooding.

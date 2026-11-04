@@ -15,11 +15,31 @@ does not match `core.__version__`.
 | `commit-guard.spdx.json` | SPDX SBOM for CommitGuard. |
 | `SHA256SUMS` | Checksums for every artifact. |
 | `SHA256SUMS.sig` | Detached OpenSSL signature when the signing key is set. |
+| `commitguard-kynsec-<version>.vsix` | VS Code extension package for the Marketplace or `code --install-extension`. |
 | `ghcr.io/commitguard-sec/commitguard:<tag>` | Container image. |
 
 Build provenance is attested with `actions/attest-build-provenance`. Semgrep
 rule packs are excluded from wheels, sdists, zipapps, and the container image
 because their upstream license forbids redistribution.
+
+## VS Code extension
+
+The release workflow compiles, tests, and packages `editors/vscode/`, then
+copies the VSIX into `dist/`. Marketplace publishing is a manual step after the
+artifacts pass review:
+
+```bash
+cd editors/vscode
+npm ci
+npm run compile
+npm test
+npm run package
+npx vsce publish
+```
+
+The published listing is [CommitGuard Security Scanner (KynSec)](https://marketplace.visualstudio.com/items?itemName=AmrKhaledEldhshan.commitguard-kynsec).
+Verify the Marketplace version matches the source tag before announcing a
+release.
 
 ## Signing
 
