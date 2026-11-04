@@ -129,7 +129,11 @@ sources:
       - path: rules/general/devskim/correctness.yaml
         sha256: aa32b6b89cba2bbcb2c874af76a40590c4aa6f76be776263be9d08c73dcc3a38
       - path: rules/general/devskim/crypto.yaml
-        sha256: f22fedd65fa46990f8f840ac80f24d7334ff0fdda1471c352d452464fbb57a60
+        sha256: f7ab838116ebaa90dc0b6e06149f3b7c047de5190ca171399480d0147c5b20a0
+        notes: >-
+          Local hardening versus the pinned DevSkim conversion: the weak
+          symmetric-cipher regex is word-bounded so it no longer matches
+          substrings such as "address".
       - path: rules/general/devskim/platform.yaml
         sha256: ea96d4c12fa9ba2a56c71fc449056d172e157fd5931550584250d7d83cc2504a
       - path: rules/general/devskim/supplychain.yaml
