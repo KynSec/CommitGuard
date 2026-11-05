@@ -1,5 +1,6 @@
 import { spawn, spawnSync } from "child_process";
 import * as fs from "fs";
+import * as os from "os";
 import * as path from "path";
 import * as vscode from "vscode";
 
@@ -78,6 +79,172 @@ export function isTrustedWorkspace(): boolean {
   return vscode.workspace.isTrusted !== false;
 }
 
+function existingFile(candidate: string): boolean {
+  try {
+    return fs.statSync(candidate).isFile();
+  } catch {
+    return false;
+  }
+}
+
+function dedupeStrings(values: string[]): string[] {
+  const seen = new Set<string>();
+  return values.filter((value) => {
+    if (!value || seen.has(value)) return false;
+    seen.add(value);
+    return true;
+  });
+}
+
+function pipxVenvRoots(): string[] {
+  const home = os.homedir();
+  return dedupeStrings([
+    process.env.PIPX_HOME ? path.join(process.env.PIPX_HOME, "venvs") : "",
+    path.join(home, ".local", "pipx", "venvs"),
+    path.join(home, ".local", "share", "pipx", "venvs"),
+    process.env.LOCALAPPDATA
+      ? path.join(process.env.LOCALAPPDATA, "pipx", "venvs")
+      : "",
+    process.env.APPDATA ? path.join(process.env.APPDATA, "pipx", "venvs") : "",
+  ]);
+}
+
+function windowsPythonInstallDirs(): string[] {
+  if (process.platform !== "win32") return [];
+  const roots = [
+    process.env.LOCALAPPDATA
+      ? path.join(process.env.LOCALAPPDATA, "Programs", "Python")
+      : "",
+    process.env.ProgramFiles ?? "",
+    process.env["ProgramFiles(x86)"] ?? "",
+  ];
+  const installs: string[] = [];
+  for (const root of dedupeStrings(roots)) {
+    try {
+      for (const name of fs.readdirSync(root)) {
+        if (/^Python[0-9.]*$/i.test(name)) {
+          installs.push(path.join(root, name));
+        }
+      }
+    } catch {
+      // No Python installs in this location.
+    }
+  }
+  return dedupeStrings(installs);
+}
+
+function userBinDirectories(): string[] {
+  const home = os.homedir();
+  const directories = [
+    process.env.PIPX_BIN_DIR ?? "",
+    path.join(home, ".local", "bin"),
+    path.join(home, ".local", "pipx", "bin"),
+    path.join(home, ".local", "share", "pipx", "bin"),
+    path.join(home, ".pyenv", "shims"),
+    "/usr/bin",
+    "/usr/local/bin",
+    "/opt/homebrew/bin",
+    "/snap/bin",
+    process.env.APPDATA
+      ? path.join(process.env.APPDATA, "Python", "Scripts")
+      : "",
+    process.env.APPDATA ? path.join(process.env.APPDATA, "pipx", "bin") : "",
+    process.env.LOCALAPPDATA
+      ? path.join(process.env.LOCALAPPDATA, "pipx", "bin")
+      : "",
+    process.env.USERPROFILE
+      ? path.join(process.env.USERPROFILE, ".local", "bin")
+      : "",
+  ];
+  for (const install of windowsPythonInstallDirs()) {
+    directories.push(path.join(install, "Scripts"));
+  }
+  const macPython = path.join(home, "Library", "Python");
+  try {
+    for (const version of fs.readdirSync(macPython)) {
+      directories.push(path.join(macPython, version, "bin"));
+    }
+  } catch {
+    // Not macOS or no per-user Python installs.
+  }
+  return dedupeStrings(directories);
+}
+
+function launcherCandidates(): string[] {
+  const names =
+    process.platform === "win32"
+      ? [
+          "commit-guard.exe",
+          "commit-guard.cmd",
+          "commit-guard.bat",
+          "commit-guard",
+        ]
+      : ["commit-guard"];
+  const candidates: string[] = [];
+  for (const directory of userBinDirectories()) {
+    for (const name of names) {
+      candidates.push(path.join(directory, name));
+    }
+  }
+  for (const root of pipxVenvRoots()) {
+    const venv = path.join(root, "commit-guard");
+    if (process.platform === "win32") {
+      candidates.push(path.join(venv, "Scripts", "commit-guard.exe"));
+      candidates.push(path.join(venv, "Scripts", "commit-guard.cmd"));
+    } else {
+      candidates.push(path.join(venv, "bin", "commit-guard"));
+    }
+  }
+  return dedupeStrings(candidates).filter(existingFile);
+}
+
+function absolutePythonCandidates(): string[] {
+  const home = os.homedir();
+  const candidates: string[] = [];
+  if (process.platform === "win32") {
+    for (const install of windowsPythonInstallDirs()) {
+      candidates.push(path.join(install, "python.exe"));
+    }
+  } else {
+    candidates.push(
+      "/usr/bin/python3",
+      "/usr/local/bin/python3",
+      "/opt/homebrew/bin/python3",
+      path.join(home, ".local", "bin", "python3"),
+      path.join(home, ".local", "bin", "python"),
+      path.join(home, ".pyenv", "shims", "python3"),
+    );
+    const macPython = path.join(home, "Library", "Python");
+    try {
+      for (const version of fs.readdirSync(macPython)) {
+        candidates.push(path.join(macPython, version, "bin", "python3"));
+        candidates.push(path.join(macPython, version, "bin", "python"));
+      }
+    } catch {
+      // Not macOS or no per-user Python installs.
+    }
+    const pyenvVersions = path.join(home, ".pyenv", "versions");
+    try {
+      for (const version of fs.readdirSync(pyenvVersions)) {
+        candidates.push(path.join(pyenvVersions, version, "bin", "python3"));
+        candidates.push(path.join(pyenvVersions, version, "bin", "python"));
+      }
+    } catch {
+      // pyenv is optional.
+    }
+  }
+  for (const root of pipxVenvRoots()) {
+    const venv = path.join(root, "commit-guard");
+    if (process.platform === "win32") {
+      candidates.push(path.join(venv, "Scripts", "python.exe"));
+    } else {
+      candidates.push(path.join(venv, "bin", "python3"));
+      candidates.push(path.join(venv, "bin", "python"));
+    }
+  }
+  return dedupeStrings(candidates).filter(existingFile);
+}
+
 function pythonFromSettings(): string[] {
   const result: string[] = [];
   const configured = settingString("pythonPath");
@@ -97,8 +264,11 @@ function pythonFromSettings(): string[] {
 
 function pythonCandidates(
   folder: vscode.WorkspaceFolder | undefined,
+  includeSettings = true,
 ): PythonCandidate[] {
-  const commands: PythonCandidate[] = pythonFromSettings().map((command) => ({
+  const commands: PythonCandidate[] = (
+    includeSettings ? pythonFromSettings() : []
+  ).map((command) => ({
     command,
     prefix: [],
   }));
@@ -120,6 +290,9 @@ function pythonCandidates(
         }
       }
     }
+  }
+  for (const command of absolutePythonCandidates()) {
+    commands.push({ command, prefix: [] });
   }
   if (process.platform === "win32") {
     commands.push({ command: "py", prefix: ["-3"] });
@@ -145,7 +318,7 @@ function probe(
 ): boolean {
   try {
     const result = spawnSync(command, args, {
-      timeout: 4000,
+      timeout: 2000,
       windowsHide: true,
       windowsVerbatimArguments,
       stdio: "ignore",
@@ -221,7 +394,42 @@ export function resolveCliLaunch(args: string[]): CliLaunch {
     }
   }
 
-  for (const candidate of pythonCandidates(folder)) {
+  for (const command of pythonFromSettings()) {
+    const candidate: PythonCandidate = { command, prefix: [] };
+    const label = `${command} -m install_hook`;
+    checked.push(label);
+    if (probePython(candidate)) {
+      return {
+        command: candidate.command,
+        args: [...candidate.prefix, "-m", "install_hook", ...args],
+        cwd,
+        label,
+      };
+    }
+  }
+
+  for (const candidate of launcherCandidates()) {
+    checked.push(candidate);
+    const probeLaunch = normalizeLaunch(candidate, ["--version"]);
+    if (
+      probe(
+        probeLaunch.command,
+        probeLaunch.args,
+        probeLaunch.windowsVerbatimArguments,
+      )
+    ) {
+      const normalized = normalizeLaunch(candidate, args);
+      return {
+        command: normalized.command,
+        args: normalized.args,
+        cwd,
+        label: candidate,
+        windowsVerbatimArguments: normalized.windowsVerbatimArguments,
+      };
+    }
+  }
+
+  for (const candidate of pythonCandidates(folder, false)) {
     const label = [...candidate.prefix, candidate.command].join(" ");
     checked.push(`${label} -m install_hook`);
     if (probePython(candidate)) {

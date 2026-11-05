@@ -45,10 +45,10 @@ starts it for the supported languages and adds a CommitGuard Activity Bar
 panel; `editors/vscode/` contains its source. The panel can run a scan limited
 to any selected rule databases, show clickable findings, and
 open `commit-guard gui` in an integrated terminal. The extension auto-detects a
-workspace wrapper, a Python installation (`python -m install_hook`), or
-`commit-guard` on `PATH`; set `commitguard.executable` or
-`commitguard.pythonPath` to override detection. Workspace-local launchers are
-only used in trusted workspaces.
+workspace wrapper, a pipx or user-local launcher, a Python installation
+(`python -m install_hook`), or `commit-guard` on `PATH`; set
+`commitguard.executable` or `commitguard.pythonPath` to override detection.
+Workspace-local launchers are only used in trusted workspaces.
 
 ## Dashboard
 

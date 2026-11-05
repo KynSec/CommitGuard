@@ -36,9 +36,21 @@
   terminal.
 - The project site, README, ecosystem guide, release guide, and troubleshooting
   docs now cover the extension, its Marketplace listing, and the scan panel.
+- VS Code extension 0.2.1 documents commands, settings, troubleshooting, and a
+  roadmap for scan-view enhancements such as persisted scans, finding filters,
+  per-finding actions, and result export.
 
 ### Fixed
 
+- VS Code extension 0.2.2 no longer registers `commitguard.explain` itself,
+  which collided with the language client's automatic command registration and
+  made server startup fail. The extension also discovers pipx, user-local
+  Python, pyenv, Homebrew, and per-user Windows/macOS installs without requiring
+  `commitguard.executable` or `commitguard.pythonPath` to be set.
+- VS Code extension 0.2.1 is bundled with esbuild, reducing the VSIX from 326
+  files (483 KB) to 7 files (101 KB), and starts the language server only when
+  a supported file needs diagnostics instead of on every activation. Launcher
+  probes are capped at two seconds and run after activation completes.
 - VS Code extension 0.1.2 auto-detects a workspace wrapper, a configured or
   detected Python interpreter (`python -m install_hook`), and `PATH`, with an
   actionable error listing every checked command. Workspace-local launchers are

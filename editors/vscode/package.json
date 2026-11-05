@@ -2,7 +2,7 @@
   "name": "commitguard-kynsec",
   "displayName": "CommitGuard Security Scanner (KynSec)",
   "description": "Offline-first CommitGuard security diagnostics, rule-database scans, and GUI launcher.",
-  "version": "0.2.0",
+  "version": "0.2.2",
   "publisher": "AmrKhaledEldhshan",
   "license": "Apache-2.0",
   "repository": {
@@ -128,7 +128,8 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
+    "compile": "tsc -p ./ && npm run bundle",
+    "bundle": "node esbuild.mjs",
     "package": "vsce package",
     "watch": "tsc -watch -p ./",
     "test": "node test/resolve.test.js && node test/scan.test.js && node test/panel.test.js"
@@ -137,9 +138,10 @@
     "vscode-languageclient": "^9.0.1"
   },
   "devDependencies": {
-    "@vscode/vsce": "^3.6.0",
     "@types/node": "^20.11.0",
     "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^3.6.0",
+    "esbuild": "^0.25.12",
     "typescript": "^5.4.0"
   },
   "capabilities": {
