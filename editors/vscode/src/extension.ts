@@ -34,6 +34,7 @@ const CHANGE_DEBOUNCE_MS = 250;
 let client: LanguageClient | undefined;
 let startPromise: Promise<void> | undefined;
 let restartAfterStart = false;
+let startupRequested = false;
 let output: vscode.OutputChannel;
 let status: vscode.StatusBarItem;
 
@@ -141,29 +142,45 @@ function clientOptions(): LanguageClientOptions {
   };
 }
 
-async function showStartupError(error: unknown): Promise<void> {
+function supportsDocument(
+  document: vscode.TextDocument | undefined,
+): boolean {
+  return !!document && LANGUAGE_IDS.includes(document.languageId);
+}
+
+function requestServerStart(document: vscode.TextDocument | undefined): void {
+  if (startupRequested || !supportsDocument(document)) return;
+  startupRequested = true;
+  setTimeout(() => void startServer(), 0);
+}
+
+function showStartupError(error: unknown): void {
   const message = String(error);
   output.appendLine(`Language server failed to start: ${message}`);
   status.text = "$(error) CommitGuard";
   status.tooltip = "CommitGuard language server failed to start";
   status.command = "commitguard.restartServer";
-  const action = await vscode.window.showErrorMessage(
-    `CommitGuard could not start its language server. Check the CommitGuard output for details. ${message}`,
-    "Show Output",
-    "Open Settings",
-    "Retry",
-  );
-  if (action === "Show Output") output.show(true);
-  if (action === "Open Settings") {
-    await vscode.commands.executeCommand(
-      "workbench.action.openSettings",
-      "commitguard.executable",
-    );
-  }
-  if (action === "Retry") setTimeout(() => void startServer(), 0);
+  void vscode.window
+    .showErrorMessage(
+      `CommitGuard could not start its language server. Check the CommitGuard output for details. ${message}`,
+      "Show Output",
+      "Open Settings",
+      "Retry",
+    )
+    .then((action) => {
+      if (action === "Show Output") output.show(true);
+      if (action === "Open Settings") {
+        void vscode.commands.executeCommand(
+          "workbench.action.openSettings",
+          "commitguard.executable",
+        );
+      }
+      if (action === "Retry") setTimeout(() => void startServer(), 0);
+    });
 }
 
 async function startServer(): Promise<void> {
+  startupRequested = true;
   if (startPromise) return startPromise;
   startPromise = (async () => {
     status.text = "$(sync~spin) CommitGuard";
@@ -205,7 +222,7 @@ async function startServer(): Promise<void> {
           output.appendLine(`Could not stop failed client: ${String(stopError)}`);
         }
       }
-      await showStartupError(error);
+      showStartupError(error);
     }
   })().finally(() => {
     startPromise = undefined;
@@ -217,18 +234,6 @@ async function startServer(): Promise<void> {
   return startPromise;
 }
 
-async function explainFinding(
-  ruleId: string,
-  fingerprint: string,
-): Promise<void> {
-  output.appendLine(`Finding: ${ruleId}`);
-  output.appendLine(`Fingerprint: ${fingerprint}`);
-  output.show(true);
-  await vscode.window.showInformationMessage(
-    `CommitGuard finding: ${ruleId}. Details are in the CommitGuard output.`,
-  );
-}
-
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   output = vscode.window.createOutputChannel("CommitGuard");
   status = vscode.window.createStatusBarItem(
@@ -236,7 +241,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     10,
   );
   status.command = "commitguard.openPanel";
-  status.text = "$(sync~spin) CommitGuard";
+  status.text = "$(shield) CommitGuard";
   status.tooltip = "Open the CommitGuard scan panel";
   status.show();
 
@@ -256,9 +261,17 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       panel.openGui(),
     ),
     vscode.commands.registerCommand("commitguard.restartServer", startServer),
-    vscode.commands.registerCommand("commitguard.explain", explainFinding),
+    vscode.workspace.onDidOpenTextDocument((document) =>
+      requestServerStart(document),
+    ),
+    vscode.window.onDidChangeActiveTextEditor((editor) =>
+      requestServerStart(editor?.document),
+    ),
     vscode.workspace.onDidChangeConfiguration((event) => {
-      if (event.affectsConfiguration("commitguard")) {
+      if (
+        event.affectsConfiguration("commitguard") &&
+        (startupRequested || startPromise)
+      ) {
         if (startPromise) restartAfterStart = true;
         void startServer();
       }
@@ -270,7 +283,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     },
   );
 
-  await startServer();
+  const activeDocument = vscode.window.activeTextEditor?.document;
+  requestServerStart(
+    supportsDocument(activeDocument)
+      ? activeDocument
+      : vscode.workspace.textDocuments.find((document) =>
+          supportsDocument(document),
+        ),
+  );
 }
 
 export async function deactivate(): Promise<void> {

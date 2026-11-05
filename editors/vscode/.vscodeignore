@@ -1,6 +1,11 @@
 .gitignore
 package-lock.json
 tsconfig.json
+esbuild.mjs
 src/**
-out/**/*.map
 test/**
+out/**/*.map
+out/cli.js
+out/panel.js
+out/scan.js
+node_modules/**

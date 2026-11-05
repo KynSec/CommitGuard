@@ -83,6 +83,35 @@ try {
   assert.deepStrictEqual(launch.args, ["-m", "install_hook", "lsp", temp]);
   assert.strictEqual(launch.label, "python3 -m install_hook");
 
+  if (process.platform !== "win32") {
+    const fakeHome = fs.mkdtempSync(path.join(os.tmpdir(), "commitguard-home-"));
+    const previousHome = process.env.HOME;
+    const previousPipxBin = process.env.PIPX_BIN_DIR;
+    const previousPipxHome = process.env.PIPX_HOME;
+    try {
+      process.env.HOME = fakeHome;
+      delete process.env.PIPX_BIN_DIR;
+      delete process.env.PIPX_HOME;
+      const bin = path.join(fakeHome, ".local", "bin");
+      fs.mkdirSync(bin, { recursive: true });
+      const launcher = path.join(bin, "commit-guard");
+      fs.writeFileSync(launcher, "#!/bin/sh\nexit 0\n", { mode: 0o755 });
+      reset(temp);
+      launch = cli.serverLaunch();
+      assert.strictEqual(launch.command, launcher);
+      assert.deepStrictEqual(launch.args, ["lsp", temp]);
+      assert.strictEqual(launch.label, launcher);
+    } finally {
+      if (previousHome === undefined) delete process.env.HOME;
+      else process.env.HOME = previousHome;
+      if (previousPipxBin === undefined) delete process.env.PIPX_BIN_DIR;
+      else process.env.PIPX_BIN_DIR = previousPipxBin;
+      if (previousPipxHome === undefined) delete process.env.PIPX_HOME;
+      else process.env.PIPX_HOME = previousPipxHome;
+      fs.rmSync(fakeHome, { recursive: true, force: true });
+    }
+  }
+
   console.log("vscode launcher resolution: ok");
 } finally {
   fs.rmSync(temp, { recursive: true, force: true });

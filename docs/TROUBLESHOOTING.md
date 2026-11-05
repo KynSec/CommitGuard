@@ -21,8 +21,9 @@ root. If it reports that no launcher was found:
 
 1. Open a folder and confirm the workspace is trusted. The extension does not
    run in restricted mode.
-2. Install the CLI (`pipx install "git+https://github.com/CommitGuard-Sec/CommitGuard.git"`)
-   or keep a working `commit-guard` wrapper in the repository.
+2. Install the CLI (`pipx install commit-guard` or
+   `python -m pip install commit-guard`) or keep a working `commit-guard`
+   wrapper in the repository.
 3. Set `commitguard.pythonPath` to the interpreter that has CommitGuard
    installed, or set `commitguard.executable` to the absolute launcher path.
 4. Run **CommitGuard: Restart Language Server** from the Command Palette. The
