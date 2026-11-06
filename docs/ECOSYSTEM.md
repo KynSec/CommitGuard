@@ -1,4 +1,4 @@
-# SBOM, Licenses, Editor Loops, Compliance, and Plugins
+# SBOM, Licenses, Editor Loops, Compliance, Audits, and Plugins
 
 These surfaces share one rule: they are local-first, read untrusted repository
 content defensively, and never turn a mapping or a score into a certification
@@ -98,13 +98,36 @@ Every report includes the caveat that mapping is not certification. Controls
 that require organizational evidence are marked as such; CommitGuard only
 shows which findings provide technical evidence.
 
+## Quarterly audit from local artifacts
+
+```bash
+commit-guard audit . \
+  --reports commit_guard_reports \
+  --since 2026-01-01 --until 2026-03-31 \
+  --format markdown --output quarterly-audit.md
+```
+
+`audit` never scans, loads plugins, or contacts the network. It merges local
+reports, applies committed triage state, filters local history to the requested
+period, and can add compliance coverage from bundled packs. Use `--strict` to
+fail when triage issues exist or no reports were provided. The output is a
+review artifact, not a certification.
+
 ## Plugins
 
 ```bash
+commit-guard plugin install --source plugins/example
+commit-guard plugin verify --dir ~/.config/commitguard/plugins
 commit-guard plugin list
-commit-guard plugin validate --dir plugins/example
 commit-guard plugin run --dir plugins/example --format json
+commit-guard plugin remove --name example
 ```
+
+Installation verifies the entrypoint digest before copying the plugin into the
+plugin directory. `--force` replaces an existing install and
+`--allow-unsigned-plugin` is an explicit local-development override. Removal
+only deletes a discovered plugin directory by manifest name; it never removes
+the plugin root. Core scans do not depend on any installed plugin.
 
 A plugin is a directory containing `plugin.json` and an entrypoint:
 

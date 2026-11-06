@@ -1464,10 +1464,34 @@ def build_parser() -> argparse.ArgumentParser:
     p_compliance.add_argument("--format", choices=("markdown", "json", "text"), default="markdown")
     p_compliance.add_argument("--output", type=Path, default=None)
 
-    p_plugin = sub.add_parser("plugin", help="List, validate, or run out-of-process plugins.")
-    p_plugin.add_argument("action", choices=("list", "validate", "run"), nargs="?", default="list")
+    p_audit = sub.add_parser(
+        "audit", help="Build a quarterly audit from local reports and triage."
+    )
+    p_audit.add_argument("repo", nargs="?", default=".")
+    p_audit.add_argument("--reports", type=Path, action="append", default=None)
+    p_audit.add_argument("--triage", type=Path, default=None)
+    p_audit.add_argument("--history", type=Path, default=None)
+    p_audit.add_argument("--pack", action="append", default=None)
+    p_audit.add_argument("--since", default=None)
+    p_audit.add_argument("--until", default=None)
+    p_audit.add_argument("--strict", action="store_true")
+    p_audit.add_argument("--format", choices=("markdown", "json"), default="markdown")
+    p_audit.add_argument("--output", type=Path, default=None)
+
+    p_plugin = sub.add_parser(
+        "plugin", help="Install, verify, list, or run out-of-process plugins."
+    )
+    p_plugin.add_argument(
+        "action",
+        choices=("list", "validate", "verify", "run", "install", "remove"),
+        nargs="?",
+        default="list",
+    )
     p_plugin.add_argument("--repo", dest="repo_opt", default=".")
     p_plugin.add_argument("--dir", type=Path, default=None)
+    p_plugin.add_argument("--source", type=Path, default=None)
+    p_plugin.add_argument("--name", default=None)
+    p_plugin.add_argument("--force", action="store_true")
     p_plugin.add_argument("--allow-unsigned-plugin", action="store_true")
     p_plugin.add_argument("--timeout", type=float, default=30.0)
     p_plugin.add_argument("--format", choices=("text", "json"), default="text")
@@ -1782,6 +1806,21 @@ def main(argv: list[str] | None = None) -> int:
                 fmt=args.format,
                 output=args.output,
             )
+        elif args.command == "audit":
+            from core.commands import command_audit
+
+            return command_audit(
+                target,
+                reports=args.reports,
+                triage_path=args.triage,
+                history_path=args.history,
+                packs=args.pack,
+                since=args.since,
+                until=args.until,
+                strict=args.strict,
+                fmt=args.format,
+                output=args.output,
+            )
         elif args.command == "plugin":
             from core.commands import command_plugin
 
@@ -1789,6 +1828,9 @@ def main(argv: list[str] | None = None) -> int:
                 target,
                 args.action,
                 directory=args.dir,
+                source=args.source,
+                name=args.name,
+                force=args.force,
                 allow_unsigned=args.allow_unsigned_plugin,
                 timeout=args.timeout,
                 fmt=args.format,

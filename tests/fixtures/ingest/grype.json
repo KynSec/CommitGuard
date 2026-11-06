@@ -1,0 +1,19 @@
+{
+  "matches": [
+    {
+      "vulnerability": {
+        "id": "CVE-2024-0001",
+        "severity": "High",
+        "description": "demo vulnerability",
+        "fix": {"versions": ["2.0.0"]},
+        "cwes": [{"cwe": "CWE-79", "source": "nvd"}]
+      },
+      "artifact": {
+        "name": "demo-package",
+        "version": "1.0.0",
+        "type": "npm",
+        "locations": [{"path": "package-lock.json"}]
+      }
+    }
+  ]
+}

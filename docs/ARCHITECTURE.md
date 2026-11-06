@@ -169,6 +169,24 @@ non-blocking for SARIF/`--fail-on new`. Baseline fingerprints may carry
 - Severity mapping for SARIF: critical/high → `error`, medium → `warning`,
   low/info → `note`.
 
+### `core/plugins.py`
+
+- Discovers manifests only from an explicit plugin directory.
+- Verifies the SHA-256 entrypoint digest before execution or installation.
+- Installs by copying a verified plugin into a staging directory, verifying the
+  copy, then replacing the destination; removal is limited to a discovered
+  plugin directory under the plugin root.
+- Runs plugins out-of-process with timeout, output, finding-count, and
+  capability limits. Core scans remain independent of installed plugins.
+
+### `core/audit.py`
+
+- Builds a quarterly audit from local reports, triage state, history, and
+  optional compliance packs.
+- Reuses the report merge and triage audit paths, so the artifact reflects the
+  same normalization and expiry rules as the gate.
+- Never scans source, loads plugins, or uses the network.
+
 ### `install_hook.py`
 
 - Copies `main.py`, `core/`, `rules/`, `README.md`, and `docs/` into

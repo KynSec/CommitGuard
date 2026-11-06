@@ -131,9 +131,10 @@ It runs only in trusted workspaces.
 | Compliance | Control mapping packs for OWASP Top 10, CWE Top 25, ASVS 5.0, PCI DSS 4.0, and SOC 2 technical evidence, with explicit caveats. | Yes |
 | Editor and watch loops | Stdio LSP diagnostics/code actions, a VS Code extension, and `watch --once` incremental snapshots. | Yes |
 | Dashboard | Self-contained HTML/JSON with severity, category, owner, trend, and report provenance. | Yes |
-| Plugins | Signed manifests, out-of-process execution, capability limits, timeouts, and output caps. | Yes |
+| Plugins | Signed manifests, verified install/remove, out-of-process execution, capability limits, timeouts, and output caps. | Yes |
 | Policy engine | `strict`, `balanced`, and `audit` profiles; thresholds, budgets, ratchets, and new-code gating. | Yes |
 | Baseline and triage | Fingerprints, accepted-risk metadata, owners, expiry, stale-entry audits, and committed triage YAML. | Yes |
+| Quarterly audit | Local reports, triage state, bounded history, and optional compliance packs without scanning or network access. | Yes |
 | Fix workflow | Preview and apply rule-provided fixes, then re-stage safely. | Yes |
 | Reports | Markdown, JSON schema 3, SARIF 2.1.0, self-contained HTML, JUnit, GitLab Code Quality, and Checkstyle. | Yes |
 | Local GUI | Loopback-only console for scans, policy, triage, fixes, pipelines, Git, rules, reports, and configuration. | Yes |
@@ -179,13 +180,15 @@ commit-guard lsp .                         # stdio language server
 # Ecosystem surfaces
 commit-guard compliance . --report report.json --pack owasp-top10-2021
 commit-guard plugin list
-commit-guard plugin validate --dir plugins/example
+commit-guard plugin install --source plugins/example
+commit-guard plugin verify --dir plugins
 
 # Policy, baseline, and triage
 commit-guard gate --staged
 commit-guard baseline update --owner security --expiry 2026-12-31
 commit-guard triage list
 commit-guard triage audit
+commit-guard audit . --reports commit_guard_reports --since 2026-01-01
 
 # Bring findings from other analyzers into the same gate
 commit-guard ingest semgrep.sarif trivy.json grype.json checkov.sarif
@@ -381,7 +384,7 @@ commit-guard scan --staged --no-cache   # debugging or read-only environments
 | [Rules](docs/RULES.md) | Native schema, rule packs, context windows, selection, and validation. |
 | [Scan profiles](docs/SCAN_PROFILES.md) | Determinant file/rule selections in `rules/scan_profiles.yaml`, CLI/GUI usage, and PyPI packaging. |
 | [Interoperability](docs/INTEROP.md) | SARIF/native ingestion and report merging. |
-| [Ecosystem](docs/ECOSYSTEM.md) | SBOM, licenses, dashboard, watch, LSP, compliance, and plugins. |
+| [Ecosystem](docs/ECOSYSTEM.md) | SBOM, licenses, dashboard, watch, LSP, compliance, quarterly audits, and plugins. |
 | [CI](docs/CI.md) | GitHub Actions, GitLab, Jenkins, and pre-commit. |
 | [GitLab](docs/GITLAB.md) | MR summaries, inline suggestions, and signed offline snapshots. |
 | [Benchmarks](docs/BENCHMARKS.md) | Benchmark card, fixed-commit accuracy corpus, and limitations. |
@@ -389,6 +392,7 @@ commit-guard scan --staged --no-cache   # debugging or read-only environments
 | [Architecture](docs/ARCHITECTURE.md) | Scan flow, modules, caching, and tradeoffs. |
 | [Threat Model](docs/THREAT_MODEL.md) | Assets, adversaries, controls, and abuse cases. |
 | [Troubleshooting](docs/TROUBLESHOOTING.md) | Hooks, paths, caches, and false positives. |
+| [Support](docs/SUPPORT.md) | Support guide, evidence bundle, triage matrix, and escalation. |
 | [Upgrade Guide](docs/UPGRADE-2.x-to-3.x.md) | Schema 2 / 2.x to schema 3 / 3.x. |
 | [Contributing](CONTRIBUTING.md) | Development setup, tests, DCO, and rule contributions. |
 | [Changelog](CHANGELOG.md) | Release history and notable changes. |

@@ -111,3 +111,49 @@ This snapshot adds cross-file Python taint summaries, signed OSV snapshots,
 GitLab MR publishing, the VS Code extension with an Activity Bar scan panel,
 the zipapp and release workflow, the accuracy gate, upgrade end-to-end tests,
 and CI dogfooding.
+
+## Phase 3 completion snapshot
+
+Measured on 2026-11-06 from the `phase-3-completion` branch before commit:
+
+| Item | Value |
+|---|---|
+| Tests | 370 passed, 18 subtests passed |
+| JSON schema | 3 |
+| Active rules | 640 |
+| Skipped rule entries | 2,059 |
+| Corpus samples | 151 |
+| Schema/corpus issues | 0 |
+| Accuracy corpus | 14/14 checks (7 vulnerable + 7 fixed cases) |
+| Staged benchmark on this host | ~2.33 s median (120 files x 20 lines) |
+| Parent commit benchmark on this host | ~2.32 s median |
+| Lint / type check | `ruff` clean; `mypy` clean for 46 application sources |
+| Zipapp smoke test | `--version` and `audit` succeed |
+| Local Python used for measurement | 3.14.8 |
+
+The local benchmark host exceeded the 2000 ms CI limit, but the parent commit
+measured within 10 ms of this branch, so Phase 3 introduced no measurable scan
+regression. The CI latency gate remains 2000 ms.
+
+Phase 3 exit criteria are covered by `tests/test_phase3_exit.py`:
+
+- Five external tool reports (Semgrep, gitleaks, Trivy, Checkov, Grype) and a
+  CommitGuard report merge into one gate.
+- A plugin can be installed, verified, and removed without affecting core
+  commands.
+- A quarterly audit can be generated from local reports, triage state, history,
+  and compliance packs without scanning.
+- The accuracy gate remains 14/14, and the staged benchmark is unchanged
+  against the parent commit.
+
+Reproduce this snapshot with:
+
+```bash
+python -m pytest -q tests
+python main.py --check-rules --repo .
+python benchmarks/accuracy_benchmark.py
+python benchmarks/scan_benchmark.py --iterations 3 --max-median-ms 2000
+ruff check main.py install_hook.py gui_server.py gui_actions.py gui_page.py core tests benchmarks scripts
+mypy main.py install_hook.py gui_server.py gui_actions.py gui_page.py core
+python scripts/build_zipapp.py --output dist/commit-guard.pyz
+```
