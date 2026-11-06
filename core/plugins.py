@@ -11,6 +11,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import shutil
 import subprocess
 import sys
 from collections.abc import Iterable, Mapping
@@ -313,6 +314,107 @@ def run_plugin(
         warnings=warnings,
         duration_ms=duration,
     )
+
+
+def _source_manifest(source: str | Path) -> PluginManifest:
+    path = Path(source).expanduser().resolve()
+    if path.is_file():
+        return load_manifest(path)
+    if path.is_dir():
+        manifest_path = _manifest_path(path)
+        if manifest_path is None:
+            raise PluginError(f"no plugin manifest found in {path}")
+        return load_manifest(manifest_path)
+    raise PluginError(f"plugin source not found: {path}")
+
+
+def install_plugin(
+    source: str | Path,
+    *,
+    directory: str | Path | None = None,
+    force: bool = False,
+    allow_unsigned: bool = False,
+) -> PluginManifest:
+    """Copies a verified plugin into the plugin directory.
+
+    Installation never imports the plugin.  It verifies the manifest entrypoint
+    digest first, then copies the source directory under the plugin name so the
+    installed tree can be discovered without reading the original checkout.
+    """
+    manifest = _source_manifest(source)
+    if Path(manifest.name).name != manifest.name or manifest.name in {".", ".."}:
+        raise PluginError(f"invalid plugin name: {manifest.name!r}")
+    verified, reason = verify_manifest(manifest, allow_unsigned=allow_unsigned)
+    if not verified:
+        raise PluginError(reason)
+    base = (
+        Path(directory).expanduser().resolve()
+        if directory is not None
+        else DEFAULT_PLUGIN_DIR
+    )
+    destination = base / manifest.name
+    if destination == manifest.directory:
+        raise PluginError(f"plugin {manifest.name} is already in {base}")
+    if destination.exists() and not force:
+        raise PluginError(
+            f"plugin {manifest.name} is already installed in {base}; pass --force"
+        )
+    base.mkdir(parents=True, exist_ok=True)
+    staging = base / f".{manifest.name}.install-{os.getpid()}"
+    if staging.exists():
+        shutil.rmtree(staging)
+    try:
+        shutil.copytree(
+            manifest.directory,
+            staging,
+            ignore=shutil.ignore_patterns("__pycache__", "*.pyc", ".git"),
+        )
+        installed = load_manifest(
+            _manifest_path(staging) or staging / "plugin.json"
+        )
+        verified, reason = verify_manifest(
+            installed, allow_unsigned=allow_unsigned
+        )
+        if not verified:
+            raise PluginError(f"installed copy failed verification: {reason}")
+        if destination.exists():
+            shutil.rmtree(destination)
+        staging.replace(destination)
+    except Exception:
+        if staging.exists():
+            shutil.rmtree(staging, ignore_errors=True)
+        raise
+    return load_manifest(
+        _manifest_path(destination) or destination / "plugin.json"
+    )
+
+
+def remove_plugin(
+    name: str,
+    *,
+    directory: str | Path | None = None,
+) -> PluginManifest:
+    """Removes an installed plugin directory by manifest name."""
+    base = (
+        Path(directory).expanduser().resolve()
+        if directory is not None
+        else DEFAULT_PLUGIN_DIR
+    )
+    for manifest in discover_plugins(base):
+        if manifest.name != name:
+            continue
+        target = manifest.directory.resolve()
+        if target == base:
+            raise PluginError("refusing to remove the plugin directory itself")
+        try:
+            target.relative_to(base)
+        except ValueError as exc:
+            raise PluginError(
+                f"plugin {name} resolves outside {base}"
+            ) from exc
+        shutil.rmtree(target)
+        return manifest
+    raise PluginError(f"plugin not found: {name}")
 
 
 def run_plugins(
