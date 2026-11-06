@@ -678,11 +678,53 @@ def command_compliance(
     return 0
 
 
+def command_audit(
+    repo: str | Path = ".",
+    *,
+    reports: Iterable[str | Path] | None = None,
+    triage_path: str | Path | None = None,
+    history_path: str | Path | None = None,
+    packs: Iterable[str] | None = None,
+    since: str | None = None,
+    until: str | None = None,
+    strict: bool = False,
+    fmt: str = "markdown",
+    output: str | Path | None = None,
+) -> int:
+    from core.audit import AuditError, build_local_audit, format_local_audit
+
+    try:
+        audit = build_local_audit(
+            repo,
+            reports=reports,
+            triage_path=triage_path,
+            history_path=history_path,
+            packs=packs,
+            since=since,
+            until=until,
+        )
+    except (AuditError, OSError, ValueError) as exc:
+        print(f"[commit-guard] ERROR: {exc}", file=sys.stderr)
+        return 2
+    text = format_local_audit(audit, fmt=fmt)
+    try:
+        _write_or_print(text, output)
+    except OSError as exc:
+        print(f"[commit-guard] ERROR: could not write audit output: {exc}", file=sys.stderr)
+        return 2
+    if strict and (audit.triage_issues or not audit.sources):
+        return 1
+    return 0
+
+
 def command_plugin(
     repo: str | Path = ".",
     action: str = "list",
     *,
     directory: str | Path | None = None,
+    source: str | Path | None = None,
+    name: str | None = None,
+    force: bool = False,
     allow_unsigned: bool = False,
     timeout: float = 30.0,
     fmt: str = "text",
@@ -691,6 +733,8 @@ def command_plugin(
     from core.plugins import (
         PluginError,
         discover_plugins,
+        install_plugin,
+        remove_plugin,
         run_plugin,
         verify_manifest,
     )
@@ -698,6 +742,29 @@ def command_plugin(
     root = Path(repo).expanduser().resolve()
     payload: dict[str, Any]
     try:
+        if action == "install":
+            if source is None:
+                raise PluginError("plugin install requires --source")
+            installed = install_plugin(
+                source,
+                directory=directory,
+                force=force,
+                allow_unsigned=allow_unsigned,
+            )
+            print(
+                f"[commit-guard] Installed {installed.name} "
+                f"{installed.version} in {installed.directory}"
+            )
+            return 0
+        if action == "remove":
+            if not name:
+                raise PluginError("plugin remove requires --name")
+            removed = remove_plugin(name, directory=directory)
+            print(
+                f"[commit-guard] Removed {removed.name} {removed.version} "
+                f"from {removed.directory}"
+            )
+            return 0
         manifests = discover_plugins(directory)
         if action == "list":
             payload = {
@@ -717,7 +784,7 @@ def command_plugin(
                 text = "\n".join(lines) + "\n"
             _write_or_print(text, output)
             return 0
-        if action == "validate":
+        if action in {"validate", "verify"}:
             results: list[dict[str, Any]] = []
             failed = False
             for manifest in manifests:

@@ -86,6 +86,7 @@ COMMANDS = {
     "watch",
     "lsp",
     "compliance",
+    "audit",
     "plugin",
     "scan",
     "check-rules",

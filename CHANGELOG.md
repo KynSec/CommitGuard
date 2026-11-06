@@ -1,35 +1,22 @@
 # Changelog
 
-## 3.1.1 - 2026-11-04
-
-### Fixed
-
-- Restored provenance validation after the DevSkim crypto rule hardening by
-  recording the updated checksum and documenting the local word-boundary change.
-
-## 3.1.0 - 2026-11-03
+## 3.2.0 - 2026-11-06
 
 ### Added
 
-- Determinant scan profiles: human-editable `rules/scan_profiles.yaml` selects
-  staged/whole-tree mode, include/exclude paths, rule sources, rule-id globs,
-  and severities. CLI flags (`--profile`, `--profiles-file`, `--include`,
-  `--exclude`, `--rule`, `--skip-rule`, `--rule-source`, `--rule-severity`,
-  `--staged`, `--list-profiles`) and the GUI Scan tab use the same selections,
-  with profile/path/rule metadata recorded in Markdown and JSON reports.
-- GUI **Profiles** tab with an in-app rendered guide, and a Determinant
-  selection card with explicit override inputs.
-- `docs/SCAN_PROFILES.md`, packaged as the `commit_guard_docs` module for PyPI
-  and bundled into the zipapp so the guide and profiles work in installed
-  copies.
-- VS Code extension 0.1.1 with workspace-aware language-server startup,
-  debounced document synchronization, clearer recovery, and expanded language
-  activation.
-
-## Unreleased
-
-### Added
-
+- Phase 3 completion: `audit` assembles a quarterly review entirely from local
+  reports, triage state, bounded history, and optional compliance packs without
+  scanning or contacting the network. `--strict` fails on triage issues or
+  missing report inputs.
+- Plugin lifecycle commands: `plugin install` verifies the entrypoint digest
+  before an atomic copy, `plugin verify` aliases `plugin validate`, and
+  `plugin remove` deletes only a discovered plugin directory by manifest name.
+  Installed plugins remain optional and never affect core scans.
+- Phase 3 exit-criteria tests cover a reference six-source monorepo gate,
+  plugin install/verify/remove, quarterly local-artifact audits, and the
+  existing benchmark and accuracy gates.
+- Support playbook, package-manager release validation, updated Homebrew and
+  Scoop manifests for 3.2.0, and Grype ingestion fixture documentation.
 - VS Code extension 0.2.0 Activity Bar scan panel: choose any combination of
   rule databases, scan the whole repository or staged changes, review findings,
   jump to source lines, and launch `commit-guard gui` from an integrated
@@ -188,6 +175,32 @@
   headers, mobile layouts, and deep-linkable tabs.
 - `scan --format html` is now accepted by the installed `./commit-guard scan`
   wrapper (it was already supported by `main.py`).
+
+## 3.1.1 - 2026-11-04
+
+### Fixed
+
+- Restored provenance validation after the DevSkim crypto rule hardening by
+  recording the updated checksum and documenting the local word-boundary change.
+
+## 3.1.0 - 2026-11-03
+
+### Added
+
+- Determinant scan profiles: human-editable `rules/scan_profiles.yaml` selects
+  staged/whole-tree mode, include/exclude paths, rule sources, rule-id globs,
+  and severities. CLI flags (`--profile`, `--profiles-file`, `--include`,
+  `--exclude`, `--rule`, `--skip-rule`, `--rule-source`, `--rule-severity`,
+  `--staged`, `--list-profiles`) and the GUI Scan tab use the same selections,
+  with profile/path/rule metadata recorded in Markdown and JSON reports.
+- GUI **Profiles** tab with an in-app rendered guide, and a Determinant
+  selection card with explicit override inputs.
+- `docs/SCAN_PROFILES.md`, packaged as the `commit_guard_docs` module for PyPI
+  and bundled into the zipapp so the guide and profiles work in installed
+  copies.
+- VS Code extension 0.1.1 with workspace-aware language-server startup,
+  debounced document synchronization, clearer recovery, and expanded language
+  activation.
 
 ## 2.1.0
 

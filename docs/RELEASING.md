@@ -74,8 +74,32 @@ openssl dgst -sha256 -verify release-public.pem \
 The zipapp extracts the bundled native rules into
 `$COMMITGUARD_CACHE_DIR` (default `~/.cache/commitguard`) on first run. It
 supports scan and read-only command surfaces such as `sbom`, `license`,
-`dashboard`, `watch`, `lsp`, `compliance`, `plugin`, and `gate`. Installing
-hooks or refreshing a repository toolkit still requires the wheel or installer.
+`dashboard`, `watch`, `lsp`, `compliance`, `audit`, `plugin`, and `gate`.
+Installing hooks or refreshing a repository toolkit still requires the wheel or
+installer.
+
+## Package manager distribution
+
+Homebrew and Scoop manifests live under `packaging/` and are updated only after
+the signed release artifacts exist:
+
+```bash
+python scripts/validate_packaging.py --version 3.2.0 \
+  --artifact dist/commit-guard-3.2.0.tar.gz
+```
+
+Update the formula and manifest URL, version, and SHA-256, then submit them to
+the respective upstream repositories. The release workflow publishes the
+container image with both the release tag and `latest`:
+
+```bash
+docker pull ghcr.io/commitguard-sec/commitguard:3.2.0
+docker run --rm -v "$PWD:/workspace" ghcr.io/commitguard-sec/commitguard:3.2.0 \
+  scan --staged
+```
+
+Do not treat an in-repo manifest as a published package. Record the upstream
+submission or merge in the release notes.
 
 ## Offline OSV snapshots
 

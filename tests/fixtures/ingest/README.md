@@ -10,6 +10,7 @@ They contain no real secrets or live endpoints.
 | gitleaks | `gitleaks.json` | native JSON | gitleaks 8.x output shape |
 | Trivy | `trivy.json` | native JSON | Trivy 0.5x output shape |
 | Checkov | `checkov.json` | native JSON | Checkov 3.x output shape |
+| Grype | `grype.json` | native JSON | Grype 0.8x output shape |
 | Bandit | `bandit.json` | native JSON | Bandit 1.7.x output shape |
 
 Fixtures are test inputs only. They do not imply endorsement or redistribution
