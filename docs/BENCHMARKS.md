@@ -12,7 +12,7 @@ where the results must not be over-read.
 | Rule set | Bundled native rules, warm parsed-rule cache |
 | Default gate command | `python benchmarks/scan_benchmark.py --iterations 3 --max-median-ms 2000` |
 | CI regression limit | 2000 ms median |
-| Last recorded median | ~990 ms (see [BASELINE.md](BASELINE.md)) |
+| Last recorded median | ~2.33 s on the Phase 3 host; parent commit ~2.32 s (see [BASELINE.md](BASELINE.md)) |
 
 Latency varies with disk cache, Python minor version, and the number of
 matching rules. The benchmark is a regression guard, not a cross-tool

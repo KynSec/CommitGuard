@@ -163,6 +163,11 @@ jobs:
           print("release artifacts exclude blocked rule packs and include license notices")
           PY
 
+      - name: Validate package manager manifests
+        run: >-
+          python scripts/validate_packaging.py
+          --version "$(python -c 'from core import __version__; print(__version__)')"
+
       - name: Dogfood strict scan
         run: |
           mkdir -p commit_guard_reports

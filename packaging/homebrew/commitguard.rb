@@ -3,7 +3,7 @@ class Commitguard < Formula
 
   desc "Offline-first local security control plane for secrets, SAST, SCA, and policy"
   homepage "https://github.com/CommitGuard-Sec/CommitGuard"
-  url "https://files.pythonhosted.org/packages/source/c/commit-guard/commit-guard-3.0.0.tar.gz"
+  url "https://files.pythonhosted.org/packages/source/c/commit-guard/commit-guard-3.2.0.tar.gz"
   sha256 "REPLACE_WITH_RELEASE_SHA256"
   license "Apache-2.0"
 

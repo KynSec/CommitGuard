@@ -327,3 +327,17 @@ cannot mask a rule update.
 Run `python .commit_guard/main.py --no-baseline` and
 `python .commit_guard/main.py --audit-suppressions --strict` periodically to
 audit what your allowlists hide.
+
+For a quarterly review that uses only local artifacts, publish reports as CI
+artifacts and run:
+
+```bash
+commit-guard audit . \
+  --reports commit_guard_reports \
+  --since 2026-01-01 --until 2026-03-31 \
+  --format markdown --output quarterly-audit.md
+```
+
+`commit-guard audit --strict` exits `1` when triage issues exist or no reports
+were provided, so it can be a scheduled job. It does not scan source or call a
+network service.
