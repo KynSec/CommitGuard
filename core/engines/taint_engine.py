@@ -1,15 +1,28 @@
-"""Python and JavaScript/TypeScript taint engine wrapper."""
+"""Python, JavaScript/TypeScript, Java, and Go taint engine wrapper."""
 
 from __future__ import annotations
 
 import time
 from dataclasses import replace
 from pathlib import Path
+from typing import Any
 
 from core.ast_taint import scan_js_taint, scan_python_taint
 from core.engines.base import EngineCapability, EngineResult, ScanContext
+from core.interprocedural import scan_interprocedural
 from core.paths import PathMatcher
 from core.scanner import is_inline_suppressed
+
+_INTERPROCEDURAL_EXTENSIONS = (
+    ".js",
+    ".jsx",
+    ".mjs",
+    ".cjs",
+    ".ts",
+    ".tsx",
+    ".java",
+    ".go",
+)
 
 _EXCLUDED_DIRECTORIES = {
     ".git",
@@ -95,10 +108,12 @@ class TaintEngine:
     def capability(self) -> EngineCapability:
         return EngineCapability(
             name=self.name,
-            languages=frozenset({"python", "javascript", "typescript"}),
+            languages=frozenset(
+                {"python", "javascript", "typescript", "java", "go"}
+            ),
             categories=frozenset({"sast"}),
             supports_flows=True,
-            version="1",
+            version="2",
         )
 
     def available(self) -> tuple[bool, str]:
@@ -132,10 +147,32 @@ class TaintEngine:
                 context.path_excludes,
             ).items():
                 analysis_files.setdefault(path, lines)
+        interprocedural_lines = {
+            path: lines
+            for path, lines in changed_lines.items()
+            if path.lower().endswith(_INTERPROCEDURAL_EXTENSIONS)
+        }
         python_result = scan_python_taint(analysis_files, python_lines)
         js_result = scan_js_taint(context.files or {}, js_lines)
-        matches = (*python_result.matches, *js_result.matches)
-        warnings = (*python_result.warnings, *js_result.warnings)
+        interprocedural_result = scan_interprocedural(
+            context.files or {},
+            interprocedural_lines,
+            repo_root=context.repo_root,
+            includes=context.path_includes,
+            excludes=context.path_excludes,
+        )
+        matches: tuple[Any, ...] = (*python_result.matches, *js_result.matches)
+        unique: dict[tuple[str, str, int], Any] = {}
+        for match in (*matches, *interprocedural_result.matches):
+            finding = match.finding
+            key = (finding.file, finding.rule_id, match.sink_line)
+            unique.setdefault(key, match)
+        matches = tuple(unique.values())
+        warnings = (
+            *python_result.warnings,
+            *js_result.warnings,
+            *interprocedural_result.warnings,
+        )
         excluded = PathMatcher(context.path_excludes)
         findings = []
         for match in matches:

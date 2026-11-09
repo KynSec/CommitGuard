@@ -384,7 +384,11 @@ commit-guard scan --staged --no-cache   # debugging or read-only environments
 | [Rules](docs/RULES.md) | Native schema, rule packs, context windows, selection, and validation. |
 | [Scan profiles](docs/SCAN_PROFILES.md) | Determinant file/rule selections in `rules/scan_profiles.yaml`, CLI/GUI usage, and PyPI packaging. |
 | [Interoperability](docs/INTEROP.md) | SARIF/native ingestion and report merging. |
-| [Ecosystem](docs/ECOSYSTEM.md) | SBOM, licenses, dashboard, watch, LSP, compliance, quarterly audits, and plugins. |
+| [Ecosystem](docs/ECOSYSTEM.md) | SBOM, licenses, dashboard, watch, LSP, compliance, quarterly audits, plugins, signed rule packs, AI evaluation, native binaries, and the benchmark leaderboard. |
+| [Governance](GOVERNANCE.md) | Roles, decision making, maintainer continuity, and release rotation. |
+| [Maintainers](MAINTAINERS.md) | Current role assignments and responsibilities. |
+| [Security response](docs/SECURITY-RESPONSE.md) | Incident runbook, severity targets, and maintainer-absence handoff. |
+| [Phase 4 exit](docs/PHASE4-EXIT.md) | Deliverable and exit-criterion evidence, reproduction commands, and known limits. |
 | [CI](docs/CI.md) | GitHub Actions, GitLab, Jenkins, and pre-commit. |
 | [GitLab](docs/GITLAB.md) | MR summaries, inline suggestions, and signed offline snapshots. |
 | [Benchmarks](docs/BENCHMARKS.md) | Benchmark card, fixed-commit accuracy corpus, and limitations. |

@@ -111,6 +111,12 @@ max_new = { critical = 0, high = 0, medium = 25, low = 100 }
 | `rules_dir` | string | unset | Alternate rules directory. Relative paths resolve against the repo root. |
 | `profile` | string | unset | Default determinant scan profile from `rules/scan_profiles.yaml`. CLI `--profile` overrides it. |
 | `profiles_file` | string | unset | Alternate scan-profile file. Relative paths resolve against the repo root. CLI `--profiles-file` overrides it. |
+| `sca` | bool | `false` | Check pinned dependencies against OSV data. |
+| `sca_online` | bool | `false` | Query OSV.dev instead of the offline snapshot. |
+| `sca_snapshot` | string | `.commit_guard_osv.json` | Offline OSV snapshot. Relative paths resolve against the repo root. |
+| `sca_timeout` | int | `20` | OSV.dev request timeout in seconds. |
+| `sca_reachability` | bool | `false` | Annotate dependency findings with first-party import evidence. Findings remain visible when no import is found. |
+| `vex` | string | unset | OpenVEX or CycloneDX VEX document applied after SCA. `not_affected` and `fixed` statements mark matching findings non-blocking. Relative paths resolve against the repo root. |
 
 ### `[gate]`
 

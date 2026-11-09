@@ -47,6 +47,16 @@ export const RULE_SOURCES: RuleSource[] = [
     label: "JavaScript AST / taint",
     description: "JavaScript and TypeScript data-flow rules.",
   },
+  {
+    id: "java_ast",
+    label: "Java AST / taint",
+    description: "Java interprocedural data-flow rules.",
+  },
+  {
+    id: "go_ast",
+    label: "Go AST / taint",
+    description: "Go interprocedural data-flow rules.",
+  },
 ];
 
 export interface ScanFinding {

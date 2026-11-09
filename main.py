@@ -114,6 +114,7 @@ try:
         publish_report_pr,
         pull_request_context_from_environment,
     )
+    from core.reachability import annotate_reachability, assess_reachability
     from core.reporter import (
         build_markdown_report,
         print_cli_summary,
@@ -163,6 +164,7 @@ try:
         record_history,
         write_html_report,
     )
+    from core.vex import VEXError, apply_vex, load_vex
 except ImportError as exc:  # missing PyYAML or a corrupted install
     print(
         f"[commit-guard] ERROR: cannot load the scan engine ({exc}).",
@@ -623,6 +625,16 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--sca-require-signature", action="store_true",
                         help=("Require a matching HMAC signature for offline OSV snapshots "
                               "(key: COMMITGUARD_OSV_SIGNING_KEY)."))
+    sca_reach_group = parser.add_mutually_exclusive_group()
+    sca_reach_group.add_argument("--sca-reachability", action="store_true",
+                        dest="sca_reachability", default=None,
+                        help="Annotate SCA findings with first-party import evidence.")
+    sca_reach_group.add_argument("--no-sca-reachability", action="store_false",
+                        dest="sca_reachability", default=None,
+                        help="Disable SCA reachability analysis.")
+    parser.add_argument("--vex", type=Path, default=None,
+                        help=("Apply an OpenVEX or CycloneDX VEX document to dependency "
+                              "findings (not_affected/fixed become non-blocking)."))
     fix_group = parser.add_mutually_exclusive_group()
     fix_group.add_argument("--fix", action="store_true", dest="fix", default=None,
                         help="Apply safe rule auto-fixes and re-stage modified files.")
@@ -697,6 +709,12 @@ def _list_rules(rules_dir: Path, verbose: bool, use_cache: bool) -> int:
     ]
     by_source["javascript_ast"] = [
         rule_id for rule_id in TAINT_RULES if "js-ast" in rule_id
+    ]
+    by_source["java_ast"] = [
+        rule_id for rule_id in TAINT_RULES if "java-ast" in rule_id
+    ]
+    by_source["go_ast"] = [
+        rule_id for rule_id in TAINT_RULES if "go-ast" in rule_id
     ]
     for source in sorted(by_source):
         ids = by_source[source]
@@ -844,6 +862,8 @@ def run_scan(
     sca_snapshot: Path | None = None,
     sca_timeout: int | None = None,
     sca_require_signature: bool = False,
+    sca_reachability: bool | None = None,
+    vex_path: Path | None = None,
     fix: bool | None = None,
     fix_dry_run: bool | None = None,
     use_policy: bool = False,
@@ -905,6 +925,8 @@ def run_scan(
         sca_online=sca_online,
         sca_snapshot=sca_snapshot,
         sca_timeout=sca_timeout,
+        sca_reachability=sca_reachability,
+        vex=vex_path,
         fix=fix,
         fix_dry_run=fix_dry_run,
     )
@@ -1308,6 +1330,37 @@ def run_scan(
             for warning in sca_result.warnings:
                 print(f"[commit-guard] SCA WARNING: {warning}", file=sys.stderr)
 
+    if sca_result is not None and config.sca_reachability:
+        assessments = assess_reachability(target_repo, sca_result.vulnerabilities)
+        findings = annotate_reachability(findings, assessments)
+        if not quiet:
+            reachable = {
+                (item.package, item.ecosystem)
+                for item in assessments.values()
+                if item.reachable
+            }
+            print(
+                f"[commit-guard] Reachability: {len(reachable)} vulnerable "
+                "package(s) imported by first-party source."
+            )
+
+    if config.vex is not None:
+        vex_file = config.vex.expanduser()
+        if not vex_file.is_absolute():
+            vex_file = (target_repo / vex_file).resolve()
+        try:
+            vex_document = load_vex(vex_file)
+        except VEXError as exc:
+            print(f"[commit-guard] ERROR: {exc}", file=sys.stderr)
+            return 2
+        application = apply_vex(findings, vex_document)
+        findings = list(application.findings)
+        if not quiet:
+            print(
+                f"[commit-guard] VEX: {application.suppressed} suppressed, "
+                f"{application.annotated} annotated."
+            )
+
     truncated = bool(config.max_findings and len(findings) > config.max_findings)
     if truncated:
         findings = findings[: config.max_findings]
@@ -1642,6 +1695,8 @@ def main(argv: list[str] | None = None) -> int:
         sca_snapshot=args.sca_snapshot,
         sca_timeout=args.sca_timeout,
         sca_require_signature=args.sca_require_signature,
+        sca_reachability=args.sca_reachability,
+        vex_path=args.vex,
         fix=args.fix,
         fix_dry_run=args.fix_dry_run,
         create_pr=args.create_pr,

@@ -164,6 +164,107 @@ CASES: tuple[AccuracyCase, ...] = (
         },
     ),
     AccuracyCase(
+        name="javascript-cross-file-wrapper",
+        rule_id="cg-js-ast-sqli-taint",
+        cwe="CWE-89",
+        vulnerable={
+            "api_flow.js": (
+                "function fetchUser(req) {\n"
+                "  return req.query.id;\n"
+                "}\n"
+                "module.exports = { fetchUser };\n"
+            ),
+            "app_flow.js": (
+                "const { fetchUser } = require('./api_flow');\n"
+                "\n"
+                "function view(req, db) {\n"
+                "  const id = fetchUser(req);\n"
+                "  db.query('SELECT * FROM users WHERE id=' + id);\n"
+                "}\n"
+            ),
+        },
+        fixed={
+            "api_flow.js": (
+                "function fetchUser(req) {\n"
+                "  return req.query.id;\n"
+                "}\n"
+                "module.exports = { fetchUser };\n"
+            ),
+            "app_flow.js": (
+                "const { fetchUser } = require('./api_flow');\n"
+                "\n"
+                "function view(req, db) {\n"
+                "  fetchUser(req);\n"
+                "  db.query('SELECT * FROM users WHERE id = 42');\n"
+                "}\n"
+            ),
+        },
+    ),
+    AccuracyCase(
+        name="java-interprocedural-wrapper",
+        rule_id="cg-java-ast-code-exec-taint",
+        cwe="CWE-95",
+        vulnerable={
+            "Flow.java": (
+                "class Flow {\n"
+                "  String value(HttpServletRequest request) {\n"
+                "    return request.getParameter(\"cmd\");\n"
+                "  }\n"
+                "  void run(HttpServletRequest request) {\n"
+                "    String cmd = value(request);\n"
+                "    Runtime.getRuntime().exec(cmd);\n"
+                "  }\n"
+                "}\n"
+            )
+        },
+        fixed={
+            "Flow.java": (
+                "class Flow {\n"
+                "  String value(HttpServletRequest request) {\n"
+                "    return request.getParameter(\"cmd\");\n"
+                "  }\n"
+                "  void run(HttpServletRequest request) {\n"
+                "    value(request);\n"
+                "    Runtime.getRuntime().exec(\"true\");\n"
+                "  }\n"
+                "}\n"
+            )
+        },
+    ),
+    AccuracyCase(
+        name="go-interprocedural-wrapper",
+        rule_id="cg-go-ast-code-exec-taint",
+        cwe="CWE-95",
+        vulnerable={
+            "flow.go": (
+                "package main\n"
+                "\n"
+                "func value(r *http.Request) string {\n"
+                "  return r.FormValue(\"cmd\")\n"
+                "}\n"
+                "\n"
+                "func run(r *http.Request) {\n"
+                "  cmd := value(r)\n"
+                "  exec.Command(\"sh\", \"-c\", cmd)\n"
+                "}\n"
+            )
+        },
+        fixed={
+            "flow.go": (
+                "package main\n"
+                "\n"
+                "func value(r *http.Request) string {\n"
+                "  return r.FormValue(\"cmd\")\n"
+                "}\n"
+                "\n"
+                "func run(r *http.Request) {\n"
+                "  value(r)\n"
+                "  exec.Command(\"true\")\n"
+                "}\n"
+            )
+        },
+    ),
+    AccuracyCase(
         name="python-cross-file-wrapper",
         rule_id="cg-python-ast-sqli-taint",
         cwe="CWE-89",

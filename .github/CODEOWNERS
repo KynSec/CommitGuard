@@ -1,0 +1,21 @@
+# Default reviewers
+* @CommitGuard-Sec/maintainers
+
+# Governance and release process
+/GOVERNANCE.md @CommitGuard-Sec/lead-maintainers @CommitGuard-Sec/maintainers
+/MAINTAINERS.md @CommitGuard-Sec/lead-maintainers @CommitGuard-Sec/maintainers
+/SECURITY.md @CommitGuard-Sec/security-response
+/docs/SECURITY-RESPONSE.md @CommitGuard-Sec/security-response
+/docs/RELEASING.md @CommitGuard-Sec/release-managers
+/.github/workflows/ @CommitGuard-Sec/release-managers @CommitGuard-Sec/security-response
+
+# Detection and rule data
+/core/ast_taint.py @CommitGuard-Sec/maintainers
+/core/interprocedural.py @CommitGuard-Sec/maintainers
+/rules/ @CommitGuard-Sec/rule-packs
+/benchmarks/ @CommitGuard-Sec/maintainers
+
+# Rule-pack registry and signing
+/core/rule_packs.py @CommitGuard-Sec/security-response @CommitGuard-Sec/maintainers
+/core/sca.py @CommitGuard-Sec/security-response
+/core/vex.py @CommitGuard-Sec/security-response
