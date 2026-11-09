@@ -8,6 +8,7 @@ network request is made unless a caller explicitly opts into a remote provider.
 
 from __future__ import annotations
 
+import ipaddress
 import json
 import math
 import os
@@ -18,11 +19,38 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Protocol
+from urllib.parse import urlsplit
 
 from core.scanner import Finding
 
 DEFAULT_MAX_CHARS = 12000
 DEFAULT_PROVIDER = "local"
+
+
+def _is_allowed_ai_base_url(base_url: str) -> bool:
+    try:
+        parsed = urlsplit(base_url)
+    except ValueError:
+        return False
+
+    hostname = parsed.hostname
+    scheme = parsed.scheme.lower()
+    if (
+        not hostname
+        or parsed.username is not None
+        or parsed.password is not None
+        or scheme not in {"https", "http"}
+    ):
+        return False
+    if scheme == "https":
+        return True
+    if hostname.lower() == "localhost":  # commit-guard-ignore: devskim-DS162092
+        return True
+    try:
+        return ipaddress.ip_address(hostname).is_loopback
+    except ValueError:
+        return False
+
 
 _REMEDIATION_BY_CATEGORY = {
     "secret": (
@@ -304,7 +332,7 @@ class OpenAICompatibleProvider:
                 "remote provider needs COMMITGUARD_AI_BASE_URL, "
                 "COMMITGUARD_AI_API_KEY, and COMMITGUARD_AI_MODEL"
             )
-        if not self.base_url.startswith(("https://", "http://localhost", "http://127.0.0.1")):
+        if not _is_allowed_ai_base_url(self.base_url):
             raise AIError("remote provider base URL must use HTTPS or loopback HTTP")
         payload = {
             "model": self.model,

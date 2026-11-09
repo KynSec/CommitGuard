@@ -12,6 +12,7 @@ from pathlib import Path
 import install_hook
 from core.ai_assistant import (
     AIError,
+    _is_allowed_ai_base_url,
     build_context_package,
     context_from_finding,
     resolve_provider,
@@ -185,6 +186,30 @@ class ReachabilityTests(unittest.TestCase):
 
 
 class AIAssistantTests(unittest.TestCase):
+    def test_remote_provider_allows_https_and_exact_loopback_urls(self) -> None:
+        allowed = (
+            "https://api.example.com/v1",
+            "http://localhost:9000/v1",
+            "http://127.0.0.1:8000/v1",
+            "http://[::1]:8000/v1",
+        )
+        for base_url in allowed:
+            with self.subTest(base_url=base_url):
+                self.assertTrue(_is_allowed_ai_base_url(base_url))
+
+    def test_remote_provider_rejects_non_tls_and_lookalike_hosts(self) -> None:
+        denied = (
+            "http://example.com",
+            "http://localhost.attacker.test",
+            "http://127.0.0.1.attacker.test",
+            "ftp://localhost",
+            "http://user:password@localhost",
+            "https://",
+        )
+        for base_url in denied:
+            with self.subTest(base_url=base_url):
+                self.assertFalse(_is_allowed_ai_base_url(base_url))
+
     def test_context_package_redacts_secret_values(self) -> None:
         finding = Finding(
             file="settings.py",
