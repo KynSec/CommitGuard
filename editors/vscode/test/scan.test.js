@@ -26,6 +26,8 @@ assert.deepStrictEqual(args, [
 ]);
 
 assert.ok(RULE_SOURCES.some((source) => source.id === "semgrep:semgrep_python"));
+assert.ok(RULE_SOURCES.some((source) => source.id === "java_ast"));
+assert.ok(RULE_SOURCES.some((source) => source.id === "go_ast"));
 assert.ok(!buildScanArgs("/repo", "/tmp/r.json", [], "staged").includes("--all"));
 
 const report = parseScanReport({

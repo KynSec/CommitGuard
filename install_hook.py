@@ -969,6 +969,8 @@ def run_manual_scan(
     use_policy: bool = False,
     policy_path: Path | None = None,
     policy_profile: str | None = None,
+    sca_reachability: bool | None = None,
+    vex_path: Path | None = None,
 ) -> int:
     repo_root = find_repo_root(target_path)
     main_py = get_install_dir(repo_root) / "main.py"
@@ -1054,6 +1056,10 @@ def run_manual_scan(
         command.append("--strict")
     if no_placeholder_filter:
         command.append("--no-placeholder-filter")
+    if sca_reachability:
+        command.append("--sca-reachability")
+    if vex_path:
+        command.extend(["--vex", str(vex_path)])
 
     result = subprocess.run(command, cwd=str(repo_root), check=False)
     return result.returncode
@@ -1275,6 +1281,10 @@ def build_parser() -> argparse.ArgumentParser:
                         help="Policy TOML file (default: [gate] in .commit_guard.toml).")
     p_scan.add_argument("--policy-profile", choices=("strict", "balanced", "audit"),
                         default=None, help="Override the policy profile.")
+    p_scan.add_argument("--sca-reachability", action="store_true",
+                        help="Annotate SCA findings with first-party import evidence.")
+    p_scan.add_argument("--vex", type=Path, default=None,
+                        help="Apply an OpenVEX/CycloneDX VEX document to dependency findings.")
 
     p_gui = sub.add_parser("gui", help="Launch the local web control center.")
     p_gui.add_argument("repo", nargs="?", default=".")
@@ -1497,6 +1507,66 @@ def build_parser() -> argparse.ArgumentParser:
     p_plugin.add_argument("--format", choices=("text", "json"), default="text")
     p_plugin.add_argument("--output", type=Path, default=None)
 
+    p_packs = sub.add_parser(
+        "packs",
+        help="Install, verify, sign, or list signed third-party rule packs.",
+    )
+    p_packs.add_argument(
+        "action",
+        choices=(
+            "list",
+            "verify",
+            "sign",
+            "install",
+            "remove",
+            "registry-list",
+            "registry-install",
+        ),
+        nargs="?",
+        default="list",
+    )
+    p_packs.add_argument("--dir", type=Path, default=None)
+    p_packs.add_argument("--source", default=None)
+    p_packs.add_argument("--name", default=None)
+    p_packs.add_argument("--registry", default=None)
+    p_packs.add_argument("--key", default=None)
+    p_packs.add_argument("--force", action="store_true")
+    p_packs.add_argument("--allow-unsigned-pack", action="store_true")
+    p_packs.add_argument("--require-signature", action="store_true")
+    p_packs.add_argument("--format", choices=("text", "json"), default="text")
+    p_packs.add_argument("--output", type=Path, default=None)
+
+    p_vex = sub.add_parser(
+        "vex", help="Export, inspect, or apply Vulnerability Exploitability eXchange documents."
+    )
+    p_vex.add_argument("action", choices=("export", "apply", "show"), nargs="?", default="export")
+    p_vex.add_argument("--repo", dest="repo_opt", default=".")
+    p_vex.add_argument("--report", type=Path, default=None)
+    p_vex.add_argument("--vex", type=Path, default=None)
+    p_vex.add_argument("--output", type=Path, default=None)
+    p_vex.add_argument(
+        "--status",
+        choices=("not_affected", "affected", "fixed", "under_investigation"),
+        default="affected",
+    )
+    p_vex.add_argument("--author", default="CommitGuard")
+    p_vex.add_argument("--strict", action="store_true",
+                       help="With apply, exit 1 when blocking findings remain.")
+
+    p_ai = sub.add_parser(
+        "ai", help="Explain findings or build a redacted, local-first AI context package."
+    )
+    p_ai.add_argument("action", choices=("explain", "context"), nargs="?", default="explain")
+    p_ai.add_argument("--repo", dest="repo_opt", default=".")
+    p_ai.add_argument("--report", type=Path, default=None)
+    p_ai.add_argument("--fingerprint", default=None)
+    p_ai.add_argument("--output", type=Path, default=None)
+    p_ai.add_argument("--format", choices=("text", "json", "markdown"), default="text")
+    p_ai.add_argument("--provider", default="local")
+    p_ai.add_argument("--allow-network", action="store_true",
+                      help="Allow an opt-in remote provider; local is the default.")
+    p_ai.add_argument("--max-chars", type=int, default=12000)
+
     return parser
 
 
@@ -1582,6 +1652,8 @@ def main(argv: list[str] | None = None) -> int:
                 use_policy=args.use_policy,
                 policy_path=args.policy,
                 policy_profile=args.policy_profile,
+                sca_reachability=(True if args.sca_reachability else None),
+                vex_path=args.vex,
             )
         elif args.command == "gui":
             repo_root = find_repo_root(target)
@@ -1835,6 +1907,49 @@ def main(argv: list[str] | None = None) -> int:
                 timeout=args.timeout,
                 fmt=args.format,
                 output=args.output,
+            )
+        elif args.command == "packs":
+            from core.commands import command_packs
+
+            return command_packs(
+                args.action,
+                directory=args.dir,
+                source=args.source,
+                name=args.name,
+                registry=args.registry,
+                key=args.key,
+                force=args.force,
+                allow_unsigned=args.allow_unsigned_pack,
+                require_signature=args.require_signature,
+                fmt=args.format,
+                output=args.output,
+            )
+        elif args.command == "vex":
+            from core.commands import command_vex
+
+            return command_vex(
+                target,
+                action=args.action,
+                report=args.report,
+                vex=args.vex,
+                output=args.output,
+                status=args.status,
+                author=args.author,
+                strict=args.strict,
+            )
+        elif args.command == "ai":
+            from core.commands import command_ai
+
+            return command_ai(
+                target,
+                action=args.action,
+                report=args.report,
+                fingerprint=args.fingerprint,
+                output=args.output,
+                fmt=args.format,
+                provider=args.provider,
+                allow_network=args.allow_network,
+                max_chars=args.max_chars,
             )
         elif args.command in ("check-rules", "explain", "suppressions"):
             repo_root = find_repo_root(target)

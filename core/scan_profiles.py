@@ -318,7 +318,13 @@ def filter_ruleset(ruleset: RuleSet, selection: RuleSelection) -> RuleSet:
 
 
 def ast_rule_source(rule_id: str) -> str:
-    return "javascript_ast" if "js-ast" in rule_id else "python_ast"
+    if "js-ast" in rule_id:
+        return "javascript_ast"
+    if "java-ast" in rule_id:
+        return "java_ast"
+    if "go-ast" in rule_id:
+        return "go_ast"
+    return "python_ast"
 
 
 def selected_ast_rule_ids(selection: RuleSelection) -> frozenset[str] | None:
