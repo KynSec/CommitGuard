@@ -845,3 +845,307 @@ def command_plugin(
         return 2
     print(f"[commit-guard] ERROR: unknown plugin action: {action}", file=sys.stderr)
     return 2
+
+
+def command_packs(
+    action: str = "list",
+    *,
+    directory: str | Path | None = None,
+    source: str | Path | None = None,
+    name: str | None = None,
+    registry: str | Path | None = None,
+    key: str | None = None,
+    force: bool = False,
+    allow_unsigned: bool = False,
+    require_signature: bool = False,
+    fmt: str = "text",
+    output: str | Path | None = None,
+) -> int:
+    from core.rule_packs import (
+        RulePackError,
+        discover_packs,
+        install_from_registry,
+        install_pack,
+        load_pack,
+        load_registry,
+        remove_pack,
+        sign_pack,
+        validate_pack_rules,
+        verify_pack,
+    )
+
+    payload: dict[str, Any]
+    try:
+        if action == "install":
+            if source is None:
+                raise RulePackError("packs install requires --source")
+            installed = install_pack(
+                source,
+                directory=directory,
+                force=force,
+                allow_unsigned=allow_unsigned,
+                key=key,
+            )
+            count, _warnings = validate_pack_rules(installed)
+            print(
+                f"[commit-guard] Installed rule pack {installed.name} "
+                f"{installed.version} ({count} rules) in {installed.directory}"
+            )
+            return 0
+        if action == "remove":
+            if not name:
+                raise RulePackError("packs remove requires --name")
+            removed = remove_pack(name, directory=directory)
+            print(
+                f"[commit-guard] Removed rule pack {removed.name} "
+                f"{removed.version} from {removed.directory}"
+            )
+            return 0
+        if action == "registry-list":
+            if registry is None:
+                raise RulePackError("packs registry-list requires --registry")
+            index = load_registry(registry)
+            payload = {
+                "registry": index.source,
+                "packs": [entry.to_dict() for entry in index.entries],
+            }
+            if fmt == "json":
+                text = json.dumps(payload, indent=2) + "\n"
+            elif not index.entries:
+                text = "Registry contains no packs.\n"
+            else:
+                lines = ["NAME                     VERSION   SOURCE"]
+                for entry in index.entries:
+                    lines.append(
+                        f"{entry.name:<24} {entry.version:<9} {entry.source}"
+                    )
+                text = "\n".join(lines) + "\n"
+            _write_or_print(text, output)
+            return 0
+        if action == "registry-install":
+            if registry is None or not name:
+                raise RulePackError(
+                    "packs registry-install requires --registry and --name"
+                )
+            installed = install_from_registry(
+                registry,
+                name,
+                directory=directory,
+                force=force,
+                allow_unsigned=allow_unsigned,
+                key=key,
+            )
+            print(
+                f"[commit-guard] Installed rule pack {installed.name} "
+                f"{installed.version} from the registry"
+            )
+            return 0
+
+        packs = discover_packs(directory)
+        if action == "list":
+            payload = {"packs": [pack.to_dict() for pack in packs]}
+            if fmt == "json":
+                text = json.dumps(payload, indent=2) + "\n"
+            elif not packs:
+                text = "No rule packs found.\n"
+            else:
+                lines = ["NAME                     VERSION   SIGNED   RULES"]
+                for pack in packs:
+                    signed = "yes" if pack.signature else "no"
+                    try:
+                        count, _warnings = validate_pack_rules(pack)
+                    except RulePackError:
+                        count = 0
+                    lines.append(
+                        f"{pack.name:<24} {pack.version:<9} {signed:<8} {count}"
+                    )
+                text = "\n".join(lines) + "\n"
+            _write_or_print(text, output)
+            return 0
+        if action in {"verify", "sign"}:
+            results: list[dict[str, Any]] = []
+            failed = False
+            for pack in packs:
+                if action == "sign":
+                    try:
+                        sign_pack(pack, key)
+                        pack = load_pack(pack.directory)
+                    except (RulePackError, OSError) as exc:
+                        failed = True
+                        results.append(
+                            {
+                                "name": pack.name,
+                                "version": pack.version,
+                                "valid": False,
+                                "reason": str(exc),
+                            }
+                        )
+                        continue
+                ok, reason = verify_pack(
+                    pack, key, required=require_signature  # commit-guard-ignore
+                )
+                failed = failed or not ok
+                results.append(
+                    {
+                        "name": pack.name,
+                        "version": pack.version,
+                        "valid": ok,
+                        "reason": reason,
+                    }
+                )
+            payload = {"valid": not failed, "packs": results}
+            if fmt == "json":
+                text = json.dumps(payload, indent=2) + "\n"
+            else:
+                text = (
+                    "No rule packs found.\n"
+                    if not results
+                    else "\n".join(
+                        f"{item['name']}: {'OK' if item['valid'] else 'FAILED'} "
+                        f"({item['reason']})"
+                        for item in results
+                    )
+                    + "\n"
+                )
+            _write_or_print(text, output)
+            return 1 if failed else 0
+    except (RulePackError, OSError) as exc:
+        print(f"[commit-guard] ERROR: {exc}", file=sys.stderr)
+        return 2
+    print(f"[commit-guard] ERROR: unknown packs action: {action}", file=sys.stderr)
+    return 2
+
+
+def command_vex(
+    repo: str | Path = ".",
+    *,
+    action: str = "export",
+    report: str | Path | None = None,
+    vex: str | Path | None = None,
+    output: str | Path | None = None,
+    status: str = "affected",
+    author: str = "CommitGuard",
+    strict: bool = False,
+) -> int:
+    """Exports, inspects, or applies VEX documents."""
+    from core.vex import VEXError, apply_vex, export_openvex, load_vex
+
+    root = Path(repo).expanduser().resolve()
+    try:
+        if action == "export":
+            if report is None:
+                raise CommandError("vex export needs --report")
+            findings, _source = load_report(report, repo_root=root)
+            document = export_openvex(findings, author=author, status=status)
+            text = json.dumps(document.to_openvex(), indent=2) + "\n"
+            _write_or_print(text, output)
+            print(
+                f"[commit-guard] Exported {len(document.statements)} VEX statement(s)."
+            )
+            return 0
+        if action == "show":
+            if vex is None:
+                raise CommandError("vex show needs --vex")
+            document = load_vex(vex)
+            payload = {
+                "format": document.fmt,
+                "author": document.author,
+                "timestamp": document.timestamp,
+                "statements": [item.to_dict() for item in document.statements],
+            }
+            text = json.dumps(payload, indent=2) + "\n"
+            _write_or_print(text, output)
+            return 0
+        if action == "apply":
+            if report is None or vex is None:
+                raise CommandError("vex apply needs --report and --vex")
+            findings, _source = load_report(report, repo_root=root)
+            application = apply_vex(findings, load_vex(vex))
+            applied_payload = {
+                "schema_version": SCHEMA_VERSION,
+                "tool": {"name": "CommitGuard", "version": __version__},
+                "total": len(application.findings),
+                "vex": application.to_dict(),
+                "findings": [
+                    finding_to_dict(finding) for finding in application.findings
+                ],
+            }
+            text = json.dumps(applied_payload, indent=2) + "\n"
+            _write_or_print(text, output)
+            print(
+                f"[commit-guard] VEX applied: {application.suppressed} suppressed, "
+                f"{application.annotated} annotated, {len(application.unmatched)} unmatched."
+            )
+            blocking = any(finding.blocking for finding in application.findings)
+            return 1 if (strict and blocking) else 0
+    except (CommandError, VEXError, MergeError, IngestError, OSError) as exc:
+        print(f"[commit-guard] ERROR: {exc}", file=sys.stderr)
+        return 2
+    print(f"[commit-guard] ERROR: unknown vex action: {action}", file=sys.stderr)
+    return 2
+
+
+def command_ai(
+    repo: str | Path = ".",
+    *,
+    action: str = "explain",
+    report: str | Path | None = None,
+    fingerprint: str | None = None,
+    output: str | Path | None = None,
+    fmt: str = "text",
+    provider: str = "local",
+    allow_network: bool = False,
+    max_chars: int = 12000,
+) -> int:
+    """Builds local-first AI explanations and redacted context packages."""
+    from core.ai_assistant import (
+        AIError,
+        build_context_package,
+        context_from_finding,
+        resolve_provider,
+    )
+
+    root = Path(repo).expanduser().resolve()
+    try:
+        if report is None:
+            raise CommandError("ai commands need --report")
+        findings, _source = load_report(report, repo_root=root)
+        if fingerprint:
+            findings = [
+                finding
+                for finding in findings
+                if finding.id == fingerprint or finding.fingerprint == fingerprint
+            ]
+            if not findings:
+                raise CommandError(f"no finding matches fingerprint {fingerprint!r}")
+        if action == "context":
+            package = build_context_package(
+                root, findings, provider=provider, max_chars=max_chars
+            )
+            if fmt == "json":
+                text = json.dumps(package.to_dict(), indent=2) + "\n"
+            else:
+                text = package.to_markdown()
+            _write_or_print(text, output)
+            return 0
+        if action == "explain":
+            selected = resolve_provider(provider, allow_network=allow_network)
+            explanations = [selected.explain(context_from_finding(item)) for item in findings]
+            if fmt == "json":
+                text = json.dumps(
+                    {
+                        "provider": selected.name,
+                        "findings": [context_from_finding(item).to_dict() for item in findings],
+                        "explanations": explanations,
+                    },
+                    indent=2,
+                ) + "\n"
+            else:
+                text = "\n\n".join(explanations) + "\n"
+            _write_or_print(text, output)
+            return 0
+    except (CommandError, AIError, MergeError, IngestError, OSError) as exc:
+        print(f"[commit-guard] ERROR: {exc}", file=sys.stderr)
+        return 2
+    print(f"[commit-guard] ERROR: unknown ai action: {action}", file=sys.stderr)
+    return 2

@@ -1,8 +1,8 @@
 {
   "name": "commitguard-kynsec",
   "displayName": "CommitGuard Security Scanner (KynSec)",
-  "description": "Offline-first CommitGuard security diagnostics, rule-database scans, and GUI launcher.",
-  "version": "0.2.2",
+  "description": "Offline-first CommitGuard security diagnostics, rule-database scans, interprocedural taint for Python/JS/TS/Java/Go, and GUI launcher.",
+  "version": "0.3.0",
   "publisher": "AmrKhaledEldhshan",
   "license": "Apache-2.0",
   "repository": {

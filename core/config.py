@@ -97,6 +97,8 @@ class Config:
     sca_online: bool = False
     sca_snapshot: Path | None = None
     sca_timeout: int = 20
+    sca_reachability: bool = False
+    vex: Path | None = None
     fix: bool = False
     fix_dry_run: bool = False
     exclude: tuple[str, ...] = DEFAULT_EXCLUDES
@@ -224,6 +226,8 @@ def load_config(
             sca_online=bool(scan.get("sca_online", False)),
             sca_snapshot=Path(scan["sca_snapshot"]).expanduser() if scan.get("sca_snapshot") else None,
             sca_timeout=int(scan.get("sca_timeout", 20)),
+            sca_reachability=bool(scan.get("sca_reachability", False)),
+            vex=Path(scan["vex"]).expanduser() if scan.get("vex") else None,
             fix=bool(scan.get("fix", False)),
             fix_dry_run=bool(scan.get("fix_dry_run", False)),
             exclude=DEFAULT_EXCLUDES + _as_str_tuple(paths.get("exclude"), "paths.exclude"),
@@ -264,6 +268,8 @@ filter_placeholders = true  # ignore obvious example/dummy secret values
 # sca_online = false       # OSV.dev network query (offline snapshot otherwise)
 # sca_snapshot = ".commit_guard_osv.json"
 # sca_timeout = 20
+# sca_reachability = false  # annotate SCA findings with import evidence
+# vex = "vex.json"          # apply OpenVEX/CycloneDX VEX decisions to SCA findings
 # fix = false              # apply rules with fix_pattern/fix_replacement
 # fix_dry_run = false      # preview fixes without writing or staging
 

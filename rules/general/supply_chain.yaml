@@ -115,4 +115,4 @@ rules:
     confidence: high
     tags: [git-hygiene, performance, binary]
     cwe: CWE-400
-    regex: '(?i)\.(?:sqlite3?|dump|safetensors|onnx|bin|tar\.gz|weights|iso)\b'
+    regex: '(?i)\.(?:sqlite3?|dump|safetensors|onnx|bin|weights|iso)\b'

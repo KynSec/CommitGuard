@@ -57,6 +57,8 @@ provider.resolveWebviewView(view);
 
 assert.ok(html.includes('data-source="gitleaks"'));
 assert.ok(html.includes('data-source="semgrep:semgrep_python"'));
+assert.ok(html.includes('data-source="java_ast"'));
+assert.ok(html.includes('data-source="go_ast"'));
 assert.ok(html.includes("Open CommitGuard GUI"));
 assert.ok(html.includes("Run selected scan"));
 assert.ok(html.includes("script-src 'nonce-"));

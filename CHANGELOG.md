@@ -1,5 +1,41 @@
 # Changelog
 
+## 3.3.0 - 2026-11-09
+
+### Added
+
+- VEX support: `commit-guard vex export`, `vex show`, and `vex apply` parse
+  OpenVEX and CycloneDX VEX documents. Scan-time `--vex` (or `[scan].vex`)
+  keeps findings visible but marks `not_affected` and `fixed` statements
+  non-blocking, recording the decision in `provenance.vex`.
+- SCA reachability: `--sca-reachability` (or `[scan].sca_reachability`) scans
+  first-party Python, JavaScript/TypeScript, Go, and Java imports and records
+  import evidence under `provenance.reachability`. Unreachable findings stay
+  visible; absence of evidence is reported, not treated as proof.
+- Local-first AI assistant: `commit-guard ai explain` and `commit-guard ai
+  context` build deterministic, redacted, token-bounded context packages for
+  any model. Remote OpenAI-compatible providers are disabled unless
+  `--allow-network` and explicit environment configuration are supplied.
+- `security-scan.yml` dogfoods CommitGuard and uploads SARIF to GitHub code
+  scanning; `codeql.yml` runs CodeQL `security-extended` analysis for Python
+  and JavaScript/TypeScript.
+- Interprocedural taint for JavaScript/TypeScript, Java, and Go: per-function
+  summaries propagate source-returning wrappers and parameter-to-sink flows
+  across files, with new `java_ast` and `go_ast` rule sources.
+- Signed third-party rule packs: `commit-guard packs` installs, verifies,
+  signs, and removes packs with HMAC-SHA256 sidecars, plus a git-based
+  `registry.json` community index with digest-pinned installs.
+- Published AI evaluation (`benchmarks/ai_evaluation.py`), reproducible
+  benchmark leaderboard (`benchmarks/leaderboard.py`), and a `Benchmarks`
+  workflow that publishes all result artifacts.
+- Optional native binary build (`scripts/build_native.py`) and a
+  Linux/macOS/Windows `Native binaries` workflow.
+- Governance package: `GOVERNANCE.md`, `MAINTAINERS.md`, `.github/CODEOWNERS`,
+  `docs/SECURITY-RESPONSE.md`, and `docs/PHASE4-EXIT.md`.
+- VS Code extension 0.3.0 exposes the new `java_ast` and `go_ast` rule
+  databases in the scan panel, so interprocedural Java and Go findings can be
+  selected and reviewed without leaving the editor.
+
 ## 3.2.0 - 2026-11-06
 
 ### Added

@@ -150,3 +150,80 @@ local plugin.
 
 Plugins are experimental until sandboxing and distribution review are complete.
 Do not auto-load plugins from a scanned repository.
+
+## Signed third-party rule packs
+
+Rule packs are directories with a manifest (`pack.json` or `pack.yaml`) and one
+or more YAML files in the custom rule format. A pack can be installed from a
+local directory or a git URL, and is verified before it is copied into
+`rules/custom/`.
+
+```bash
+export COMMIT_GUARD_RULE_PACK_KEY=...        # shared verification key
+commit-guard packs sign --dir ./my-pack
+commit-guard packs verify --dir ./my-pack --require-signature
+commit-guard packs install --source ./my-pack --dir rules/custom
+commit-guard packs list --dir rules/custom --format json
+```
+
+`pack.sig` is an HMAC-SHA256 sidecar over the manifest identity and the rules
+file. A missing signature is allowed only with `--allow-unsigned-pack`; CI
+should pass `--require-signature`. The installed pack is loaded by the normal
+custom-rule loader, so its rules participate in the gate like bundled rules.
+
+### Community registry
+
+The registry is a git repository containing `registry.json`. There is no hosted
+service: mirror it, fork it, or pin a commit. Each entry names a pack, version,
+source, digest, and optional signature.
+
+```bash
+commit-guard packs registry-list --registry ./registry
+commit-guard packs registry-install --registry ./registry --name acme-rules \
+  --dir rules/custom
+```
+
+A registry digest mismatch aborts the install and removes the copied pack.
+Registry changes are reviewed like code and pinned to a commit; the registry is
+never a mutable pointer to a branch.
+
+## AI assistant evaluation
+
+The default provider is deterministic, offline, and secret-redacting. The
+published evaluation is reproducible:
+
+```bash
+python benchmarks/ai_evaluation.py --json --output ai-evaluation.json
+```
+
+It checks actionable remediation for each supported category, deterministic
+explanations, a bounded context package, and that secret values never appear in
+the generated context. Remote OpenAI-compatible providers remain opt-in with
+`--allow-network`.
+
+## Native binaries
+
+PyInstaller builds are optional and never replace the signed Python release:
+
+```bash
+python -m pip install pyinstaller
+python scripts/build_native.py --output-dir dist/native
+```
+
+The `Native binaries` workflow builds Linux, macOS, and Windows artifacts on a
+tag or manual dispatch. Native binaries are a convenience for users without
+Python; the wheel, sdist, zipapp, checksums, and SBOMs remain the canonical
+release artifacts.
+
+## Benchmark leaderboard
+
+```bash
+python benchmarks/accuracy_benchmark.py --json --output accuracy.json
+python benchmarks/ai_evaluation.py --json --output ai-evaluation.json
+python benchmarks/scan_benchmark.py --json --output scan-benchmark.json
+python benchmarks/leaderboard.py --results-dir . --output leaderboard.md
+```
+
+The leaderboard is generated from result artifacts and records the commit,
+Python version, and platform. It is published as a CI artifact and can be
+deployed to any static site. It does not compare against commercial products.

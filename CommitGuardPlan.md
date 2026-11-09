@@ -1414,6 +1414,15 @@ Cut line: defer reachability, VEX, AI, and additional compliance frameworks.
 
 ### 15.6 Phase 4 — Ecosystem, future CommitGuard 3.x releases (months 18–24)
 
+**Status:** Implemented on `Under-development`, with two organizational exit
+criteria still requiring external evidence (see `docs/PHASE4-EXIT.md`). The
+branch carries interprocedural taint for JavaScript/TypeScript, Java, and Go
+(`core/interprocedural.py`), VEX import/export and filtering (`core/vex.py`),
+SCA reachability (`core/reachability.py`), a local-first AI context packager
+(`core/ai_assistant.py`), signed rule packs and a git-based registry
+(`core/rule_packs.py`), a published AI evaluation, a benchmark leaderboard,
+optional native binary builds, and the governance package.
+
 **Goal:** durable differentiation that is hard to copy.
 
 Deliverables:

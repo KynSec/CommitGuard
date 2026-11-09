@@ -51,12 +51,17 @@ The language server provides CommitGuard security diagnostics and quick fixes
 over the Language Server Protocol. It is not an autocomplete or type-checking
 server.
 
+The scan view includes the Python, JavaScript/TypeScript, Java, and Go taint
+databases. Java and Go use CommitGuard's interprocedural analysis, so a tainted
+value returned by a helper function is still reported at the dangerous sink.
+
 ### Scan view
 
 The **CommitGuard** Activity Bar view includes:
 
 - checkboxes for each rule database (`custom`, `gitleaks`, `nuclei`, `devskim`,
-  `semgrep`, `semgrep:semgrep_python`, `python_ast`, `javascript_ast`);
+  `semgrep`, `semgrep:semgrep_python`, `python_ast`, `javascript_ast`,
+  `java_ast`, `go_ast`);
 - whole-repository or staged-changes scan scope;
 - a **Run selected scan** button that passes each chosen database as
   `--rule-source` and shows findings in the panel;
