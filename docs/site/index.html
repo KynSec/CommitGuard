@@ -4,20 +4,20 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#080c14">
-<title>CommitGuard — Fast, Offline Pre-Commit Security &amp; Static Analysis</title>
-<meta name="description" content="Next-Gen local security scanner: secrets, AST taint flows, dependency blast-radius graph, and automated 1-click fixes. 100% offline, zero telemetry.">
+<title>CommitGuard — Local-First Security &amp; Static Analysis</title>
+<meta name="description" content="Local-first security scanning for secrets, cross-file taint, vulnerable dependencies, policy gates, triage, SBOMs, VEX, and CI reports. No telemetry; network features are opt-in.">
 <meta name="color-scheme" content="dark">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://kynsec.github.io/CommitGuard/">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230b1220'/%3E%3Cpath d='M32 10l17 6v13c0 11-7 19-17 23-10-4-17-12-17-23V16z' fill='%2338bdf8'/%3E%3Cpath d='M24 31l6 6 11-12' fill='none' stroke='%2308101c' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="CommitGuard">
-<meta property="og:title" content="CommitGuard — Offline Pre-Commit Security">
-<meta property="og:description" content="Scan staged diffs for secrets, taint flows, and vulnerable dependencies. 1-click fixes, zero telemetry, no source code leaves your machine.">
+<meta property="og:title" content="CommitGuard — Local-First Security">
+<meta property="og:description" content="Scan code locally for secrets, taint flows, and vulnerable dependencies. Use policy gates, triage, SBOMs, and CI reports with no telemetry and opt-in network features.">
 <meta property="og:url" content="https://kynsec.github.io/CommitGuard/">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="CommitGuard — Offline Pre-Commit Security">
-<meta name="twitter:description" content="Scan staged diffs for secrets, taint flows, and vulnerable dependencies. 1-click fixes, zero telemetry, no source code leaves your machine.">
+<meta name="twitter:title" content="CommitGuard — Local-First Security">
+<meta name="twitter:description" content="Scan code locally for secrets, taint flows, and vulnerable dependencies. Use policy gates, triage, SBOMs, and CI reports with no telemetry and opt-in network features.">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -25,10 +25,10 @@
   "name": "CommitGuard",
   "applicationCategory": "DeveloperApplication",
   "operatingSystem": "Linux, macOS, Windows",
-  "description": "Offline pre-commit security and static analysis for secrets, AST taint flows, vulnerable dependencies, and dependency blast radius.",
+  "description": "Local-first security analysis for secrets, cross-file taint flows, vulnerable dependencies, policy gates, and supply-chain reports. Network features are opt-in; no telemetry.",
   "url": "https://kynsec.github.io/CommitGuard/",
   "codeRepository": "https://github.com/KynSec/CommitGuard",
-  "license": "https://opensource.org/licenses/MIT",
+  "license": "https://spdx.org/licenses/Apache-2.0.html",
   "offers": {
     "@type": "Offer",
     "price": "0",
@@ -525,6 +525,42 @@ body.nav-open .drawer {
 .feature-card h3 { font-size: 18px; margin: 0 0 8px; color: #fff; letter-spacing: -.01em; }
 .feature-card p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.6; }
 .feature-card p code { font-size: 12.5px; }
+.feature-list {
+  display: grid;
+  gap: 10px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.feature-list li {
+  position: relative;
+  padding-left: 20px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.feature-list li::before {
+  content: "\2713";
+  position: absolute;
+  left: 0;
+  color: var(--ok);
+  font-weight: 800;
+}
+.feature-list code { font-size: 11.5px; }
+.package-status {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px 14px;
+  flex-wrap: wrap;
+  margin: 12px 2px 0;
+  padding: 12px 14px;
+  background: rgba(251, 191, 36, .06);
+  border: 1px solid rgba(251, 191, 36, .24);
+  border-radius: 10px;
+  font-size: 12.5px;
+}
+.package-status strong { color: #fcd34d; }
+.package-status span { color: var(--muted); }
 
 /* Control center */
 .gui-preview {
@@ -1296,13 +1332,13 @@ footer {
   <div class="container">
     <div class="pill-badge">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>
-      <span>100% Offline &middot; Zero Telemetry &middot; Local Privacy First</span>
+      <span>Offline by Default &middot; Zero Telemetry &middot; Network Features Opt In</span>
     </div>
     <h1>Secure Your Code Before It Reaches Git.</h1>
     <p>
-      CommitGuard is a fast, offline pre-commit security &amp; SAST analysis engine.
-      Scans only added diff lines for hardcoded credentials, AST cross-line taint flows,
-      vulnerable packages, and dependency blast-radius &mdash; with 1-click auto-fixes.
+      CommitGuard is a local-first security and supply-chain toolkit. Scan staged diffs,
+      repositories, or history for secrets, cross-file taint flows, and vulnerable
+      dependencies, then triage, fix, or gate findings with reports that stay under your control.
     </p>
     <div class="hero-actions">
       <a href="#install" class="btn primary">
@@ -1320,10 +1356,10 @@ footer {
     </div>
 
     <div class="metrics" aria-label="CommitGuard at a glance">
-      <div class="metric"><b>100%</b><span>Local &amp; offline</span></div>
+      <div class="metric"><b>Default</b><span>Local &amp; offline</span></div>
       <div class="metric"><b>300+</b><span>Secret &amp; SAST rules</span></div>
-      <div class="metric"><b>7+</b><span>Languages parsed</span></div>
-      <div class="metric"><b>0</b><span>Telemetry &amp; cloud calls</span></div>
+      <div class="metric"><b>6+</b><span>Dependency ecosystems</span></div>
+      <div class="metric"><b>0</b><span>Telemetry collected</span></div>
     </div>
   </div>
 </section>
@@ -1333,7 +1369,7 @@ footer {
   <div class="container">
     <div class="section-header">
       <span class="eyebrow">01 &middot; Install</span>
-      <h2>One-Click Offline Installation</h2>
+      <h2>One-Click Repository Setup</h2>
       <p>
         Works on Linux, macOS, and Windows. Run the script inside any existing Git project
         (e.g. <code>repo A</code>) to install a self-contained local copy into <code>.commit_guard/</code>.
@@ -1359,6 +1395,10 @@ footer {
           </button>
         </div>
         <p class="quick-note">Downloads the installer, then runs it from the root of the Git repository you want to protect. Prefer to inspect it first? Use the download button below. Using VS Code? <a href="https://marketplace.visualstudio.com/items?itemName=AmrKhaledEldhshan.commitguard-kynsec" target="_blank" rel="noopener noreferrer">Install the CommitGuard extension from the Marketplace</a> for live diagnostics and the scan panel.</p>
+        <aside class="package-status" aria-label="Package manager installation status">
+          <strong>pip and pipx installation: coming soon</strong>
+          <span>Use the repository installer scripts above for now. After installation, scanning is local-first; online SCA and remote AI are opt-in.</span>
+        </aside>
       </div>
 
       <div class="terminal-window">
@@ -1404,58 +1444,89 @@ footer {
   </div>
 </section>
 
-<!-- Features Grid -->
+<!-- Feature Overview -->
 <section id="features" class="section">
   <div class="container">
     <div class="section-header">
-      <span class="eyebrow">02 &middot; Engine</span>
-      <h2>Engineered for High Precision &amp; Speed</h2>
-      <p>Everything runs on your local CPU in milliseconds. Nothing is ever sent to the cloud.</p>
+      <span class="eyebrow">02 &middot; Capabilities</span>
+      <h2>One Toolkit for the Security Workflow</h2>
+      <p>From fast local scans to policy, triage, supply-chain analysis, and CI reporting. Network-dependent features stay opt-in.</p>
     </div>
 
     <div class="features-grid">
-      <div class="feature-card">
+      <article class="feature-card">
         <div class="feature-icon" style="--icon:#fbbf24">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6M15.5 7.5l3 3L22 7l-3-3"/></svg>
         </div>
-        <h3>Deep Secret Detection</h3>
-        <p>300+ rules covering AWS, GCP, Azure, OpenAI, Anthropic, Stripe, SSH keys, combined with Shannon entropy and character-class adjustment to eliminate false positives.</p>
-      </div>
-      <div class="feature-card">
+        <h3>Detection &amp; Analysis</h3>
+        <ul class="feature-list">
+          <li>Scan staged or changed diffs in under 2 seconds at p95 on supported benchmark workloads.</li>
+          <li>Detect secrets in code and Git history with format checks and default redaction across outputs.</li>
+          <li>Trace untrusted data from sources to security-sensitive sinks across functions and files in Python, JavaScript/TypeScript, Java, and Go.</li>
+          <li>Use fast regex and bounded multi-line patterns, plus an optional Semgrep/Opengrep subprocess adapter that does not bundle their binaries.</li>
+          <li>Scan dependency manifests and lockfiles across pip, npm, Go, Cargo, Maven, Composer, and other supported ecosystems.</li>
+        </ul>
+      </article>
+      <article class="feature-card">
         <div class="feature-icon" style="--icon:#a78bfa">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/><path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/></svg>
         </div>
-        <h3>AST Cross-Line Taint Analysis</h3>
-        <p>Follows untrusted user inputs (Flask/Django <code>request.args</code>, env variables) across multi-line variable reassignments straight into SQL execution and shell sinks.</p>
-      </div>
-      <div class="feature-card">
+        <h3>Unified Findings</h3>
+        <ul class="feature-list">
+          <li>Ingest and normalize JSON or SARIF from Semgrep, CodeQL, Trivy, Checkov, Gitleaks, Bandit, Ruff, ESLint, golangci-lint, and more.</li>
+          <li>Deduplicate overlapping findings using line ranges, CWE, and severity signals.</li>
+          <li>Merge reports from CI jobs, separate projects, or monorepo packages into one report.</li>
+        </ul>
+      </article>
+      <article class="feature-card">
         <div class="feature-icon" style="--icon:#38bdf8">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="6" r="3"/><circle cx="19" cy="6" r="3"/><circle cx="12" cy="18" r="3"/><path d="M8 6h8M6.5 8.5 10.5 16M17.5 8.5 13.5 16"/></svg>
         </div>
-        <h3>Dependency &amp; Blast Radius</h3>
-        <p>Parses import trees in 7+ languages (Python, JS/TS, Go, Rust, Java, etc.) and calculates the exact blast-radius of vulnerable files with native Mermaid diagrams.</p>
-      </div>
-      <div class="feature-card">
+        <h3>Policy, Debt &amp; Triage</h3>
+        <ul class="feature-list">
+          <li>Version policy gates, severity thresholds, profiles, and budgets in <code>.commit_guard.toml</code>.</li>
+          <li>Use fingerprint-based <code>.commit_guard_baseline</code> baselines, new-code gates, and ratchets to focus on introduced risk and keep security debt from growing.</li>
+          <li>Track accepted risk, false positives, and won't-fix decisions in committed <code>.commit_guard/triage.yaml</code>, with owners, reasons, expiry, and tickets.</li>
+          <li>Map findings to <code>CODEOWNERS</code> and organize reports by team.</li>
+        </ul>
+      </article>
+      <article class="feature-card">
         <div class="feature-icon" style="--icon:#34d399">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
         </div>
-        <h3>1-Click Auto-Fix Engine</h3>
-        <p>Don't just detect vulnerabilities &mdash; fix them. Automatically transforms insecure code (like <code>yaml.load()</code> to <code>yaml.safe_load()</code>) and git-stages the result.</p>
-      </div>
-      <div class="feature-card">
+        <h3>Developer Experience</h3>
+        <ul class="feature-list">
+          <li>Use the <code>commit-guard</code> CLI (or <code>cg</code> shorthand) and deterministic machine-readable output.</li>
+          <li>Preview safe autofixes and reversible patches; secrets are never auto-fixed.</li>
+          <li>Use the stdio Language Server Protocol for diagnostics and quick fixes in VS Code, Neovim, JetBrains, and other LSP clients.</li>
+          <li>Run incremental watch scans on file changes and saves, or open the local loopback GUI control center.</li>
+          <li>Install with pip or pipx once package-manager support ships; repository installer scripts are available today.</li>
+        </ul>
+      </article>
+      <article class="feature-card">
         <div class="feature-icon" style="--icon:#f472b6">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7.5 4.27 9 5.15M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/></svg>
         </div>
-        <h3>Free Dependency SCA</h3>
-        <p>Scans project manifests (<code>requirements.txt</code>, <code>package.json</code>, etc.) against Google OSV.dev batch vulnerability data completely free with zero API keys required.</p>
-      </div>
-      <div class="feature-card">
+        <h3>Supply Chain, Compliance &amp; AI</h3>
+        <ul class="feature-list">
+          <li>Generate CycloneDX 1.6 and SPDX 2.3 SBOMs and produce dedicated dependency license reports and policy gates.</li>
+          <li>Import and export OpenVEX decisions with traceable findings and audit details.</li>
+          <li>Map findings to OWASP Top 10, CWE Top 25, ASVS 5.0, PCI DSS 4.0, and other supported control sets.</li>
+          <li>Optionally connect a local model such as Ollama or a configured OpenAI-compatible provider for explanations and fix ideas, with prompt-injection safeguards and secret redaction; AI output is advisory, never a gate.</li>
+        </ul>
+      </article>
+      <article class="feature-card">
         <div class="feature-icon" style="--icon:#67e8f9">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4M8 16h.01M16 16h.01"/></svg>
         </div>
-        <h3>GitHub Actions &amp; PR Bot</h3>
-        <p>Generates clean SARIF reports, GitHub annotations, automated pull requests, and native click-to-commit inline suggestions on PR diffs.</p>
-      </div>
+        <h3>Reporting, Privacy &amp; Trust</h3>
+        <ul class="feature-list">
+          <li>Export JSON, SARIF 2.1.0, static HTML, Markdown, JUnit, and GitLab Code Quality reports.</li>
+          <li>Publish a self-contained HTML dashboard as a CI artifact without a server.</li>
+          <li>Run offline by default with zero telemetry; online SCA and remote AI require explicit opt-in.</li>
+          <li>Track rule provenance and release checksums, SBOMs, and Sigstore/Cosign signatures.</li>
+        </ul>
+      </article>
     </div>
   </div>
 </section>
@@ -1541,7 +1612,7 @@ footer {
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
           <span id="demoRunLabel">Reveal finding</span>
         </button>
-        <span class="demo-hint">Illustrative output. The real engine scans your staged diff locally.</span>
+        <span class="demo-hint">Illustrative output. Run staged, diff, or repository-wide scans locally.</span>
       </div>
     </div>
   </div>
@@ -1822,15 +1893,15 @@ footer {
     <div class="faq-list">
       <details class="faq-item" open>
         <summary>Does my code leave my machine?</summary>
-        <p>No. The scanner runs locally, has no telemetry, and never uploads source files. Only the staged diff is read, and findings stay on your machine unless you choose to export them.</p>
+        <p>No telemetry is collected. Local scans run on your machine; online vulnerability lookups and remote AI providers are optional and require opt-in. You choose whether to export reports.</p>
       </details>
       <details class="faq-item">
         <summary>What exactly gets scanned?</summary>
-        <p>By default CommitGuard inspects lines added to the staged diff, which keeps pre-commit checks fast and focused. The Control Center and CLI also surface dependency manifests and project-wide blast-radius views.</p>
+        <p>Choose staged or changed diffs, scan a repository, or inspect Git history for secrets. Dependency analysis, imported reports, and project-wide views are also available through the CLI and Control Center.</p>
       </details>
       <details class="faq-item">
         <summary>Which languages are covered?</summary>
-        <p>Secret rules are language-agnostic. AST taint analysis and import parsing cover Python, JavaScript/TypeScript, Go, Rust, Java, and more &mdash; 7+ languages in total.</p>
+        <p>Secret rules are language-agnostic. Interprocedural AST taint analysis supports Python, JavaScript/TypeScript, Java, and Go; dependency and import analysis cover additional ecosystems and languages.</p>
       </details>
       <details class="faq-item">
         <summary>How do I stop a finding from blocking a commit?</summary>
@@ -1859,7 +1930,7 @@ footer {
       <div>
         <span class="eyebrow">Start local</span>
         <h2 id="ctaTitle">Catch the leak before it becomes a commit.</h2>
-        <p>Install in under a minute. No account, no API key, and no source code leaves your machine.</p>
+        <p>Set up a repository with the installer scripts. Package-based pip and pipx installation is coming soon. No account is needed, and network integrations remain opt-in.</p>
       </div>
       <div class="cta-actions">
         <a href="#install" class="btn primary">Install CommitGuard</a>
@@ -1884,8 +1955,8 @@ footer {
       <a href="https://github.com/CommitGuard-Sec/CommitGuard" target="_blank" rel="noopener noreferrer">GitHub</a>
     </nav>
     <p style="margin:0">
-      CommitGuard is open source under the MIT License.<br>
-      Developed with zero telemetry and 100% offline security in mind.
+      CommitGuard is open source under the Apache License 2.0.<br>
+      No telemetry. Local-first scanning, with network integrations opt-in.
     </p>
     <p class="footer-sign">Have a nice life far from hacking developer&nbsp;bro&nbsp;:)&nbsp;&#128522;</p>
   </div>

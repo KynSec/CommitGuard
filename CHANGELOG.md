@@ -35,6 +35,9 @@
 - VS Code extension 0.3.0 exposes the new `java_ast` and `go_ast` rule
   databases in the scan panel, so interprocedural Java and Go findings can be
   selected and reviewed without leaving the editor.
+- The project website now presents the current security, policy, triage,
+  supply-chain, developer, and reporting features, and clearly marks pip/pipx
+  package-index installation as coming soon.
 
 ## 3.2.0 - 2026-11-06
 
