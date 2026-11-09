@@ -114,7 +114,7 @@ and CI dogfooding.
 
 ## Phase 3 completion snapshot
 
-Measured on 2026-11-06 from the `phase-3-completion` branch before commit:
+Measured on 2026-11-06 from the `Under-development` branch before commit:
 
 | Item | Value |
 |---|---|

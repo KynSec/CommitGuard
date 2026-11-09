@@ -1,0 +1,66 @@
+name: Benchmarks
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * 1"
+  pull_request:
+    paths:
+      - "benchmarks/**"
+      - "core/ast_taint.py"
+      - "core/interprocedural.py"
+      - "core/ai_assistant.py"
+      - ".github/workflows/benchmarks.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pyyaml
+
+      - name: Run accuracy benchmark
+        run: |
+          mkdir -p benchmark-results
+          python benchmarks/accuracy_benchmark.py --json \
+            --output benchmark-results/accuracy.json
+
+      - name: Run AI evaluation
+        run: |
+          python benchmarks/ai_evaluation.py --json \
+            --output benchmark-results/ai-evaluation.json
+
+      - name: Run latency benchmark
+        run: |
+          python benchmarks/scan_benchmark.py --json --max-median-ms 10000 \
+            --output benchmark-results/scan-benchmark.json
+
+      - name: Build leaderboard
+        run: |
+          python benchmarks/leaderboard.py \
+            --results-dir benchmark-results \
+            --commit "$GITHUB_SHA" \
+            --output benchmark-results/leaderboard.md
+          python benchmarks/leaderboard.py \
+            --results-dir benchmark-results \
+            --commit "$GITHUB_SHA" \
+            --format json \
+            --output benchmark-results/leaderboard.json
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: benchmark-results/
+          if-no-files-found: error

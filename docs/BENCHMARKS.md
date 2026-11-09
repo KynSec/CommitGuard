@@ -36,6 +36,9 @@ Supported CWE subset:
 | Python XSS/SSTI | CWE-79 | `cg-python-ast-xss-taint` |
 | JavaScript code execution | CWE-95 | `cg-js-ast-code-exec-taint` |
 | Python cross-file wrapper | CWE-89 | `cg-python-ast-sqli-taint` |
+| JavaScript cross-file wrapper | CWE-89 | `cg-js-ast-sqli-taint` |
+| Java interprocedural wrapper | CWE-95 | `cg-java-ast-code-exec-taint` |
+| Go interprocedural wrapper | CWE-95 | `cg-go-ast-code-exec-taint` |
 
 Reproduce:
 
@@ -47,15 +50,37 @@ python benchmarks/accuracy_benchmark.py --json --output accuracy-report.json
 The corpus is intentionally small and deterministic. It covers the rules that
 are documented as stable, not every bundled rule.
 
+## AI evaluation
+
+`benchmarks/ai_evaluation.py` checks the local-first assistant against five
+finding categories. It verifies actionable remediation, deterministic output,
+a bounded context package, and that secret values never appear in the output.
+
+```bash
+python benchmarks/ai_evaluation.py --json --output ai-evaluation.json
+```
+
+## Leaderboard
+
+`benchmarks/leaderboard.py` turns the three result artifacts into a
+deterministic Markdown and JSON leaderboard. Rows record the commit, Python
+version, platform, pass rate, metric, and source artifact. The `Benchmarks`
+workflow publishes the artifacts on every benchmark change and on a weekly
+schedule.
+
+```bash
+python benchmarks/leaderboard.py --results-dir . --commit "$(git rev-parse HEAD)"
+```
+
 ## What the benchmark does not claim
 
 - It is not a comparison against commercial SAST or SCA products.
 - It does not measure whole-program taint precision on large monorepos.
 - The synthetic fixture does not represent every framework, ORM, or template
   engine. Unknown frameworks can produce false negatives.
-- The JavaScript/TypeScript taint engine is syntax-driven and does not perform
-  full type resolution; aliasing through arbitrary abstractions is out of
-  scope for Phase 2.
+- The JavaScript/TypeScript, Java, and Go interprocedural engines are
+  syntax-driven and do not perform full type resolution; dynamic dispatch,
+  reflection, and generated code can cause false positives or false negatives.
 - Python cross-file summaries match functions by name. Ambiguous helpers with
   the same name in unrelated modules can increase false positives.
 - Offline SCA depends on the freshness of the supplied OSV snapshot. Signed
@@ -64,6 +89,9 @@ are documented as stable, not every bundled rule.
   trees, monorepos, or cold caches will differ.
 - The accuracy corpus is a floor for regressions, not a published precision or
   recall score on an independent holdout set.
+- The AI evaluation is deterministic and offline. It measures the local
+  template provider, not the quality of an arbitrary remote model.
+- The leaderboard does not compare CommitGuard against commercial products.
 
 Report benchmark regressions with the exact command, Python version, and
 platform so the result can be reproduced.

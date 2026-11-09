@@ -808,3 +808,85 @@ def scan_js_taint(
     for match in matches:
         unique[(match.finding.file, match.finding.rule_id, match.sink_line)] = match
     return TaintResult(tuple(unique.values()), tuple(warnings))
+
+
+JAVA_TAINT_RULES = {
+    "cg-java-ast-code-exec-taint": {
+        "description": "Request-controlled data reaches Runtime.exec, ProcessBuilder, or a script evaluator; avoid dynamic code execution.",
+        "severity": "critical",
+        "cwe": "CWE-95",
+        "tags": ("ai", "rce", "taint", "java"),
+    },
+    "cg-java-ast-sqli-taint": {
+        "description": "Request-controlled data reaches a JDBC or template query; use prepared statements and parameter binding.",
+        "severity": "high",
+        "cwe": "CWE-89",
+        "tags": ("sqli", "injection", "taint", "java"),
+    },
+    "cg-java-ast-shell-taint": {
+        "description": "Request-controlled data reaches a process command; avoid shell execution or validate arguments.",
+        "severity": "high",
+        "cwe": "CWE-78",
+        "tags": ("command-injection", "taint", "java"),
+    },
+    "cg-java-ast-ssrf-taint": {
+        "description": "Request-controlled data reaches an outbound URL or HTTP client; validate or allowlist destinations (SSRF).",
+        "severity": "high",
+        "cwe": "CWE-918",
+        "tags": ("ssrf", "web", "taint", "java"),
+    },
+    "cg-java-ast-path-traversal-taint": {
+        "description": "Request-controlled data reaches a filesystem API without visible boundary validation.",
+        "severity": "high",
+        "cwe": "CWE-22",
+        "tags": ("path-traversal", "web", "taint", "java"),
+    },
+    "cg-java-ast-xss-taint": {
+        "description": "Request-controlled data is written to an HTTP response without escaping (XSS).",
+        "severity": "high",
+        "cwe": "CWE-79",
+        "tags": ("xss", "web", "taint", "java"),
+    },
+}
+
+GO_TAINT_RULES = {
+    "cg-go-ast-code-exec-taint": {
+        "description": "Request-controlled data reaches exec.Command or another dynamic execution API; avoid shell execution.",
+        "severity": "critical",
+        "cwe": "CWE-95",
+        "tags": ("ai", "rce", "taint", "go"),
+    },
+    "cg-go-ast-sqli-taint": {
+        "description": "Request-controlled data reaches a database query; use parameterized queries.",
+        "severity": "high",
+        "cwe": "CWE-89",
+        "tags": ("sqli", "injection", "taint", "go"),
+    },
+    "cg-go-ast-shell-taint": {
+        "description": "Request-controlled data reaches a shell or process command; avoid shell execution or validate arguments.",
+        "severity": "high",
+        "cwe": "CWE-78",
+        "tags": ("command-injection", "taint", "go"),
+    },
+    "cg-go-ast-ssrf-taint": {
+        "description": "Request-controlled data reaches an outbound HTTP request; validate or allowlist destinations (SSRF).",
+        "severity": "high",
+        "cwe": "CWE-918",
+        "tags": ("ssrf", "web", "taint", "go"),
+    },
+    "cg-go-ast-path-traversal-taint": {
+        "description": "Request-controlled data reaches a filesystem API without visible boundary validation.",
+        "severity": "high",
+        "cwe": "CWE-22",
+        "tags": ("path-traversal", "web", "taint", "go"),
+    },
+    "cg-go-ast-xss-taint": {
+        "description": "Request-controlled data is written to an HTTP response without escaping (XSS).",
+        "severity": "high",
+        "cwe": "CWE-79",
+        "tags": ("xss", "web", "taint", "go"),
+    },
+}
+
+TAINT_RULES.update(JAVA_TAINT_RULES)
+TAINT_RULES.update(GO_TAINT_RULES)

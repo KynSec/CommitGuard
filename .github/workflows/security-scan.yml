@@ -1,0 +1,52 @@
+name: CommitGuard Security Scan
+
+on:
+  push:
+    branches: ["main", "Under-development"]
+  pull_request:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  commitguard-scan:
+    name: CommitGuard Security Gate & SARIF Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Run CommitGuard Scan Action
+        uses: ./
+        with:
+          format: sarif
+          gate: "true"
+          policy-profile: strict
+          soft-fail: "true"
+
+      - name: Upload SARIF report to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: commit_guard_reports/report.sarif
+          category: commitguard-security
+        continue-on-error: true
+
+      - name: Upload Scan Artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: commitguard-scan-reports
+          path: commit_guard_reports/
