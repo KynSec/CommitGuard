@@ -108,7 +108,7 @@ class VEXDocument:
     def to_openvex(self) -> dict[str, Any]:
         document: dict[str, Any] = {
             "@context": _OPENVEX_CONTEXT,
-            "author": self.author or "CommitGuard",
+            "author": self.author or "CommitGuard",  # commit-guard-ignore: generic-api-key
             "timestamp": self.timestamp or _now(),
             "version": self.version,
             "statements": [statement.to_dict() for statement in self.statements],

@@ -5,7 +5,7 @@
 # redistribution. Run `python -m unittest tests.test_provenance` after changing
 # a rule file or adding a pack.
 schema_version: 1
-updated: 2026-11-03
+updated: 2026-11-09
 checksum_algorithm: sha256
 policy:
   release_rule: "Only sources with status 'cleared' and redistribution 'allowed' may ship in a release artifact."
@@ -202,7 +202,7 @@ sources:
       - path: rules/general/deserialization.yaml
         sha256: 72e6b93629b04dba6f079644b134c14632444140eaeb177c2159961f6c598399
       - path: rules/general/supply_chain.yaml
-        sha256: 78698166f7109c2eecf2a986c35c489f157360de824f83021222de26b16a5c87
+        sha256: 3d7efe7e0b10258497ce18900e62b2b5795cd89e067a86418fb7b0e547bf3784
       - path: rules/general/web2.yaml
         sha256: a9f50909ffbda5356c748cc8e963b2e47e15652f290749b6ad88bd1ea9992063
       - path: rules/general/ai_agent.yaml
