@@ -30,9 +30,23 @@ Module._load = function (request, parent, isMain) {
 };
 
 const { ScanPanelProvider } = require("../out/panel.js");
+const store = new Map();
+const context = {
+  subscriptions: [],
+  workspaceState: {
+    get(key, fallback) {
+      return store.has(key) ? store.get(key) : fallback;
+    },
+    update(key, value) {
+      store.set(key, value);
+      return Promise.resolve();
+    },
+  },
+};
 const provider = new ScanPanelProvider(
-  { subscriptions: [] },
+  context,
   { appendLine() {} },
+  () => {},
 );
 let html = "";
 const view = {
@@ -41,6 +55,9 @@ const view = {
     cspSource: "vscode-resource:",
     onDidReceiveMessage() {
       return { dispose() {} };
+    },
+    postMessage() {
+      return Promise.resolve(true);
     },
     get html() {
       return html;
@@ -60,7 +77,7 @@ assert.ok(html.includes('data-source="semgrep:semgrep_python"'));
 assert.ok(html.includes('data-source="java_ast"'));
 assert.ok(html.includes('data-source="go_ast"'));
 assert.ok(html.includes("Open CommitGuard GUI"));
-assert.ok(html.includes("Run selected scan"));
+assert.ok(html.includes("Run Scan"));
 assert.ok(html.includes("script-src 'nonce-"));
 assert.ok(html.includes("sample workspace"));
 console.log("webview panel: ok");

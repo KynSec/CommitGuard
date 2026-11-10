@@ -1,3 +1,4 @@
+import * as path from "path";
 import * as vscode from "vscode";
 import {
   LanguageClient,
@@ -37,6 +38,22 @@ let restartAfterStart = false;
 let startupRequested = false;
 let output: vscode.OutputChannel;
 let status: vscode.StatusBarItem;
+
+// Exported so panel.ts can call it after a scan completes.
+export function setStatusFindingCount(count: number): void {
+  const cfg = vscode.workspace.getConfiguration("commitguard");
+  const show = cfg.get<boolean>("showFindingCount", true);
+  if (show) {
+    status.text =
+      count === 0
+        ? "$(shield) CommitGuard · ✓ Clean"
+        : `$(shield) CommitGuard · ${count} issue${count === 1 ? "" : "s"}`;
+  } else {
+    status.text = "$(shield) CommitGuard";
+  }
+  status.tooltip = "Open the CommitGuard scan panel";
+  status.command = "commitguard.openPanel";
+}
 
 interface PendingChange {
   event: vscode.TextDocumentChangeEvent;
@@ -245,7 +262,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   status.tooltip = "Open the CommitGuard scan panel";
   status.show();
 
-  const panel = new ScanPanelProvider(context, output);
+  const panel = new ScanPanelProvider(context, output, setStatusFindingCount);
   context.subscriptions.push(
     output,
     status,
@@ -261,6 +278,58 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       panel.openGui(),
     ),
     vscode.commands.registerCommand("commitguard.restartServer", startServer),
+
+    // New commands
+    vscode.commands.registerCommand("commitguard.scanCurrentFile", async () => {
+      const editor = vscode.window.activeTextEditor;
+      if (!editor) {
+        await vscode.window.showWarningMessage(
+          "CommitGuard: Open a file before scanning the current file.",
+        );
+        return;
+      }
+      const folder = vscode.workspace.getWorkspaceFolder(editor.document.uri);
+      if (!folder) {
+        await vscode.window.showWarningMessage(
+          "CommitGuard: The current file is outside the workspace.",
+        );
+        return;
+      }
+      const relative = path.relative(folder.uri.fsPath, editor.document.uri.fsPath);
+      if (!relative || relative === ".." || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)) {
+        await vscode.window.showWarningMessage(
+          "CommitGuard: The current file is outside the workspace.",
+        );
+        return;
+      }
+      panel.triggerScan("repo", undefined, relative.split(path.sep).join("/"));
+    }),
+    vscode.commands.registerCommand("commitguard.scanStaged", () =>
+      panel.triggerScan("staged"),
+    ),
+    vscode.commands.registerCommand("commitguard.scanRepo", () =>
+      panel.triggerScan("repo"),
+    ),
+    vscode.commands.registerCommand("commitguard.showDashboard", () =>
+      panel.focus(),
+    ),
+    vscode.commands.registerCommand("commitguard.exportResults", () =>
+      panel.exportResults(),
+    ),
+    vscode.commands.registerCommand("commitguard.clearResults", () =>
+      panel.clearResults(),
+    ),
+
+    // Scan-on-save
+    vscode.workspace.onDidSaveTextDocument((document) => {
+      const cfg = vscode.workspace.getConfiguration("commitguard");
+      const scanOnSave = cfg.get<boolean>("scanOnSave", false);
+      if (!scanOnSave || !vscode.workspace.isTrusted) return;
+      const scope = cfg.get<string>("autoScanScope", "staged") === "repo" ? "repo" : "staged";
+      panel.triggerScan(scope as "repo" | "staged");
+      output.appendLine(`Auto-scan triggered on save: ${document.uri.fsPath}`);
+    }),
+
     vscode.workspace.onDidOpenTextDocument((document) =>
       requestServerStart(document),
     ),

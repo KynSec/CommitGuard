@@ -80,6 +80,15 @@ export interface ScanReport {
   findings: ScanFinding[];
 }
 
+export interface ScanHistoryEntry {
+  id: string;        // unique ID (timestamp-based)
+  timestamp: string; // ISO string
+  durationMs: number;
+  mode: ScanMode;
+  sources: string[];
+  report: ScanReport;
+}
+
 function asNumber(value: unknown): number | null {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
@@ -93,6 +102,7 @@ export function buildScanArgs(
   reportPath: string,
   sources: string[],
   mode: ScanMode,
+  include?: string,
 ): string[] {
   const args = [
     "scan",
@@ -105,6 +115,7 @@ export function buildScanArgs(
     "--soft-fail",
     mode === "repo" ? "--all" : "--staged",
   ];
+  if (include) args.push("--include", include);
   for (const source of sources) args.push("--rule-source", source);
   return args;
 }

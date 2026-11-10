@@ -29,6 +29,10 @@ assert.ok(RULE_SOURCES.some((source) => source.id === "semgrep:semgrep_python"))
 assert.ok(RULE_SOURCES.some((source) => source.id === "java_ast"));
 assert.ok(RULE_SOURCES.some((source) => source.id === "go_ast"));
 assert.ok(!buildScanArgs("/repo", "/tmp/r.json", [], "staged").includes("--all"));
+assert.deepStrictEqual(
+  buildScanArgs("/repo", "/tmp/r.json", ["gitleaks"], "repo", "src/app.py").slice(-4),
+  ["--include", "src/app.py", "--rule-source", "gitleaks"],
+);
 
 const report = parseScanReport({
   generated: "now",

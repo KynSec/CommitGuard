@@ -1,184 +1,208 @@
-# CommitGuard VS Code Extension
+# 🛡️ CommitGuard Security Scanner
 
-[CommitGuard](https://github.com/KynSec/CommitGuard) security diagnostics,
-rule-database scans, and GUI launcher for VS Code. Everything runs locally and
-offline against your own rule databases.
+> **The offline-first, zero-telemetry SAST scanner for VS Code.**<br>
+> Catch secrets, vulnerabilities, and code issues before they ever leave your machine.
 
-## Install
+[![Version](https://img.shields.io/visual-studio-marketplace/v/AmrKhaledEldhshan.commitguard-kynsec?label=VS%20Code%20Marketplace&color=blue)](https://marketplace.visualstudio.com/items?itemName=AmrKhaledEldhshan.commitguard-kynsec)
+[![Offline](https://img.shields.io/badge/offline-100%25-brightgreen)](https://github.com/KynSec/CommitGuard)
+[![Zero Telemetry](https://img.shields.io/badge/telemetry-zero-blue)](https://github.com/KynSec/CommitGuard)
+[![License](https://img.shields.io/badge/license-Apache--2.0-lightgrey)](LICENSE)
+[![GitHub](https://img.shields.io/badge/source-GitHub-black?logo=github)](https://github.com/KynSec/CommitGuard)
 
-1. Install the
-   [CommitGuard Security Scanner (KynSec)](https://marketplace.visualstudio.com/items?itemName=AmrKhaledEldhshan.commitguard-kynsec)
-   extension from the VS Code Marketplace.
-2. Install the CommitGuard CLI so the extension can launch the language server
-   and scanner:
+---
 
-   ```bash
-   pipx install commit-guard
-   # or: python -m pip install commit-guard
-   ```
+## ✨ Features
 
-3. Open a folder, trust the workspace, and open the **CommitGuard** icon in the
-   Activity Bar.
+| | Feature | Description |
+|---|---|---|
+| 🔒 | **100% Offline** | All scanning happens locally — no data leaves your machine, ever. |
+| 🔑 | **Secret Detection** | Catch API keys, tokens, and credentials with Gitleaks + Nuclei patterns. |
+| 🧠 | **Interprocedural Taint Analysis** | Deep data-flow analysis for Python, JavaScript, TypeScript, Java, and Go. |
+| 🔍 | **Multi-Engine SAST** | Runs Semgrep, DevSkim, and custom CommitGuard rules simultaneously. |
+| 📡 | **LSP Diagnostics** | Real-time squiggles and diagnostics powered by a Language Server. |
+| ⚡ | **Scan Staged Changes** | Pre-commit style scanning of only your staged git changes. |
+| 🗂️ | **Full Repo Scanning** | Deep scan of the entire repository on demand. |
+| 📋 | **Export Results** | Export findings as JSON for CI/CD integration or reporting. |
+| 🔕 | **Suppress Findings** | Insert `# commit-guard-ignore` comments directly from the panel. |
+| 📜 | **Scan History** | Review and restore the last 20 scan results. |
+| 🎨 | **Rich Panel UI** | Filter, group, and explore findings in a polished side panel. |
+| ⌨️ | **Keyboard Shortcuts** | Trigger scans without leaving the keyboard. |
+| 🛠️ | **Scan on Save** | Optional auto-scan on every file save. |
 
-If auto-detection cannot find the CLI, set `commitguard.executable` to the
-absolute launcher path or `commitguard.pythonPath` to the Python interpreter
-where CommitGuard is installed. To test a local build, run `npm run package` in
-this directory and install the generated `.vsix` with **Extensions: Install from
-VSIX...**.
+---
 
-## Quick start
+## 📦 Quick Install
 
-1. Select one or more rule databases in the **Scan** view.
-2. Choose **Whole repository** or **Staged changes only**.
-3. Click **Run selected scan**.
-4. Click a finding to jump to the file, line, and column.
-5. Use **Open CommitGuard GUI** for the full desktop Control Center.
+1. Open VS Code
+2. Press `Ctrl+P` (macOS: `Cmd+P`)
+3. Run: `ext install AmrKhaledEldhshan.commitguard-kynsec`
 
-Use **CommitGuard: Open Scan Panel** from the Command Palette if the view is
-hidden.
+Or search **CommitGuard** in the Extensions Marketplace sidebar.
 
-## Features
+> **Requires** the [CommitGuard CLI](https://github.com/KynSec/CommitGuard) to be installed (`pip install commit-guard`).
 
-### Live diagnostics
+---
 
-The extension connects VS Code to the CommitGuard stdio language server and
-provides live diagnostics and safe quick fixes for Python, JavaScript,
-TypeScript, Go, Rust, Java, C/C++, C#, Ruby, PHP, YAML, JSON, Dockerfiles, and
-shell scripts. Changes are debounced while typing and scanned after a short
-pause.
+## 🚀 Quick Start
 
-The language server provides CommitGuard security diagnostics and quick fixes
-over the Language Server Protocol. It is not an autocomplete or type-checking
-server.
+1. **Install the CLI**: `pip install commit-guard`
+2. **Open a workspace** folder in VS Code
+3. **Click the shield icon** in the Activity Bar to open the CommitGuard panel
+4. **Select rule databases** (or click *All*)
+5. **Click ▶ Run Scan** — findings appear instantly in the panel
 
-The scan view includes the Python, JavaScript/TypeScript, Java, and Go taint
-databases. Java and Go use CommitGuard's interprocedural analysis, so a tainted
-value returned by a helper function is still reported at the dangerous sink.
+---
 
-### Scan view
+## ⌨️ Commands
 
-The **CommitGuard** Activity Bar view includes:
+| Command | Description | Shortcut |
+|---|---|---|
+| `CommitGuard: Open Scan Panel` | Open the CommitGuard side panel | `Ctrl+Shift+G P` |
+| `CommitGuard: Scan Staged Changes` | Scan only staged git changes | `Ctrl+Shift+G S` |
+| `CommitGuard: Scan Full Repository` | Scan the entire repository | — |
+| `CommitGuard: Scan Current File` | Quick scan of the active file | Editor title button |
+| `CommitGuard: Open GUI` | Launch the CommitGuard desktop GUI | — |
+| `CommitGuard: Restart Language Server` | Restart the LSP backend | — |
+| `CommitGuard: Export Results as JSON` | Save findings to a JSON file | — |
+| `CommitGuard: Clear Results` | Clear the current scan results | — |
+| `CommitGuard: Show Dashboard` | Focus the CommitGuard scan panel | — |
 
-- checkboxes for each rule database (`custom`, `gitleaks`, `nuclei`, `devskim`,
-  `semgrep`, `semgrep:semgrep_python`, `python_ast`, `javascript_ast`,
-  `java_ast`, `go_ast`);
-- whole-repository or staged-changes scan scope;
-- a **Run selected scan** button that passes each chosen database as
-  `--rule-source` and shows findings in the panel;
-- clickable findings that open the file at the reported line and column;
-- an **Open CommitGuard GUI** button that runs `commit-guard gui` in an
-  integrated terminal.
+> **macOS**: Replace `Ctrl` with `Cmd` in all shortcuts.
 
-Each scan runs against a temporary JSON report, so results stay local and are
-not uploaded anywhere. Scans can be cancelled while they are running.
+---
 
-### Status and output
+## ⚙️ Settings
 
-The CommitGuard status item shows server state and can restart the server.
-Language-server output and quick-fix explanations are available in the
-**CommitGuard** output channel.
+| Setting | Type | Default | Description |
+|---|---|---|---|
+| `commitguard.executable` | `string` | `""` | Absolute path to the `commit-guard` CLI. Auto-detected if empty. |
+| `commitguard.pythonPath` | `string` | `""` | Python interpreter to use when running via `-m install_hook`. |
+| `commitguard.extraArgs` | `string[]` | `[]` | Extra arguments passed before the `lsp` subcommand. |
+| `commitguard.trace.server` | `"off" \| "messages" \| "verbose"` | `"off"` | LSP protocol tracing level. |
+| `commitguard.scanOnSave` | `boolean` | `false` | Auto-scan on file save. |
+| `commitguard.autoScanScope` | `"staged" \| "repo"` | `"staged"` | Scope used for auto-scan on save. |
+| `commitguard.defaultSources` | `string[]` | `[]` | Rule databases pre-selected when the scan panel opens. |
+| `commitguard.showFindingCount` | `boolean` | `true` | Show the finding count in the status bar. |
 
-## Commands
+---
 
-| Command | Description |
-| --- | --- |
-| `CommitGuard: Open Scan Panel` | Focus the rule-database scan view. |
-| `CommitGuard: Open GUI` | Launch the CommitGuard desktop Control Center. |
-| `CommitGuard: Restart Language Server` | Stop and restart the LSP server. |
+## 🌐 Supported Languages
 
-## Settings
+CommitGuard's LSP diagnostics and AST/taint engines support:
 
-| Setting | Default | Description |
-| --- | --- | --- |
-| `commitguard.executable` | `""` | Absolute path or command for the CommitGuard CLI. Leave empty to auto-detect. |
-| `commitguard.pythonPath` | `""` | Python interpreter used with `-m install_hook` when the launcher is not on `PATH`. |
-| `commitguard.extraArgs` | `[]` | Extra arguments passed before the `lsp` subcommand. |
-| `commitguard.trace.server` | `"off"` | LSP transport tracing: `off`, `messages`, or `verbose`. |
+| | | | |
+|---|---|---|---|
+| 🐍 Python | ☕ Java | 🦀 Rust | 🐘 PHP |
+| 🟨 JavaScript | 🐹 Go | 💎 Ruby | 🐚 Shell |
+| 🔷 TypeScript | 🔵 C / C++ | 📄 YAML | 🐳 Dockerfile |
+| ⚛️ React (JSX/TSX) | 🟣 C# | 📝 JSON | — |
 
-Changes to CommitGuard settings restart the language server automatically.
+---
 
-## Launcher detection
+## 🗄️ Rule Databases
 
-The extension resolves the CLI in this order:
+| ID | Name | Description |
+|---|---|---|
+| `custom` | CommitGuard Rules | Built-in regex and language rules |
+| `gitleaks` | Gitleaks Secrets | Credential and token patterns |
+| `nuclei` | Nuclei Secrets | Nuclei secret templates |
+| `devskim` | DevSkim | Security and cryptography rules |
+| `semgrep` | All Semgrep DBs | Every installed Semgrep rule database |
+| `semgrep:semgrep_python` | Semgrep Python | Python-specific Semgrep rules |
+| `python_ast` | Python AST/Taint | Python data-flow and AST analysis |
+| `javascript_ast` | JavaScript AST/Taint | JS/TS data-flow analysis |
+| `java_ast` | Java AST/Taint | Java interprocedural analysis |
+| `go_ast` | Go AST/Taint | Go interprocedural analysis |
 
-1. `commitguard.executable`, if set.
-2. The repository's `commit-guard` / `commit-guard.cmd` wrapper.
-3. A Python interpreter from `commitguard.pythonPath` or the Python extension's
-   selected interpreter, verified with `-m install_hook`.
-4. `commit-guard` from pipx, `~/.local/bin`, Homebrew, pyenv, or per-user
-   Windows/macOS Python script directories.
-5. A Python interpreter from a workspace `.venv`/`venv`/`env`, common absolute
-   install locations, or `py -3` / `python3` / `python`, verified with
-   `-m install_hook`.
-6. `commit-guard` on `PATH`.
+---
 
-A normal `pipx install commit-guard` works without any settings, even when VS
-Code was launched without your shell's `PATH`. If detection fails, the error
-lists every command that was checked. Set `commitguard.pythonPath` to the
-interpreter that has CommitGuard installed, or set `commitguard.executable` to
-the absolute launcher path. The extension does not use an activated shell, so a
-virtualenv that is only active in a terminal is not visible until you point at
-its Python executable.
+## 🏆 Why CommitGuard?
 
-For safety, the extension does not run in untrusted workspaces.
+| Feature | CommitGuard | Cloud SAST tools |
+|---|---|---|
+| **Privacy** | ✅ 100% local | ❌ Code sent to cloud |
+| **Internet required** | ✅ No | ❌ Yes |
+| **API keys needed** | ✅ No | ❌ Yes |
+| **Telemetry** | ✅ Zero | ❌ Often yes |
+| **Works offline** | ✅ Always | ❌ No |
+| **Pre-commit integration** | ✅ Yes | ⚠️ Varies |
+| **Multiple SAST engines** | ✅ 10 sources | ⚠️ Varies |
+| **Free** | ✅ Apache-2.0 | ⚠️ Freemium |
 
-## Roadmap: scan view enhancements
+---
 
-These are planned improvements, not behavior in the current release:
+## 🔧 Troubleshooting
 
-- **Persist panel state per workspace** — remember selected rule databases,
-  scan scope, last results, and scroll position across window reloads.
-- **Filter and group findings** — search by rule, file, severity, or message;
-  group by file or rule; show counts per database.
-- **Per-finding actions** — Fix, Suppress, Open in GUI, Copy fingerprint, and
-  Reveal in Explorer directly from the finding row.
-- **Better scan workflow** — re-scan, show last-scan time and duration,
-  optional scan-on-save, live progress, and clear staged-versus-repository
-  summaries.
-- **First-run and setup states** — detect a missing CLI and offer **Open
-  Settings**, **Show Output**, **Retry**, and a short installation guide that
-  lists the exact commands checked.
-- **Quick actions** — scan the current file or staged files without opening the
-  full panel.
-- **Rule-database health** — show which databases are installed, recommended
-  defaults, and missing optional dependencies.
-- **Export results** — save findings as SARIF, JSON, Markdown, or HTML.
-- **Status bar summary** — show the current finding count and open the scan
-  view on click.
-- **Open in Control Center** — jump from a finding to the matching entry in the
-  CommitGuard desktop GUI.
+### "Could not locate the CommitGuard command"
 
-## Troubleshooting
-
-**"Could not locate the CommitGuard command"** — install the CLI with
-`pipx install commit-guard` or `python -m pip install commit-guard`, then set
-`commitguard.executable` to the absolute path of the launcher. Use **Show
-Output** from the error notification for the full list of checked commands.
-
-**The server starts but no diagnostics appear** — open a supported file in a
-trusted workspace, check the **CommitGuard** output channel, and confirm the
-CLI version supports `commit-guard lsp --stdio`.
-
-**A virtualenv is not detected** — VS Code does not inherit a shell's activated
-environment. Point `commitguard.pythonPath` at the virtualenv's Python
-executable.
-
-**Windows launchers** — `.cmd` and `.bat` wrappers are supported. If a wrapper
-fails, set `commitguard.executable` to `commit-guard.cmd` or the Python
-interpreter instead.
-
-## Development
+The extension could not find the `commit-guard` CLI. Fix with one of:
 
 ```bash
+# Option A — pip install
+pip install commit-guard
+
+# Option B — pipx (recommended)
+pipx install commit-guard
+
+# Option C — set explicit path in settings
+# commitguard.executable: "/home/user/.local/bin/commit-guard"
+```
+
+### Language server won't start
+
+1. Open the **CommitGuard** output channel (View → Output → CommitGuard)
+2. Check the error message
+3. Run `commitguard.restartServer` from the Command Palette
+4. If it persists, set `commitguard.trace.server` to `"verbose"` and check the output
+
+### Scan produces no findings / empty report
+
+- Ensure the workspace is **trusted** (VS Code workspace trust prompt)
+- Confirm git is initialized (`git init`) and files are staged (`git add .`) for staged scans
+- Try `commitguard.scanRepo` to scan the full repository
+- Check the CommitGuard output channel for CLI errors
+
+### Staged scan shows "No staged changes"
+
+You need to stage files first: `git add <file>` or `git add -A`. Staged-only mode respects git's index.
+
+---
+
+## 👩‍💻 Development
+
+```bash
+# Clone the repo
+git clone https://github.com/KynSec/CommitGuard.git
+cd CommitGuard/editors/vscode
+
+# Install dependencies
 npm install
+
+# Compile TypeScript
 npm run compile
+
+# Watch mode
+npm run watch
+
+# Run tests
 npm test
+
+# Package extension
 npm run package
 ```
 
-Open this folder in VS Code and press `F5` to launch an Extension Development
-Host. Install CommitGuard first (`pipx install commit-guard`). The extension
-starts CommitGuard's stdio language server in the workspace root when a
-supported file needs diagnostics. The bundled extension keeps activation and
-the published VSIX small; tests still load the individually compiled modules
-from `out/`.
+Open the `editors/vscode` folder in VS Code and press `F5` to launch the Extension Development Host.
+
+---
+
+## 📄 License
+
+[Apache-2.0](https://github.com/KynSec/CommitGuard/blob/main/LICENSE) © KynSec / Amr Khaled Eldhshan
+
+---
+
+<p align="center">
+  Made with ❤️ by <a href="https://github.com/KynSec">KynSec</a> ·
+  <a href="https://github.com/KynSec/CommitGuard/issues">Report a bug</a> ·
+  <a href="https://github.com/KynSec/CommitGuard">GitHub</a>
+</p>

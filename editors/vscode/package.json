@@ -2,9 +2,10 @@
   "name": "commitguard-kynsec",
   "displayName": "CommitGuard Security Scanner (KynSec)",
   "description": "Offline-first CommitGuard security diagnostics, rule-database scans, interprocedural taint for Python/JS/TS/Java/Go, and GUI launcher.",
-  "version": "0.3.0",
+  "version": "1.0.0",
   "publisher": "AmrKhaledEldhshan",
   "license": "Apache-2.0",
+  "icon": "media/icon.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/KynSec/CommitGuard.git",
@@ -15,40 +16,37 @@
   },
   "categories": [
     "Linters",
-    "Other"
+    "Other",
+    "Testing",
+    "SCM Providers"
   ],
   "keywords": [
-    "security",
-    "sast",
-    "secrets",
-    "lsp",
-    "commitguard"
+    "security", "sast", "secrets", "lsp", "commitguard", "pre-commit",
+    "git", "code-scanning", "vulnerability", "static-analysis", "devsecops",
+    "owasp", "taint-analysis", "gitleaks", "semgrep", "devskim", "nuclei",
+    "python", "javascript", "typescript", "java", "go", "rust", "php",
+    "offline", "privacy", "secret-detection", "dependency-scanning", "supply-chain"
   ],
   "activationEvents": [
-    "onLanguage:python",
-    "onLanguage:javascript",
-    "onLanguage:typescript",
-    "onLanguage:javascriptreact",
-    "onLanguage:typescriptreact",
-    "onLanguage:go",
-    "onLanguage:rust",
-    "onLanguage:java",
-    "onLanguage:c",
-    "onLanguage:cpp",
-    "onLanguage:csharp",
-    "onLanguage:ruby",
-    "onLanguage:php",
-    "onLanguage:yaml",
-    "onLanguage:json",
-    "onLanguage:dockerfile",
-    "onLanguage:shellscript",
-    "workspaceContains:.commit_guard.toml",
-    "workspaceContains:.commit_guard",
-    "onView:commitguard.scanView",
-    "onCommand:commitguard.openPanel",
-    "onCommand:commitguard.openGui"
+    "onStartupFinished"
   ],
   "main": "./out/extension.js",
+  "badges": [
+    {
+      "url": "https://img.shields.io/badge/offline-100%25-brightgreen",
+      "href": "https://github.com/KynSec/CommitGuard",
+      "description": "100% Offline"
+    },
+    {
+      "url": "https://img.shields.io/badge/zero-telemetry-blue",
+      "href": "https://github.com/KynSec/CommitGuard",
+      "description": "Zero Telemetry"
+    }
+  ],
+  "galleryBanner": {
+    "color": "#080c14",
+    "theme": "dark"
+  },
   "contributes": {
     "commands": [
       {
@@ -63,6 +61,34 @@
         "command": "commitguard.openGui",
         "title": "CommitGuard: Open GUI",
         "icon": "$(browser)"
+      },
+      {
+        "command": "commitguard.scanCurrentFile",
+        "title": "CommitGuard: Scan Current File",
+        "icon": "$(search)"
+      },
+      {
+        "command": "commitguard.scanStaged",
+        "title": "CommitGuard: Scan Staged Changes",
+        "icon": "$(git-commit)"
+      },
+      {
+        "command": "commitguard.scanRepo",
+        "title": "CommitGuard: Scan Full Repository",
+        "icon": "$(repo)"
+      },
+      {
+        "command": "commitguard.exportResults",
+        "title": "CommitGuard: Export Results as JSON"
+      },
+      {
+        "command": "commitguard.showDashboard",
+        "title": "CommitGuard: Show Dashboard",
+        "icon": "$(graph)"
+      },
+      {
+        "command": "commitguard.clearResults",
+        "title": "CommitGuard: Clear Results"
       }
     ],
     "configuration": {
@@ -95,6 +121,30 @@
           ],
           "default": "off",
           "description": "Traces the LSP transport for troubleshooting."
+        },
+        "commitguard.scanOnSave": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically scan staged changes when a file is saved."
+        },
+        "commitguard.autoScanScope": {
+          "type": "string",
+          "enum": ["staged", "repo"],
+          "default": "staged",
+          "description": "Scope used for auto-scan on save."
+        },
+        "commitguard.defaultSources": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "Rule databases pre-selected when the scan panel opens."
+        },
+        "commitguard.showFindingCount": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the finding count in the status bar after a scan."
         }
       }
     },
@@ -123,8 +173,39 @@
           "when": "view == commitguard.scanView",
           "group": "navigation"
         }
+      ],
+      "editor/title": [
+        {
+          "command": "commitguard.scanCurrentFile",
+          "when": "resourceScheme == file",
+          "group": "navigation"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "commitguard.scanCurrentFile",
+          "group": "commitguard"
+        }
+      ],
+      "scm/title": [
+        {
+          "command": "commitguard.scanStaged",
+          "group": "commitguard"
+        }
       ]
-    }
+    },
+    "keybindings": [
+      {
+        "command": "commitguard.scanStaged",
+        "key": "ctrl+shift+g s",
+        "mac": "cmd+shift+g s"
+      },
+      {
+        "command": "commitguard.openPanel",
+        "key": "ctrl+shift+g p",
+        "mac": "cmd+shift+g p"
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

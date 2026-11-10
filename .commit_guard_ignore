@@ -1,2 +1,6 @@
 # Commit Guard baseline
 fingerprint:ca8e4a43876dae7f
+# VS Code manifest false positives: keyword "secret-detection" and keybinding strings.
+fingerprint:2db20340adcd8e16
+fingerprint:c83e0c6e6abff146
+fingerprint:0360a0219b32602b
