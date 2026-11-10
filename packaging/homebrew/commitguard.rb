@@ -3,8 +3,8 @@ class Commitguard < Formula
 
   desc "Offline-first local security control plane for secrets, SAST, SCA, and policy"
   homepage "https://github.com/KynSec/CommitGuard"
-  url "https://github.com/KynSec/CommitGuard/releases/download/v3.3.0/commit_guard-3.3.0.tar.gz"
-  sha256 "7a97a63ec531ade9f2fda187dbd950a9ff09c14d872f4f616ba41a029bb81150"
+  url "https://github.com/KynSec/CommitGuard/releases/download/v3.4.0/commit_guard-3.4.0.tar.gz"
+  sha256 "53382d492c29b9f01ca66e7ea79625f2624caa6b546191c76629356c9d86471a"
   license "Apache-2.0"
 
   depends_on "python@3.12"

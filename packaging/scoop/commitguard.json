@@ -1,12 +1,12 @@
 {
-  "version": "3.3.0",
+  "version": "3.4.0",
   "description": "Offline-first local security control plane for secrets, SAST, SCA, and policy",
   "homepage": "https://github.com/KynSec/CommitGuard",
   "license": "Apache-2.0",
   "depends": ["python", "git"],
-  "url": "https://github.com/KynSec/CommitGuard/releases/download/v3.3.0/commit_guard-3.3.0.tar.gz",
-  "hash": "7a97a63ec531ade9f2fda187dbd950a9ff09c14d872f4f616ba41a029bb81150",
-  "extract_dir": "commit_guard-3.3.0",
+  "url": "https://github.com/KynSec/CommitGuard/releases/download/v3.4.0/commit_guard-3.4.0.tar.gz",
+  "hash": "53382d492c29b9f01ca66e7ea79625f2624caa6b546191c76629356c9d86471a",
+  "extract_dir": "commit_guard-3.4.0",
   "installer": {
     "script": [
       "python -m pip install --user --no-warn-script-location .",
