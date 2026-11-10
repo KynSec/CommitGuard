@@ -1,5 +1,34 @@
 # Changelog
 
+## 3.4.0 - 2026-11-10
+
+### Added
+
+- VS Code extension 1.0.0: Activity Bar scan panel with scan-current-file,
+  staged and full-repository scans, scan-on-save, JSON export, the last 20
+  scans in a History tab, status-bar finding counts, and a Marketplace icon.
+- Extension commands and keybindings for opening the panel, scanning the
+  current file, staged changes, or the whole repository, restarting the LSP,
+  exporting results, clearing results, and focusing the scan dashboard.
+- Release signing now publishes `SHA256SUMS.pub` alongside `SHA256SUMS.sig`,
+  and the release guide documents end-to-end checksum and signature
+  verification.
+- Homebrew and Scoop manifests now use the GitHub release sdist with real
+  SHA-256 values, and the packaging validator checks the underscore sdist
+  naming used by the build backend.
+
+### Fixed
+
+- GUI configuration validation now imports `PipelineError` before the
+  validation block, avoiding a potential uninitialized-local-variable failure
+  when the pipelines module cannot be imported.
+- Downloaded rule packs are checked to resolve inside the rules directory
+  before writing, and reviewed CodeQL path-injection, command-line-injection,
+  and SSRF false positives were dismissed with justifications.
+- The extension no longer has a circular import between the activation and
+  panel modules, registers every contributed command, and only advertises the
+  History view that exists.
+
 ## 3.3.0 - 2026-11-09
 
 ### Added
