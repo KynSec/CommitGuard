@@ -99,9 +99,10 @@ jobs:
           printf '%s' "$RELEASE_SIGNING_KEY_B64" | base64 -d > "$RUNNER_TEMP/release-signing-key.pem"
           openssl dgst -sha256 -sign "$RUNNER_TEMP/release-signing-key.pem" \
             -out dist/SHA256SUMS.sig dist/SHA256SUMS
-          openssl dgst -sha256 -verify <(
-            openssl pkey -in "$RUNNER_TEMP/release-signing-key.pem" -pubout
-          ) -signature dist/SHA256SUMS.sig dist/SHA256SUMS
+          openssl pkey -in "$RUNNER_TEMP/release-signing-key.pem" \
+            -pubout -out dist/SHA256SUMS.pub
+          openssl dgst -sha256 -verify dist/SHA256SUMS.pub \
+            -signature dist/SHA256SUMS.sig dist/SHA256SUMS
           rm -f "$RUNNER_TEMP/release-signing-key.pem"
 
       - name: Attest build provenance

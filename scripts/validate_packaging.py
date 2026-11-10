@@ -43,15 +43,15 @@ def main(argv: list[str] | None = None) -> int:
 
     formula = HOMEBREW.read_text(encoding="utf-8")
     manifest = json.loads(SCOOP.read_text(encoding="utf-8"))
-    if f"commit-guard-{expected}.tar.gz" not in formula:
+    if f"commit_guard-{expected}.tar.gz" not in formula:
         errors.append(f"Homebrew formula does not reference version {expected}")
     if manifest.get("version") != expected:
         errors.append(
             f"Scoop version {manifest.get('version')!r} != {expected!r}"
         )
-    if manifest.get("extract_dir") != f"commit-guard-{expected}":
+    if manifest.get("extract_dir") != f"commit_guard-{expected}":
         errors.append("Scoop extract_dir does not match the version")
-    if f"commit-guard-{expected}.tar.gz" not in str(manifest.get("url", "")):
+    if f"commit_guard-{expected}.tar.gz" not in str(manifest.get("url", "")):
         errors.append(f"Scoop URL does not reference version {expected}")
 
     homebrew_hash = re.search(r'sha256 "([0-9a-f]{64})"', formula)

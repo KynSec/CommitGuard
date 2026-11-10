@@ -1978,6 +1978,8 @@ def _fetch_rule_url(url: str, timeout: int = 30) -> tuple[bytes, str, str]:
                     if int(length) > RULE_PACK_MAX_BYTES:
                         raise ActionError("The rule pack is larger than 5 MB.")
                 except ValueError:
+                    # Malformed Content-Length is ignored; the body size is
+                    # enforced after the read below.
                     pass
             data = response.read(RULE_PACK_MAX_BYTES + 1)
             content_type = response.headers.get("Content-Type", "")
@@ -2034,6 +2036,11 @@ def download_rule_pack(
         subdir = "custom" if source == "custom" else "semgrep_rules"
         path = rules_dir / subdir / f"downloaded-{slug}.yaml"
         expect_yaml = True
+
+    try:
+        path.resolve().relative_to(rules_dir.resolve())
+    except ValueError as exc:
+        raise ActionError("Refusing to write a rule pack outside the rules directory.") from exc
 
     data, content_type, final_url = _fetch_rule_url(url, timeout=timeout)
     if not data.strip():
@@ -2619,10 +2626,12 @@ def config_save(target: str | Path, text: str) -> dict:
         raise ActionError(f"Invalid TOML: {exc}") from exc
     temp_path = repo / f"{CONFIG_FILENAME}.tmp-{os.getpid()}"
     try:
-        temp_path.write_text(text, encoding="utf-8")
         from core.config import load_config
         from core.pipelines import PipelineError, load_pipelines
-
+    except Exception as exc:
+        raise ActionError(f"Configuration validation is unavailable: {exc}") from exc
+    try:
+        temp_path.write_text(text, encoding="utf-8")
         load_config(repo, explicit_path=temp_path)
         load_pipelines(repo, config_path=temp_path)
     except PipelineError as exc:
@@ -2635,6 +2644,7 @@ def config_save(target: str | Path, text: str) -> dict:
         try:
             temp_path.unlink()
         except OSError:
+            # Best-effort cleanup; the real write error is raised below.
             pass
     backup = path.with_suffix(path.suffix + ".bak")
     try:
