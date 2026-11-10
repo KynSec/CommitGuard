@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.4.1 - 2026-11-10
+
+### Fixed
+
+- VS Code extension 1.0.1 renders scan output without assigning untrusted
+  values to `innerHTML`. Status messages, finding badges, history entries, and
+  empty states now use `textContent` and DOM APIs, closing the new CodeQL
+  DOM-injection alerts.
+
 ## 3.4.0 - 2026-11-10
 
 ### Added

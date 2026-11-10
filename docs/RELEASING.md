@@ -101,8 +101,8 @@ Homebrew and Scoop manifests live under `packaging/` and are updated only after
 the signed release artifacts exist:
 
 ```bash
-python scripts/validate_packaging.py --version 3.4.0 \
-  --artifact dist/commit_guard-3.4.0.tar.gz
+python scripts/validate_packaging.py --version 3.4.1 \
+  --artifact dist/commit_guard-3.4.1.tar.gz
 ```
 
 Update the formula and manifest URL, version, and SHA-256, then submit them to
@@ -110,8 +110,8 @@ the respective upstream repositories. The release workflow publishes the
 container image with both the release tag and `latest`:
 
 ```bash
-docker pull ghcr.io/kynsec/commitguard:v3.4.0
-docker run --rm -v "$PWD:/workspace" ghcr.io/kynsec/commitguard:v3.4.0 \
+docker pull ghcr.io/kynsec/commitguard:v3.4.1
+docker run --rm -v "$PWD:/workspace" ghcr.io/kynsec/commitguard:v3.4.1 \
   scan --staged
 ```
 

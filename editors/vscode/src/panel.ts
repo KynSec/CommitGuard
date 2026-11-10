@@ -1067,7 +1067,7 @@ export class ScanPanelProvider implements vscode.WebviewViewProvider {
   }
 
   function setStatus(text, kind) {
-    statusEl.innerHTML = text || '';
+    statusEl.textContent = text || '';
     statusEl.className = 'status-line' + (kind ? ' ' + kind : '');
   }
 
@@ -1141,7 +1141,7 @@ export class ScanPanelProvider implements vscode.WebviewViewProvider {
     const sources = getSelected();
     if (!sources.length) { setStatus('Select at least one rule database.', 'error'); return; }
     setRunning(true);
-    setStatus('<span class="spinner"></span> Running CommitGuard scan…', '');
+    setStatus('Running CommitGuard scan…', '');
     vscode.postMessage({ type: 'runScan', sources, mode: mode || currentScope });
   }
 
@@ -1159,7 +1159,7 @@ export class ScanPanelProvider implements vscode.WebviewViewProvider {
 
   // ── Render badges ──
   function renderBadges(report) {
-    badgesEl.innerHTML = '';
+    badgesEl.replaceChildren();
     const makeBadge = (label, value, cls) => {
       const s = document.createElement('span');
       s.className = 'badge' + (cls ? ' ' + cls : '');
@@ -1261,25 +1261,39 @@ export class ScanPanelProvider implements vscode.WebviewViewProvider {
   }
 
   function renderFindings(allFindings) {
-    findingsEl.innerHTML = '';
+    findingsEl.replaceChildren();
     const filtered = applyFilters(allFindings);
 
     if (!filtered.length) {
       const empty = document.createElement('div');
       empty.className = 'empty-state';
       if (allFindings.length === 0) {
-        empty.innerHTML = \`
-          <svg viewBox="0 0 24 24" fill="none">
-            <path d="M12 2.5 4.5 5.6v5.2c0 4.7 3.1 9 7.5 10.7 4.4-1.7 7.5-6 7.5-10.7V5.6L12 2.5Z"
-              stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
-            <path d="m8.5 12 2.3 2.3 4.7-4.8"
-              stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          <span class="empty-title">All clear!</span>
-          <p>No findings — your code looks clean!</p>
-        \`;
+        const svgNs = 'http://www.w3.org/2000/svg';
+        const svg = document.createElementNS(svgNs, 'svg');
+        svg.setAttribute('viewBox', '0 0 24 24');
+        svg.setAttribute('fill', 'none');
+        const shield = document.createElementNS(svgNs, 'path');
+        shield.setAttribute('d', 'M12 2.5 4.5 5.6v5.2c0 4.7 3.1 9 7.5 10.7 4.4-1.7 7.5-6 7.5-10.7V5.6L12 2.5Z');
+        shield.setAttribute('stroke', 'currentColor');
+        shield.setAttribute('stroke-width', '1.5');
+        shield.setAttribute('stroke-linejoin', 'round');
+        const check = document.createElementNS(svgNs, 'path');
+        check.setAttribute('d', 'm8.5 12 2.3 2.3 4.7-4.8');
+        check.setAttribute('stroke', 'currentColor');
+        check.setAttribute('stroke-width', '1.5');
+        check.setAttribute('stroke-linecap', 'round');
+        check.setAttribute('stroke-linejoin', 'round');
+        svg.append(shield, check);
+        const title = document.createElement('span');
+        title.className = 'empty-title';
+        title.textContent = 'All clear!';
+        const detail = document.createElement('p');
+        detail.textContent = 'No findings — your code looks clean!';
+        empty.append(svg, title, detail);
       } else {
-        empty.innerHTML = '<p>No findings match the current filter.</p>';
+        const detail = document.createElement('p');
+        detail.textContent = 'No findings match the current filter.';
+        empty.appendChild(detail);
       }
       findingsEl.appendChild(empty);
       return;
@@ -1344,9 +1358,12 @@ export class ScanPanelProvider implements vscode.WebviewViewProvider {
   }
 
   function renderHistory() {
-    historyList.innerHTML = '';
+    historyList.replaceChildren();
     if (!scanHistory.length) {
-      historyList.innerHTML = '<div class="history-empty">No scan history yet.</div>';
+      const empty = document.createElement('div');
+      empty.className = 'history-empty';
+      empty.textContent = 'No scan history yet.';
+      historyList.appendChild(empty);
       return;
     }
     scanHistory.slice(0, 5).forEach(entry => {
@@ -1419,7 +1436,7 @@ export class ScanPanelProvider implements vscode.WebviewViewProvider {
       }
     } else if (msg.type === 'scanStarted') {
       setRunning(true);
-      setStatus('<span class="spinner"></span> Running CommitGuard scan…', '');
+      setStatus('Running CommitGuard scan…', '');
     } else if (msg.type === 'scanResult') {
       cancelBtn.disabled = false;
       setRunning(false);
@@ -1439,8 +1456,8 @@ export class ScanPanelProvider implements vscode.WebviewViewProvider {
     } else if (msg.type === 'clearResults') {
       currentReport = null;
       resultsEl.classList.add('hidden');
-      findingsEl.innerHTML = '';
-      badgesEl.innerHTML = '';
+      findingsEl.replaceChildren();
+      badgesEl.replaceChildren();
       setStatus('Results cleared.', '');
     }
   });

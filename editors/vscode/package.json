@@ -2,7 +2,7 @@
   "name": "commitguard-kynsec",
   "displayName": "CommitGuard Security Scanner (KynSec)",
   "description": "Offline-first CommitGuard security diagnostics, rule-database scans, interprocedural taint for Python/JS/TS/Java/Go, and GUI launcher.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "publisher": "AmrKhaledEldhshan",
   "license": "Apache-2.0",
   "icon": "media/icon.png",
@@ -21,11 +21,35 @@
     "SCM Providers"
   ],
   "keywords": [
-    "security", "sast", "secrets", "lsp", "commitguard", "pre-commit",
-    "git", "code-scanning", "vulnerability", "static-analysis", "devsecops",
-    "owasp", "taint-analysis", "gitleaks", "semgrep", "devskim", "nuclei",
-    "python", "javascript", "typescript", "java", "go", "rust", "php",
-    "offline", "privacy", "secret-detection", "dependency-scanning", "supply-chain"
+    "security",
+    "sast",
+    "secrets",
+    "lsp",
+    "commitguard",
+    "pre-commit",
+    "git",
+    "code-scanning",
+    "vulnerability",
+    "static-analysis",
+    "devsecops",
+    "owasp",
+    "taint-analysis",
+    "gitleaks",
+    "semgrep",
+    "devskim",
+    "nuclei",
+    "python",
+    "javascript",
+    "typescript",
+    "java",
+    "go",
+    "rust",
+    "php",
+    "offline",
+    "privacy",
+    "secret-detection",
+    "dependency-scanning",
+    "supply-chain"
   ],
   "activationEvents": [
     "onStartupFinished"
@@ -129,7 +153,10 @@
         },
         "commitguard.autoScanScope": {
           "type": "string",
-          "enum": ["staged", "repo"],
+          "enum": [
+            "staged",
+            "repo"
+          ],
           "default": "staged",
           "description": "Scope used for auto-scan on save."
         },
