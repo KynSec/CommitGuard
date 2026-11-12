@@ -7,12 +7,12 @@
 Secrets, risky code, dependencies, and imported analyzer findings. One policy,
 one baseline, one fast gate. No telemetry. No source upload. No waiting for CI.
 
-[![CI](https://github.com/CommitGuard-Sec/CommitGuard/actions/workflows/ci.yml/badge.svg)](https://github.com/CommitGuard-Sec/CommitGuard/actions/workflows/ci.yml)
+[![CI](https://github.com/KynSec/CommitGuard/actions/workflows/ci.yml/badge.svg)](https://github.com/KynSec/CommitGuard/actions/workflows/ci.yml)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Offline first](https://img.shields.io/badge/offline-first-2ea043)](#privacy-model)
 [![Zero telemetry](https://img.shields.io/badge/telemetry-zero-success)](#privacy-model)
-[![Release](https://img.shields.io/badge/release-3.0%20preview-orange)](#release-status)
+[![Release](https://img.shields.io/badge/release-3.4.1-blue)](#release-status)
 
 [Quickstart](#quickstart-in-60-seconds) · [Why CommitGuard](#why-commitguard) · [Features](#feature-matrix) · [CLI](#cli-at-a-glance) · [Architecture](#architecture) · [Docs](#documentation)
 
@@ -23,7 +23,7 @@ one baseline, one fast gate. No telemetry. No source upload. No waiting for CI.
 ```text
 $ commit-guard scan --staged
 
-  COMMITGUARD  policies: balanced  rules: 418  mode: staged diff
+  COMMITGUARD  policies: balanced  rules: 640  mode: staged diff
   ------------------------------------------------------------
   CRITICAL  0    HIGH  1    MEDIUM  1    LOW  0    INFO  0
   ------------------------------------------------------------
@@ -55,11 +55,11 @@ CommitGuard moves the control point to the developer's local loop.
 ## Quickstart in 60 Seconds
 
 ```bash
-# Install with pipx. Use the official GitHub source until the first PyPI release.
-pipx install "git+https://github.com/CommitGuard-Sec/CommitGuard.git"
+# Install the signed 3.4.1 wheel from GitHub Releases.
+pipx install "https://github.com/KynSec/CommitGuard/releases/download/v3.4.1/commit_guard-3.4.1-py3-none-any.whl"
 
-# Or, once published:
-# pipx install commit-guard
+# Or install from source:
+# pipx install "git+https://github.com/KynSec/CommitGuard.git"
 
 # Initialize in any Git repository
 cd /path/to/your/repo
@@ -84,21 +84,35 @@ hook, and preserves your existing configuration and ignore files.
 
 ### Release status
 
-CommitGuard is on the **3.0** line. GitHub source installs work today; pin a
-release tag or commit SHA for production use.
+CommitGuard **3.4.1** is the current release. All four planned phases (0–4) are
+implemented. GitHub Releases provide signed wheels, sdists, a single-file
+zipapp, the VS Code extension, SBOMs, build provenance, and container images.
+The remaining Phase 4 organizational evidence is tracked in
+[Phase 4 exit](docs/PHASE4-EXIT.md).
+
+| Phase | Status |
+|---|---|
+| 0 — Hygiene | Complete |
+| 1 — MVP | Complete |
+| 2 — Credible 3.0 | Complete |
+| 3 — Category tool | Complete |
+| 4 — Ecosystem | Implemented and released; external evidence pending |
+| 5 — Production hardening & adoption | Next |
+| 6 — Team and platform scale | Planned |
+| 7 — Detection depth & ecosystem maturity | Planned |
 
 ## Install Options
 
 | Method | Command | Best for |
 |---|---|---|
-| pipx | `pipx install "git+https://github.com/CommitGuard-Sec/CommitGuard.git"` | Isolated CLI install today |
-| PyPI | `pipx install commit-guard` | After the first release |
-| pip | `python -m pip install "git+https://github.com/CommitGuard-Sec/CommitGuard.git"` | Existing virtual environments |
-| Source | `git clone https://github.com/CommitGuard-Sec/CommitGuard.git` | Development and review |
-| VS Code | [Install extension](https://marketplace.visualstudio.com/items?itemName=AmrKhaledEldhshan.commitguard-kynsec) (`ext install AmrKhaledEldhshan.commitguard-kynsec`) | Live diagnostics and rule-database scan panel |
+| pipx | `pipx install "https://github.com/KynSec/CommitGuard/releases/download/v3.4.1/commit_guard-3.4.1-py3-none-any.whl"` | Isolated CLI install from the signed release |
+| PyPI | `pipx install commit-guard` | After trusted publishing is enabled |
+| pip | `python -m pip install "https://github.com/KynSec/CommitGuard/releases/download/v3.4.1/commit_guard-3.4.1-py3-none-any.whl"` | Existing virtual environments |
+| Source | `git clone https://github.com/KynSec/CommitGuard.git` | Development and review |
+| VS Code | [Install release VSIX](https://github.com/KynSec/CommitGuard/releases/download/v3.4.1/commitguard-kynsec-1.0.1.vsix) (`code --install-extension commitguard-kynsec-1.0.1.vsix`) | Live diagnostics and the 1.0.1 scan panel |
 | pre-commit | `commit-guard install . --no-hook` | Framework-managed hooks |
-| GitHub Action | `uses: CommitGuard-Sec/CommitGuard@<tag-or-sha>` | CI enforcement |
-| Docker | `docker build -t commitguard . && docker run --rm -v "$PWD:/workspace" commitguard scan --staged` | Isolated or CI runs |
+| GitHub Action | `uses: KynSec/CommitGuard@v3.4.1` | CI enforcement |
+| Docker | `docker pull ghcr.io/kynsec/commitguard:v3.4.1` | Isolated or CI runs |
 | Homebrew | Formula in `packaging/homebrew/commitguard.rb` | macOS/Linux package management |
 | Scoop | Manifest in `packaging/scoop/commitguard.json` | Windows package management |
 
@@ -106,16 +120,24 @@ Requirements: **Python 3.11+**, **git**, and **PyYAML 6+** (installed
 automatically). Linux, macOS, Windows, Git worktrees, and custom
 `core.hooksPath` are supported.
 
+The GHCR package may require `docker login ghcr.io` until its visibility is set
+to public. In-repo Homebrew and Scoop manifests are updated for 3.4.1; upstream
+submission is tracked as part of Phase 5.
+
 ### VS Code extension
 
-Install [CommitGuard Security Scanner (KynSec)](https://marketplace.visualstudio.com/items?itemName=AmrKhaledEldhshan.commitguard-kynsec)
-from the Marketplace, or build the VSIX from `editors/vscode/`. The extension
-starts the local language server for live diagnostics and adds an Activity Bar
-panel that scans any combination of rule databases (`custom`, `gitleaks`,
-`nuclei`, `devskim`, `semgrep`, `semgrep:semgrep_python`, `python_ast`,
-`javascript_ast`), scans the whole repository or the staged diff, opens findings
-at the reported line, and launches `commit-guard gui` in an integrated terminal.
-It runs only in trusted workspaces.
+Install the signed `commitguard-kynsec-1.0.1.vsix` from the
+[3.4.1 release](https://github.com/KynSec/CommitGuard/releases/download/v3.4.1/commitguard-kynsec-1.0.1.vsix),
+or build it from `editors/vscode/`. Marketplace publication is pending.
+
+The extension starts the local language server for live diagnostics and adds an
+Activity Bar scan panel. Version 1.0.1 can scan the current file, staged
+changes, or the full repository; select any combination of rule databases
+(`custom`, `gitleaks`, `nuclei`, `devskim`, `semgrep`,
+`semgrep:semgrep_python`, `python_ast`, `javascript_ast`, `java_ast`,
+`go_ast`); scan on save; export JSON; browse the last 20 scans in the History
+tab; and show finding counts in the status bar. It runs only in trusted
+workspaces.
 
 ## Feature Matrix
 
@@ -125,6 +147,14 @@ It runs only in trusted workspaces.
 | Secret detection | 220+ gitleaks-style rules with entropy, keywords, path filters, and allowlists. Values are redacted by default. | Yes |
 | SAST | 280+ curated native and MIT-licensed DevSkim rules for Python, JS/TS, Go, Java, PHP, Ruby, Rust, C/C++, shell, frameworks, web, CI, Kubernetes, Terraform, and Docker. | Yes |
 | Python + JS/TS taint | Standard-library AST checks for request/input flows into SQL, shell, code-exec, SSRF, path, and XSS sinks, with cross-file helper summaries for Python. | Yes |
+| Interprocedural taint | Cross-file summaries for JavaScript/TypeScript, Java, and Go wrappers, plus Python helper flows. | Yes |
+| SCA reachability + VEX | Import evidence for first-party code, OpenVEX/CycloneDX VEX import/export, and non-blocking `not_affected`/`fixed` decisions. | Yes |
+| Signed rule packs + registry | HMAC-signed packs, digest-pinned git registry, install/verify/sign/remove, and revocation. | Yes |
+| Local-first AI assistant | Deterministic, redacted, token-bounded context packages; remote providers are disabled unless explicitly enabled. | Yes / opt-in |
+| AI evaluation + leaderboard | Reproducible AI evaluation and benchmark leaderboard artifacts. | Yes |
+| Native binaries | Optional Linux/macOS/Windows builds for environments without Python. | Yes |
+| Governance + security response | Maintainer council, release managers, key custodians, CODEOWNERS, and a 48-hour handoff runbook. | Yes |
+| VS Code 1.0.1 | Current-file, staged, and repo scans; scan-on-save; history; JSON export; status-bar counts. | Yes |
 | Dependencies | Pinned-dependency checks against an offline OSV snapshot with optional HMAC-signed sidecars, plus opt-in OSV.dev lookup. | Yes / opt-in |
 | Analyzer interop | Normalize and merge SARIF or native output from Semgrep, CodeQL, Trivy, Grype, Checkov, Bandit, and gitleaks. | Yes |
 | SBOM and licenses | CycloneDX 1.6, SPDX 2.3, and an allow/deny/review license policy with separate exit status. | Yes |
@@ -178,7 +208,15 @@ commit-guard watch . --once --all          # one audit scan, then exit
 commit-guard lsp .                         # stdio language server
 
 # Ecosystem surfaces
+commit-guard scan --sca-reachability
 commit-guard compliance . --report report.json --pack owasp-top10-2021
+commit-guard vex export --report report.json --output openvex.json
+commit-guard vex apply --report report.json --vex openvex.json
+commit-guard ai explain --report report.json --fingerprint <fp>
+commit-guard ai context --report report.json --output context.json
+commit-guard packs install --source ./pack
+commit-guard packs verify --dir ~/.config/commitguard/packs
+commit-guard packs registry-install --registry registry.json --name <pack>
 commit-guard plugin list
 commit-guard plugin install --source plugins/example
 commit-guard plugin verify --dir plugins
@@ -270,6 +308,10 @@ Core modules:
 - `core/scanner.py` applies path, context, entropy, allowlist, suppression, and
   redaction rules.
 - `core/engines/` provides the isolated regex and AST engine adapters.
+- `core/interprocedural.py` builds cross-file taint summaries for JS/TS, Java, and Go.
+- `core/reachability.py` records SCA import evidence; `core/vex.py` applies VEX decisions.
+- `core/rule_packs.py` verifies, signs, installs, and resolves signed third-party packs.
+- `core/ai_assistant.py` builds redacted, local-first context packages.
 - `core/policy.py` and `core/triage.py` turn findings into a deterministic gate.
 - `core/reporter.py` writes every output format, including SARIF 2.1.0.
 - `gui_server.py` serves the token-protected loopback control center.
@@ -299,8 +341,11 @@ without a shell inside the repository. Hooks and CI never start the GUI.
 
 ## Privacy Model
 
-- **No telemetry.** CommitGuard does not phone home, collect usage data, or use
-  an LLM service.
+- **No telemetry.** CommitGuard does not phone home, collect usage data, or call
+  an LLM by default.
+- **Local-first AI.** `commit-guard ai` builds deterministic, redacted context
+  packages locally; remote providers require `--allow-network` and explicit
+  configuration.
 - **No source upload.** A normal scan reads the local index, working tree, or
   selected reports and writes local output.
 - **Explicit network surfaces.** `--sca-online`, GitHub report/PR actions, and
@@ -334,7 +379,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: CommitGuard-Sec/CommitGuard@main
+      - uses: KynSec/CommitGuard@v3.4.1
         with:
           format: sarif
           scan-mode: all
@@ -353,9 +398,10 @@ report-artifact examples.
 ## Performance
 
 The reference benchmark runs **120 files x 20 added lines** with a warm rule
-cache and a median of **~0.96 s** on the development machine used for this
-release. First scans after a rule-pack change parse and cache the rules, so they
-take longer. The cache invalidates automatically when rule files change.
+cache. CI enforces a **2,000 ms** median ceiling; recorded medians vary by host
+and are published in [BASELINE.md](docs/BASELINE.md). First scans after a
+rule-pack change parse and cache the rules, so they take longer. The cache
+invalidates automatically when rule files change.
 
 ```bash
 commit-guard scan --staged
@@ -369,6 +415,11 @@ commit-guard scan --staged --no-cache   # debugging or read-only environments
 - Python taint uses conservative cross-file function summaries. Ambiguous
   helpers with the same name can increase false positives, and arbitrary
   abstractions, aliases, and sanitizers are still not fully modelled.
+- Interprocedural summaries for JS/TS, Java, and Go are name-based and
+  conservative; Java and Go analysis is syntax-driven, not type-resolved.
+- Native binaries are convenience artifacts, not the canonical signed release.
+- The benchmark leaderboard does not compare against commercial products.
+- Local AI context is review material, not a substitute for human triage.
 - Most Semgrep rules require AST support. CommitGuard executes regex-compatible
   rules and records AST-only rules as skipped rather than approximating them.
 - Offline SCA depends on the quality and freshness of your local OSV snapshot.
@@ -415,10 +466,10 @@ Apache-2.0. See [LICENSE](LICENSE), [NOTICE](NOTICE), and
 | | |
 |---|---|
 | **Lead Author & Creator** | **Amr Khaled Ahmed (Amr Eldhshan)** |
-| **GitHub Profile** | [@AmrEldhshan](https://github.com/AmrEldhshan) |
+| **GitHub Profile** | [@Amr-Khaled-Ahmed](https://github.com/Amr-Khaled-Ahmed) |
 | **Email** | [amr171516@gmail.com](mailto:amr171516@gmail.com) |
-| **Official Organization** | [CommitGuard Security (@CommitGuard-Sec)](https://github.com/CommitGuard-Sec) |
-| **Official Repository** | [github.com/CommitGuard-Sec/CommitGuard](https://github.com/CommitGuard-Sec/CommitGuard) |
+| **Official Organization** | [CommitGuard Security (@KynSec)](https://github.com/KynSec) |
+| **Official Repository** | [github.com/KynSec/CommitGuard](https://github.com/KynSec/CommitGuard) |
 
 For security reports, follow [SECURITY.md](SECURITY.md). For bugs and feature
-requests, use the [official issue tracker](https://github.com/CommitGuard-Sec/CommitGuard/issues).
+requests, use the [official issue tracker](https://github.com/KynSec/CommitGuard/issues).
