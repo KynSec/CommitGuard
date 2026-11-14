@@ -1,0 +1,525 @@
+# CommitGuard hardening pack — project-authored, high-signal checks.
+#
+# These rules target dangerous defaults and common injection sinks that are
+# frequently missed by generic secret/SAST packs. They are line-oriented and
+# deliberately conservative: prefer a review prompt over a noisy blocker.
+#
+# License: Apache-2.0 (same as CommitGuard). See rules/PROVENANCE.yaml.
+
+rules:
+  # ------------------------------------------------------------------------
+  # Python
+  # ------------------------------------------------------------------------
+  - id: cg-python-requests-no-timeout
+    description: requests call without a timeout can hang a worker indefinitely.
+    severity: medium
+    category: sast
+    confidence: medium
+    languages: [python]
+    tags: [network, availability]
+    cwe: CWE-400
+    regex: '\brequests\.(?:get|post|put|patch|delete|head|options)\s*\((?![^\n]*\btimeout\s*=)'
+
+  - id: cg-python-os-exec
+    description: os.exec* replaces the process and can execute attacker-controlled commands.
+    severity: high
+    category: sast
+    confidence: high
+    languages: [python]
+    tags: [command-injection]
+    cwe: CWE-78
+    regex: '\bos\.exec(?:l|le|lp|v|ve|vp|vpe)\s*\('
+
+  - id: cg-python-os-spawn
+    description: os.spawn* executes an external command without a shell-safe argument boundary.
+    severity: medium
+    category: sast
+    confidence: medium
+    languages: [python]
+    tags: [command-injection]
+    cwe: CWE-78
+    regex: '\bos\.spawn(?:l|le|lp|v|ve|vp|vpe)\s*\('
+
+  - id: cg-python-mark-safe
+    description: Django mark_safe() bypasses autoescaping and can enable XSS.
+    severity: medium
+    category: web
+    confidence: medium
+    languages: [python]
+    tags: [django, xss]
+    cwe: CWE-79
+    regex: '\bmark_safe\s*\('
+
+  - id: cg-python-chmod-world-writable
+    description: World-writable permissions on a file or directory are unsafe.
+    severity: medium
+    category: sast
+    confidence: high
+    languages: [python]
+    tags: [filesystem, permissions]
+    cwe: CWE-732
+    regex: '\bos\.chmod\s*\([^\n)]*\b(?:0o?)?777\b'
+
+  - id: cg-python-ssl-wrap-socket
+    description: ssl.wrap_socket() is deprecated and defaults to insecure protocol settings.
+    severity: high
+    category: sast
+    confidence: high
+    languages: [python]
+    tags: [tls, crypto]
+    cwe: CWE-295
+    regex: '\bssl\.wrap_socket\s*\('
+
+  - id: cg-python-ssl-old-protocol
+    description: An obsolete SSL/TLS protocol version is selected explicitly.
+    severity: high
+    category: sast
+    confidence: high
+    languages: [python]
+    tags: [tls, crypto]
+    cwe: CWE-326
+    regex: '\bssl\.PROTOCOL_(?:SSLv2|SSLv3|TLSv1|TLSv1_1)\b'  # commit-guard-ignore: devskim-DS169125, devskim-DS169126
+
+  - id: cg-python-django-extra-sql
+    description: QuerySet.extra() accepts raw SQL fragments and is a common injection point.
+    severity: high
+    category: sast
+    confidence: medium
+    languages: [python]
+    tags: [django, sqli]
+    cwe: CWE-89
+    regex: '\.extra\s*\('
+
+  - id: cg-python-paramiko-exec-command
+    description: Paramiko exec_command() runs a remote shell command and needs strict input validation.
+    severity: medium
+    category: sast
+    confidence: medium
+    languages: [python]
+    tags: [command-injection, ssh]
+    cwe: CWE-78
+    regex: '\.exec_command\s*\('
+
+  - id: cg-python-jinja-from-string
+    description: Building a Jinja template from a runtime string can enable server-side template injection.
+    severity: medium
+    category: web
+    confidence: medium
+    languages: [python]
+    tags: [ssti, template]
+    cwe: CWE-1336
+    regex: '\bfrom_string\s*\('
+
+  # ------------------------------------------------------------------------
+  # JavaScript / TypeScript
+  # ------------------------------------------------------------------------
+  - id: cg-javascript-child-process-shell-true
+    description: child_process with shell true exposes command injection through shell metacharacters.
+    severity: high
+    category: sast
+    confidence: high
+    languages: [javascript, typescript]
+    tags: [command-injection, node]
+    cwe: CWE-78
+    regex: '\bshell\s*:\s*true\b'
+
+  - id: cg-javascript-exec-template
+    description: child_process exec() with an interpolated template string can enable command injection.
+    severity: high
+    category: sast
+    confidence: high
+    languages: [javascript, typescript]
+    tags: [command-injection, node]
+    cwe: CWE-78
+    regex: '\bexec\s*\(\s*`[^`]*\$\{'
+
+  - id: cg-javascript-vm-run-untrusted
+    description: vm.runIn*Context() executes strings as code; never pass untrusted input.
+    severity: medium
+    category: sast
+    confidence: medium
+    languages: [javascript, typescript]
+    tags: [code-injection, node]
+    cwe: CWE-95
+    regex: '\bvm\.runIn(?:New|This)Context\s*\(\s*(?!["''`])'
+
+  - id: cg-javascript-jwt-decode
+    description: jwt.decode() parses a token without verifying its signature.
+    severity: high
+    category: authz
+    confidence: high
+    languages: [javascript, typescript]
+    tags: [jwt, authentication]
+    cwe: CWE-347
+    regex: '\bjwt\.decode\s*\('
+
+  - id: cg-javascript-node-tls-reject-off
+    description: Disabling Node TLS certificate verification exposes all HTTPS traffic to interception.
+    severity: high
+    category: sast
+    confidence: high
+    languages: [javascript, typescript]
+    tags: [tls, node]
+    cwe: CWE-295
+    regex: '\bNODE_TLS_REJECT_UNAUTHORIZED\s*=\s*["\x27]?0\b'
+
+  - id: cg-javascript-create-cipher-deprecated
+    description: crypto.createCipher/createDecipher are deprecated and derive keys insecurely.
+    severity: high
+    category: sast
+    confidence: high
+    languages: [javascript, typescript]
+    tags: [crypto]
+    cwe: CWE-327
+    regex: '\bcrypto\.create(?:Cipher|Decipher)(?!iv)\s*\('
+
+  - id: cg-javascript-sequelize-query-template
+    description: Sequelize query() with an interpolated template string can enable SQL injection.
+    severity: high
+    category: sast
+    confidence: high
+    languages: [javascript, typescript]
+    tags: [sqli, database]
+    cwe: CWE-89
+    regex: '\.query\s*\(\s*`[^`]*\$\{'
+
+  - id: cg-javascript-knex-raw-template
+    description: Knex raw() with an interpolated template string can enable SQL injection.
+    severity: high
+    category: sast
+    confidence: high
+    languages: [javascript, typescript]
+    tags: [sqli, database]
+    cwe: CWE-89
+    regex: '\bknex\.raw\s*\(\s*`[^`]*\$\{'
+
+  - id: cg-javascript-node-serialize
+    description: node-serialize unserialize() can execute arbitrary code from untrusted input.
+    severity: critical
+    category: sast
+    confidence: high
+    languages: [javascript, typescript]
+    tags: [deserialization, node]
+    cwe: CWE-502
+    regex: '\bunserialize\s*\('
+
+  - id: cg-javascript-cors-default
+    description: cors() with no origin policy allows every website to read responses.
+    severity: medium
+    category: web
+    confidence: medium
+    languages: [javascript, typescript]
+    tags: [cors, misconfiguration]
+    cwe: CWE-942
+    regex: '\bapp\.use\s*\(\s*cors\s*\(\s*\)\s*\)'
+
+  - id: cg-javascript-mongoose-where
+    description: MongoDB $where accepts JavaScript and can enable server-side code execution.
+    severity: medium
+    category: sast
+    confidence: medium
+    languages: [javascript, typescript]
+    tags: [nosql, database]
+    cwe: CWE-943
+    regex: '\$where\b'
+
+  - id: cg-javascript-open-redirect
+    description: Redirecting to a request-controlled value enables open redirects and phishing.
+    severity: medium
+    category: web
+    confidence: medium
+    languages: [javascript, typescript]
+    tags: [open-redirect]
+    cwe: CWE-601
+    regex: '\b(?:res\.redirect|window\.location(?:\.href)?\s*=)\s*\(?\s*(?:req|request)\.(?:query|params|body)'
+
+  # ------------------------------------------------------------------------
+  # Java
+  # ------------------------------------------------------------------------
+  - id: cg-java-jndi-lookup
+    description: JNDI lookup with a runtime name can enable remote class loading and code execution.
+    severity: high
+    category: sast
+    confidence: medium
+    languages: [java]
+    tags: [jndi, injection]
+    cwe: CWE-74
+    regex: '\b(?:InitialContext|ctx|context)\.lookup\s*\(\s*(?!["\x27])'
+
+  - id: cg-java-new-random
+    description: java.util.Random is not cryptographically secure; use SecureRandom for secrets.
+    severity: medium
+    category: sast
+    confidence: medium
+    languages: [java]
+    tags: [crypto, randomness]
+    cwe: CWE-338
+    regex: '\bnew\s+Random\s*\('
+
+  - id: cg-java-cross-origin-wildcard
+    description: A wildcard CrossOrigin origin allows any website to call the endpoint.
+    severity: medium
+    category: web
+    confidence: high
+    languages: [java]
+    tags: [cors, spring]
+    cwe: CWE-942
+    regex: '@CrossOrigin\s*\([^)]*origins\s*=\s*["\x27]\*["\x27]'
+
+  - id: cg-java-createquery-concat
+    description: JPQL createQuery() built with string concatenation can enable injection.
+    severity: high
+    category: sast
+    confidence: high
+    languages: [java]
+    tags: [sqli, jpa]
+    cwe: CWE-89
+    regex: '\bcreateQuery\s*\([^)\n]*\+'
+
+  # ------------------------------------------------------------------------
+  # Go
+  # ------------------------------------------------------------------------
+  - id: cg-go-math-rand-secret
+    description: math/rand is predictable; use crypto/rand for tokens, keys, and nonces.
+    severity: medium
+    category: sast
+    confidence: medium
+    languages: [go]
+    tags: [crypto, randomness]
+    cwe: CWE-338
+    regex: '(?i)\b(?:token|password|secret|nonce|salt)\w*\s*:?=\s*[^\n]*\brand\.(?:Int|Intn|Int31|Int63|Float64|Read)\s*\('
+
+  - id: cg-go-http-dir-root
+    description: Serving http.Dir("/") exposes the entire filesystem through the web server.
+    severity: medium
+    category: web
+    confidence: high
+    languages: [go]
+    tags: [path-traversal, http]
+    cwe: CWE-22
+    regex: '\bhttp\.Dir\s*\(\s*["\x27]/["\x27]\s*\)'
+
+  - id: cg-go-world-writable
+    description: Creating files or directories with mode 0777 grants access to every local user.
+    severity: medium
+    category: sast
+    confidence: high
+    languages: [go]
+    tags: [filesystem, permissions]
+    cwe: CWE-732
+    regex: '\b(?:os\.Chmod|os\.WriteFile|ioutil\.WriteFile)\s*\([^\n)]*\b0?777\b'
+
+  - id: cg-go-weak-cipher-import
+    description: DES and RC4 are broken ciphers and must not be used for new designs.  # commit-guard-ignore: devskim-DS106863
+    severity: high
+    category: sast
+    confidence: high
+    languages: [go]
+    tags: [crypto]
+    cwe: CWE-327
+    regex: '"(?:crypto/des|crypto/rc4)"'
+
+  # ------------------------------------------------------------------------
+  # PHP
+  # ------------------------------------------------------------------------
+  - id: cg-php-shell-exec-family
+    description: PHP shell execution functions can run attacker-controlled commands.
+    severity: high
+    category: sast
+    confidence: high
+    languages: [php]
+    tags: [command-injection]
+    cwe: CWE-78
+    regex: '\b(?:shell_exec|passthru|popen|proc_open)\s*\('
+
+  - id: cg-php-extract-request
+    description: extract() on request data creates attacker-controlled local variables.
+    severity: high
+    category: sast
+    confidence: high
+    languages: [php]
+    tags: [variable-injection]
+    cwe: CWE-621
+    regex: '\bextract\s*\(\s*\$_(?:GET|POST|REQUEST|COOKIE)'
+
+  - id: cg-php-create-function
+    description: create_function() compiles code at runtime and is removed in PHP 8.
+    severity: critical
+    category: sast
+    confidence: high
+    languages: [php]
+    tags: [code-injection]
+    cwe: CWE-95
+    regex: '\bcreate_function\s*\('
+
+  - id: cg-php-curl-verify-off
+    description: Disabling CURLOPT_SSL_VERIFYPEER or VERIFYHOST breaks TLS verification.
+    severity: high
+    category: sast
+    confidence: high
+    languages: [php]
+    tags: [tls, crypto]
+    cwe: CWE-295
+    regex: '\bCURLOPT_SSL_VERIFY(?:PEER|HOST)\s*,\s*(?:false|0)\b'
+
+  - id: cg-php-preg-replace-e
+    description: The preg_replace /e modifier evaluates the replacement as PHP code.
+    severity: high
+    category: sast
+    confidence: high
+    languages: [php]
+    tags: [code-injection]
+    cwe: CWE-95
+    regex: '\bpreg_replace\s*\(\s*["\x27][^"\x27]*/[a-z]*e[a-z]*["\x27]'
+
+  - id: cg-php-header-open-redirect
+    description: A Location header built from request data enables open redirects.
+    severity: medium
+    category: web
+    confidence: medium
+    languages: [php]
+    tags: [open-redirect]
+    cwe: CWE-601
+    regex: '\bheader\s*\(\s*["\x27]Location:\s*["\x27]\s*\.\s*\$_(?:GET|POST|REQUEST)'
+
+  # ------------------------------------------------------------------------
+  # Ruby
+  # ------------------------------------------------------------------------
+  - id: cg-ruby-send-params
+    description: send() with a request-controlled method name can invoke unintended methods.
+    severity: high
+    category: authz
+    confidence: high
+    languages: [ruby]
+    tags: [mass-assignment, injection]
+    cwe: CWE-470
+    regex: '\.send\s*\(\s*params\b'
+
+  - id: cg-ruby-constantize-params
+    description: constantize() on request data can instantiate unintended classes.
+    severity: high
+    category: authz
+    confidence: high
+    languages: [ruby]
+    tags: [injection]
+    cwe: CWE-470
+    regex: '\bparams\b[^\n]*\.constantize\b'
+
+  - id: cg-ruby-erb-new
+    description: ERB.new() on a runtime template can enable server-side template injection.
+    severity: medium
+    category: web
+    confidence: medium
+    languages: [ruby]
+    tags: [ssti, template]
+    cwe: CWE-1336
+    regex: '\bERB\.new\s*\([^\n)]*(?:params|user|input)'
+
+  - id: cg-ruby-render-inline
+    description: 'render inline: with request data can enable server-side template injection.'
+    severity: medium
+    category: web
+    confidence: high
+    languages: [ruby]
+    tags: [ssti, rails]
+    cwe: CWE-1336
+    regex: '\brender\s+inline:\s*params\b'
+
+  # ------------------------------------------------------------------------
+  # C / C++
+  # ------------------------------------------------------------------------
+  - id: cg-c-printf-format
+    description: Passing a variable directly to printf() enables format-string attacks.
+    severity: high
+    category: sast
+    confidence: high
+    languages: [c, cpp]
+    tags: [format-string]
+    cwe: CWE-134
+    regex: '\bprintf\s*\(\s*[A-Za-z_]\w*\s*\)'
+
+  - id: cg-c-popen
+    description: popen() invokes a shell and can execute attacker-controlled commands.
+    severity: high
+    category: sast
+    confidence: high
+    languages: [c, cpp]
+    tags: [command-injection]
+    cwe: CWE-78
+    regex: '\bpopen\s*\('
+
+  # ------------------------------------------------------------------------
+  # Shell
+  # ------------------------------------------------------------------------
+  - id: cg-shell-wget-no-check
+    description: wget with --no-check-certificate disables TLS verification.
+    severity: high
+    category: sast
+    confidence: high
+    languages: [bash]
+    tags: [tls, supply-chain]
+    cwe: CWE-295
+    regex: '\bwget\b[^\n]*--no-check-certificate\b'
+
+  - id: cg-shell-npm-unsafe-perm
+    description: npm --unsafe-perm runs lifecycle scripts with elevated privileges.
+    severity: medium
+    category: supply-chain
+    confidence: medium
+    languages: [bash]
+    tags: [supply-chain, node]
+    cwe: CWE-269
+    regex: '\bnpm\s+(?:install|i)\b[^\n]*--unsafe-perm\b'
+
+  # ------------------------------------------------------------------------
+  # Containers, Kubernetes, Terraform, and CI
+  # ------------------------------------------------------------------------
+  - id: cg-docker-cap-add-all
+    description: Granting all Linux capabilities removes most container isolation.
+    severity: high
+    category: container
+    confidence: high
+    languages: [dockerfile, yaml, bash]
+    tags: [docker, capabilities]
+    cwe: CWE-250
+    regex: '(?i)(?:--cap-add[=\s]+ALL\b|cap_add\s*:\s*\[?\s*-\s*ALL\b)'
+
+  - id: cg-docker-sock-mount
+    description: Mounting the Docker socket gives a container control over the host daemon.
+    severity: high
+    category: container
+    confidence: high
+    languages: [dockerfile, yaml, bash]
+    tags: [docker, container-escape]
+    cwe: CWE-284
+    regex: '/var/run/docker\.sock'
+
+  - id: cg-k8s-host-ipc
+    description: hostIPC shares the host IPC namespace and weakens pod isolation.
+    severity: medium
+    category: container
+    confidence: high
+    languages: [yaml]
+    tags: [kubernetes, misconfiguration]
+    cwe: CWE-250
+    regex: '(?i)\bhostIPC\s*:\s*true\b'
+
+  - id: cg-terraform-public-read-write
+    description: public-read-write ACL exposes storage objects to modification by anyone.
+    severity: high
+    category: iac
+    confidence: high
+    languages: [terraform]
+    tags: [terraform, storage]
+    cwe: CWE-732
+    regex: '(?i)\bacl\s*=\s*["\x27]public-read-write["\x27]'
+
+  - id: cg-terraform-https-only-off
+    description: Disabling HTTPS-only traffic allows unencrypted access to storage.
+    severity: high
+    category: iac
+    confidence: high
+    languages: [terraform]
+    tags: [terraform, tls]
+    cwe: CWE-319
+    regex: '(?i)\benable_https_traffic_only\s*=\s*false\b'

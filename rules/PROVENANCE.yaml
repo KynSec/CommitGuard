@@ -5,7 +5,7 @@
 # redistribution. Run `python -m unittest tests.test_provenance` after changing
 # a rule file or adding a pack.
 schema_version: 1
-updated: 2026-11-09
+updated: 2026-11-14
 checksum_algorithm: sha256
 policy:
   release_rule: "Only sources with status 'cleared' and redistribution 'allowed' may ship in a release artifact."
@@ -181,11 +181,11 @@ sources:
     kind: project-authored
     status: cleared
     project: CommitGuard
-    source_url: https://github.com/CommitGuard-Sec/CommitGuard
+    source_url: https://github.com/KynSec/CommitGuard
     revision: project working tree
     retrieved: 2026-10-26
     license: Apache-2.0
-    license_url: https://github.com/CommitGuard-Sec/CommitGuard/blob/main/LICENSE
+    license_url: https://github.com/KynSec/CommitGuard/blob/main/LICENSE
     redistribution: allowed
     bundled_default: true
     files:
@@ -207,8 +207,10 @@ sources:
         sha256: a9f50909ffbda5356c748cc8e963b2e47e15652f290749b6ad88bd1ea9992063
       - path: rules/general/ai_agent.yaml
         sha256: 81c284702abd78d5f7c5f6fb0f7cfbe998af9f282d978e4d284f5971a250a135
+      - path: rules/general/hardening.yaml
+        sha256: a5c5ec6b4b89aae3e4f98e5b56e55adc001e7afd309edfd7266d7590944350a2
       - path: rules/corpus.yaml
-        sha256: 9324c659b49fa1443d5f12506bef0706ffb1a19d80f88badb4f42d22f2751cc6
+        sha256: 1d522ad0e8fceafc60f79019672da9525a770e0d0ecc753bf1aefc36bd413ee4
         notes: Positive/negative samples for check-rules; not a detection pack.
       - path: rules/nuclei_generic_key.yaml
         sha256: 6d5ae7e2e6f1d204f0dd761a021067f3249c818cc9517cab83011f696b5e0366

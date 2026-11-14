@@ -23,7 +23,7 @@ one baseline, one fast gate. No telemetry. No source upload. No waiting for CI.
 ```text
 $ commit-guard scan --staged
 
-  COMMITGUARD  policies: balanced  rules: 640  mode: staged diff
+  COMMITGUARD  policies: balanced  rules: 701  mode: staged diff
   ------------------------------------------------------------
   CRITICAL  0    HIGH  1    MEDIUM  1    LOW  0    INFO  0
   ------------------------------------------------------------
@@ -97,9 +97,9 @@ The remaining Phase 4 organizational evidence is tracked in
 | 2 — Credible 3.0 | Complete |
 | 3 — Category tool | Complete |
 | 4 — Ecosystem | Implemented and released; external evidence pending |
-| 5 — Production hardening & adoption | Next |
-| 6 — Team and platform scale | Planned |
-| 7 — Detection depth & ecosystem maturity | Planned |
+| 5 — Zero-friction adoption | Next |
+| 6 — Team adoption and trust | Planned |
+| 7 — Default local gate & ecosystem | Planned |
 
 ## Install Options
 
@@ -334,6 +334,10 @@ The console includes overview, scan controls, determinant profile/file/rule
 selection, policy gate, triage, pipelines, fix preview/apply, report PRs,
 baseline management, Git operations, rule inspection, an in-app profiles
 guide, reports, maintenance, and a validated config editor.
+
+![CommitGuard local control center](docs/assets/control-center.png)
+
+*The loopback control center (shown in v3.1.0; v3.4.1 keeps the same layout).*
 
 Security defaults: binds to `127.0.0.1`, requires a per-run token, validates the
 `Host` header, caps request bodies, keeps secrets redacted, and runs pipelines

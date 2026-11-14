@@ -36,7 +36,7 @@ class FixIntegrationTests(unittest.TestCase):
         subprocess.run(["git", "add", name], cwd=self.root, check=True)
 
     def test_fix_updates_file_restages_and_passes(self):
-        self.stage("app.py", "requests.get(url, verify=False)\n")
+        self.stage("app.py", "requests.get(url, verify=False, timeout=30)\n")  # commit-guard-ignore: cg-python-tls-verify-disabled
         code = run_scan(
             repo_dir=self.root,
             quiet=True,

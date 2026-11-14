@@ -138,9 +138,9 @@ The MVP includes the engine protocol, the Finding schema, the policy stage, SARI
 | **Phase 2 — Credible 3.0** | 9–12 months total | Optional Semgrep, taint expansion, LSP, PR fixes, SCA depth, SBOM, signed release. |
 | **Phase 3 — Category tool** | 12–18 months total | IaC/containers, compliance packs, plugins, multi-repo, dashboards, 3.x. |
 | **Phase 4 — Ecosystem** | 18–24 months | Interprocedural taint, reachability SCA, AI assistant, signed packs, future 3.x releases. |
-| **Phase 5 — Production hardening & adoption** | 24–30 months total | Public distribution, Phase 4 evidence, design partners, security review, LTS, and operational drills. |
-| **Phase 6 — Team & platform scale (4.0)** | 30–36 months total | Organization policy, multi-repo visibility, audit, plugin API v2, and CommitGuard 4.0. |
-| **Phase 7 — Detection depth & ecosystem maturity (4.x)** | 36–42 months total | Type-resolved analysis, external pack maintainers, independent benchmarks, and sustainability. |
+| **Phase 5 — Zero-friction adoption** | 24–30 months total | Install anywhere, first scan in minutes, migration paths, and an editor-native loop. |
+| **Phase 6 — Team adoption and trust** | 30–36 months total | Organization policy, shared baselines, audit, multi-repo visibility, and no hosted service. |
+| **Phase 7 — Default local gate & ecosystem** | 36–42 months total | Signed rule registry, plugin and AI-agent ecosystem, community governance, and sustainability. |
 
 With two engineers, compress Phase 2 and Phase 3 by roughly 30–40% (CommitGuard 3.0 in 5–7 months). With three, run detection, platform, and release work in parallel (CommitGuard 3.0 in 3–5 months). Do not compress Phase 0.
 
@@ -1309,7 +1309,7 @@ The goal is not to put a chatbot in a security tool. The goal is to reduce the t
 
 ### 15.1 Capacity assumptions
 
-The estimates below assume one experienced maintainer working roughly 30 focused hours per week, with community contributions for rules and docs. At that pace, a credible CommitGuard 3.0 is a 9–12 month project and the full 3.x vision is 18–24 months. Production adoption and 4.x scale add roughly another 12–18 months. With two engineers, parallelize detection and platform work and target CommitGuard 3.0 in 5–7 months; with three, add release/trust and community and target 3–5 months. Long procurement or legal delays are excluded.
+The estimates below assume one experienced maintainer working roughly 30 focused hours per week, with community contributions for rules and docs. At that pace, a credible CommitGuard 3.0 is a 9–12 month project and the full 3.x vision is 18–24 months. Production adoption, team scale, and ecosystem work add roughly another 12–18 months. With two engineers, parallelize detection and platform work and target CommitGuard 3.0 in 5–7 months; with three, add release/trust and community and target 3–5 months. Long procurement or legal delays are excluded.
 
 The plan is deliberately front-loaded with the work that is hardest to retrofit: licensing, schema, benchmark, and policy.
 
@@ -1447,79 +1447,92 @@ Exit criteria:
 
 Cut line: this phase is explicitly allowed to slip. Phases 1–3 must not.
 
-### 15.7 Phase 5 — Production hardening and adoption (months 24–30)
+### 15.7 Phase 5 — Zero-friction adoption (months 24–30)
 
 **Status:** Next.
 
-**Goal:** make the 3.4.1 feature set boring to operate and easy to adopt. Phase 5
-closes the external Phase 4 evidence and turns signed releases into supported
-distribution channels.
+**Goal:** make CommitGuard the fastest way for an individual developer to add a
+local security gate. Every install channel, onboarding path, migration path, and
+editor integration must remove work rather than add it.
 
 Deliverables:
 
-- **Close Phase 4 evidence:** independent benchmark reproduction, at least one
-  external rule-pack maintainer, a recorded maintainer-absence release dry run,
-  and a design-partner replacement review.
-- **Distribution:** PyPI trusted publishing, public GHCR package, VS Code
-  Marketplace, Homebrew tap/core submission, Scoop bucket, and notarized native
-  binaries with reproducible builds and SLSA provenance.
-- **Operational hardening:** performance budgets in CI, cache correctness and
-  corruption recovery, upgrade and rollback drills, an LTS policy, and an
-  incident response exercise.
-- **Security assurance:** independent review of the hook, GUI, plugin,
-  rule-pack, and AI context boundaries; refresh the threat model; burn down
-  shipping-code CodeQL alerts; expand fuzzing for parsers and report ingestion.
-- **Adoption:** design-partner program, migration guides from Semgrep, gitleaks,
-  Trivy, and generic SARIF pipelines, reference CI configurations, and measured
-  onboarding time.
-- **Documentation:** supported-platform matrix, production runbook,
-  troubleshooting index, and a public compatibility policy.
+- **Install anywhere:** PyPI trusted publishing, public GHCR, Homebrew,
+  Scoop, winget, GitHub Releases, the GitHub Action, pre-commit, and a
+  single-file zipapp, all shipping the same version, checksums, SBOM, and
+  provenance.
+- **First scan in minutes:** a guided `commit-guard init` that detects
+  languages, package managers, CI, and existing scanners; safe defaults for a
+  first scan; `commit-guard doctor` that diagnoses and repairs common setup
+  failures; and a one-command demo repository.
+- **Migration without loss:** importers for gitleaks configs, Semgrep rules and
+  results, Trivy and generic SARIF, SonarQube issues, and existing pre-commit
+  configurations. Preserve baselines, ignores, and triage decisions; support a
+  shadow mode that runs beside the incumbent tool before cutover.
+- **Editor-native loop:** VS Code Marketplace and JetBrains releases, LSP
+  diagnostics, scan-on-save, inline fixes, and a first-run walkthrough. The
+  editor is the primary interface for individuals, not an afterthought.
+- **Adoption content:** quickstarts for the ten most-used languages and
+  frameworks, migration cookbooks, sample repositories, short videos, a
+  troubleshooting index, and an error catalog with fixes.
+- **Trust prerequisites:** close the remaining Phase 4 external evidence,
+  publish the supported-platform matrix, and run the first public security
+  review of the install and update paths.
+- **Measurement without telemetry:** use public download and install counts,
+  opt-in surveys, issue labels, and design-partner interviews. Do not add
+  telemetry to the default scan path.
 
 Exit criteria:
 
-- All four Phase 4 exit criteria are evidenced and linked from
-  `docs/PHASE4-EXIT.md`.
-- A clean machine can install from PyPI, VS Code Marketplace, GHCR, Homebrew,
-  and Scoop using only documented commands.
-- At least three design partners run CommitGuard in CI for 30 consecutive days
-  with no unresolved P1 defect (target; record names only with permission).
-- Shipping code has zero open critical/high CodeQL alerts, or every exception is
-  documented and time-bounded.
-- An independent security review finds no open critical or high issue in the
-  trust boundaries, and remediation is verified.
-- A release manager other than the lead performs a full signed release and a
-  rollback from artifacts alone.
-- The 2,000 ms median benchmark gate passes on the reference host for four
-  consecutive weekly runs.
+- On clean macOS, Linux, and Windows machines, the median install-to-first-scan
+  time is under five minutes using only documented commands.
+- PyPI, Homebrew, Scoop, winget, GHCR, the Action, pre-commit, and the editor
+  extensions all install the same release and pass a smoke test.
+- A developer can migrate a gitleaks or Semgrep setup in under fifteen minutes
+  without losing an existing baseline or suppression.
+- Quickstarts cover at least ten languages/frameworks, and each one is exercised
+  in CI.
+- At least 1,000 external developers complete a first scan, and at least 25
+  design partners run CommitGuard weekly for 30 days (record names only with
+  permission).
+- The editor extensions and the CLI produce identical findings on the reference
+  corpus.
 
-Cut line: defer notarized binaries, paid support, and additional package
-managers. Do not defer PyPI, public container visibility, the security review,
-Phase 4 evidence, or the release/rollback drill.
+Cut line: defer winget, JetBrains, and native binaries if necessary. Do not
+defer PyPI, public container visibility, the guided init, migration importers,
+or the editor loop.
 
-### 15.8 Phase 6 — Team and platform scale, CommitGuard 4.0 (months 30–36)
+### 15.8 Phase 6 — Team adoption and trust (months 30–36)
 
 **Status:** Planned.
 
-**Goal:** scale from one repository and one developer to an organization without
-becoming a hosted platform.
+**Goal:** make CommitGuard the default gate for teams and organizations without
+turning it into a hosted platform. Everything must work from git and CI
+artifacts.
 
 Deliverables:
 
-- **4.0 architecture:** organization-level configuration inheritance, signed
-  policy bundles, shared baselines and triage state stored in git or CI
-  artifacts, multi-repo orchestration, and a versioned migration path.
-- **Identity and audit:** role enforcement through existing git/CI identity,
-  approval records, immutable audit export, and separation of duties for policy
-  and baseline changes.
-- **Fleet visibility:** multi-repo trends, ownership routing, SLA tracking, and
-  SIEM/SARIF exports from local or CI-generated artifacts; no mandatory server.
+- **Organization policy:** signed policy bundles stored in git, inheritance
+  across repositories, per-team profiles, exceptions with owner and expiry, and
+  approval through CODEOWNERS or the existing CI identity system.
+- **Shared state:** baselines and triage decisions stored in git or CI
+  artifacts, conflict-free merges, drift detection, and a documented recovery
+  path when shared state is corrupted.
+- **Workflow integrations:** first-class PR annotations and checks for GitHub,
+  GitLab, Bitbucket, and Azure DevOps; SARIF upload; Jira and ServiceNow
+  exports; Slack and Teams notifications through CI; and SIEM-ready audit
+  export.
+- **Fleet visibility:** multi-repo trends, ownership routing, SLA tracking, risk
+  acceptance, and executive reporting generated from local or CI artifacts. No
+  mandatory server and no source upload.
 - **Scale:** incremental scan correctness at monorepo size, bounded memory,
-  parallel workers, cache sharing with integrity checks, and performance budgets
-  per repository size.
-- **Extensibility:** plugin API v2, policy authoring SDK, report schema 4, and
-  compatibility tests for external plugins and rule packs.
-- **Release:** CommitGuard 4.0 with an LTS line, upgrade tooling, and a tested
-  migration from 3.x.
+  parallel workers, integrity-checked cache sharing, and published performance
+  budgets by repository size.
+- **Adoption program:** reference architectures, rollout playbooks, a design
+  partner cohort, migration office hours, and a published compatibility policy
+  for 3.x and 4.x.
+- **Release:** CommitGuard 4.0 with organization configuration, plugin API v2,
+  report schema 4, and a tested migration from 3.x.
 
 Exit criteria:
 
@@ -1531,57 +1544,64 @@ Exit criteria:
   artifacts without a hosted service.
 - A monorepo fixture within the documented size envelope meets the published
   latency and memory budgets.
-- At least two external plugins pass the v2 contract suite.
+- At least three organizations run the team workflow for 90 consecutive days
+  with no unresolved P1 defect.
 - The 4.0 release candidate passes the benchmark, upgrade, rollback, and
-  cross-platform gates; 3.x LTS support terms are published.
+  cross-platform gates; 3.x LTS terms are published.
 
 Cut line: defer a self-hosted server, SSO administration UI, cross-org
-benchmarking, and hosted SaaS. Do not defer signed policy bundles, RBAC, audit
-export, migration, or LTS.
+benchmarking, and hosted SaaS. Do not defer signed policy bundles, shared
+baselines, audit export, migration, or the team workflow.
 
-### 15.9 Phase 7 — Detection depth and ecosystem maturity, CommitGuard 4.x (months 36–42)
+### 15.9 Phase 7 — Default local gate and ecosystem flywheel (months 36–42)
 
 **Status:** Planned.
 
-**Goal:** keep detection credible as the ecosystem grows, with independent
-evidence and a sustainable maintainer model.
+**Goal:** make CommitGuard the default local gate for individuals and the
+obvious extension point for organizations, with an ecosystem that can sustain
+itself.
 
 Deliverables:
 
-- **Analysis depth:** type-resolved Java and Go taint where feasible, richer
-  framework and sanitizer models, deeper Python and JS/TS interprocedural
-  summaries, and explicit precision/recall trade-offs.
-- **Optional AI triage:** evaluation-backed ranking and explanation that never
-  becomes an unreviewable blocking oracle; local-first remains the default.
-- **Rule ecosystem:** at least three external maintainers, registry governance,
-  pack certification, revocation drills, and a contribution pipeline with
-  provenance checks.
-- **Benchmark maturity:** real-world CVE-fix pairs, per-CWE and per-language
-  cards, independent replication, and a leaderboard that publishes negative
-  results.
-- **Compliance and audit:** additional frameworks, evidence exports, and auditor
-  workflows built on reproducible artifacts rather than portal claims.
+- **Rule registry:** a signed, searchable registry with one-command install,
+  update, certification, revocation drills, compatibility metadata, and
+  provenance for every pack.
+- **Plugin ecosystem:** plugin API v2, a curated directory, sandboxed execution,
+  contract tests, example plugins, and recognition for maintainers.
+- **AI coding agent integration:** an MCP server and agent hooks so assistants
+  can check generated code before it reaches the commit, using redacted,
+  local-first context and never making the agent an unreviewable blocking
+  oracle.
+- **Community and governance:** public roadmap, benchmark leaderboard that also
+  publishes negative results, contribution pipeline, maintainer bounties, and an
+  annual governance review.
 - **Sustainability:** documented funding, two trained release managers, security
-  response SLAs, succession planning, and an annual governance review.
-- **Distribution parity:** native binaries and package managers ship the same
-  version, checksums, SBOM, and provenance as the Python release.
+  response SLAs, succession planning, and an LTS line with published support
+  terms.
+- **Distribution parity:** native binaries, package managers, the Action, and
+  editor extensions ship the same version, checksums, SBOM, and provenance.
+- **Detection depth where it changes adoption:** type-resolved Java and Go taint,
+  richer framework and sanitizer models, and explicit precision/recall
+  trade-offs, prioritized by user-reported gaps rather than rule count.
 
 Exit criteria:
 
+- The documented install path is the default recommendation in at least three
+  major ecosystems or language communities.
+- At least ten external packs from five maintainers are published, signed, and
+  installable through the registry, and a revocation exercise is completed.
+- At least three AI coding agent or editor integrations pass the compatibility
+  suite.
 - An independent party reproduces the published benchmark and confirms the
   documented precision/recall for the supported CWE subset.
-- At least three external maintainers have released signed packs and completed a
-  revocation exercise.
-- Type-resolved Java and Go analysis ships with benchmark evidence and no
-  regression on the existing corpus.
 - Security response meets the published SLA for 12 consecutive months.
 - Two release managers and a documented successor can complete a signed release
   without the lead.
 - The annual governance and funding review is published.
 
-Cut line: defer optional AI triage, additional languages, and extra compliance
-frameworks. Do not defer independent benchmark replication, security response,
-or ecosystem governance.
+Cut line: defer additional languages, extra compliance frameworks, and optional
+AI triage. Do not defer registry signing, revocation, security response,
+release succession, or the independent benchmark.
 
 ### 15.10 Weekly operating cadence
 
@@ -1626,12 +1646,12 @@ A change is done only when:
 | Compliance | Mapping packs, report sections | Policy | 3 | 2 |
 | Plugins | Protocol, manifests, signatures, sandbox | Runner | 3 | 4 |
 | AI assistant | Provider layer, context, evaluation | Policy, triage | 4 | 4 |
-| Production adoption | Distribution, security review, design partners, LTS | Release trust, Phase 4 evidence | 5 | 8 |
-| Team scale | Org policy, multi-repo, audit, plugin API v2, 4.0 | Adoption, policy | 6 | 10 |
-| Detection maturity | Type-resolved analysis, registry governance, independent benchmarks | Team scale, benchmark | 7 | 10 |
+| Zero-friction adoption | Installers, guided init, migration importers, editor integrations, adoption content | Release trust, Phase 4 evidence | 5 | 8 |
+| Team adoption | Org policy, shared state, PR/CI integrations, dashboards, scale, 4.0 | Adoption, policy | 6 | 10 |
+| Ecosystem flywheel | Signed registry, plugin API v2, AI-agent integrations, governance, funding | Team adoption, benchmark | 7 | 10 |
 | Docs and community | Guides, demo, upgrade notes, contribution | Ongoing | 0–7 | ongoing |
 
-The critical path is **legal → schema → runner → policy → interop → benchmark → release**. Taint depth and Semgrep run in parallel after the runner exists. Phases 5–7 then follow **release → adoption evidence → team scale → detection maturity**. The table covers the core product; Phase 4 research, native binaries, and community work add roughly 4–8 months, and Phases 5–7 add another 12–18 months.
+The critical path is **legal → schema → runner → policy → interop → benchmark → release**. Taint depth and Semgrep run in parallel after the runner exists. Phases 5–7 then follow **release → zero-friction adoption → team adoption → ecosystem flywheel**. The table covers the core product; Phase 4 research, native binaries, and community work add roughly 4–8 months, and Phases 5–7 add another 12–18 months.
 
 ### 15.13 Cost and resource assumptions
 
@@ -1641,7 +1661,7 @@ The critical path is **legal → schema → runner → policy → interop → be
 | Signing | Sigstore/cosign is free; key management is time | Start with checksums and Sigstore keyless. |
 | Benchmark compute | Local + CI; no GPU required | Keep datasets sampled and cached. |
 | Domain and trademarks | Domain under $50/year; trademark search/registration can reach four figures | Keep the CommitGuard identity; complete legal review before reserving branded assets or publishing. |
-| Packaging | PyPI and GitHub Releases are free | Ship release artifacts first; add Homebrew/Scoop and Marketplace channels in Phase 5 after adoption evidence. |
+| Packaging | PyPI and GitHub Releases are free | Ship release artifacts first; Phase 5 makes package managers and editor installs first-class. |
 | Maintainer time | 30 focused hours/week | Cut Phase 5–7 scope before cutting quality. |
 | Legal review | Needed for Semgrep rules, third-party fixtures, and the name | Do not ship ambiguous assets; keep them optional. |
 

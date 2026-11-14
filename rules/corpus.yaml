@@ -770,3 +770,250 @@ samples:
     path: retriever.py
     positive: 'vector_store.add_documents(request.json["documents"])'
     negative: 'vector_store.add_documents(validated_documents)'
+
+
+  # Hardening pack
+  - rule_id: cg-python-requests-no-timeout
+    path: sample.py
+    positive: 'requests.get(url)'
+    negative: 'requests.get(url, timeout=5)'
+
+  - rule_id: cg-python-os-exec
+    path: sample.py
+    positive: 'os.execv("/bin/sh", args)'
+    negative: 'subprocess.run(["git", "status"])'
+
+  - rule_id: cg-python-os-spawn
+    path: sample.py
+    positive: 'os.spawnlp(os.P_WAIT, "sh", "sh", "-c", cmd)'
+    negative: 'subprocess.run(["ls"])'
+
+  - rule_id: cg-python-mark-safe
+    path: views.py
+    positive: 'return mark_safe(user_html)'
+    negative: 'return format_html("<b>{}</b>", value)'
+
+  - rule_id: cg-python-chmod-world-writable
+    path: sample.py
+    positive: 'os.chmod(path, 0o777)'
+    negative: 'os.chmod(path, 0o750)'
+
+  - rule_id: cg-python-ssl-wrap-socket
+    path: sample.py
+    positive: 'ssl.wrap_socket(sock)'
+    negative: 'context.wrap_socket(sock, server_hostname=host)'
+
+  - rule_id: cg-python-ssl-old-protocol
+    path: sample.py
+    positive: 'context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)'  # commit-guard-ignore: devskim-DS169126
+    negative: 'context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)'
+
+  - rule_id: cg-python-django-extra-sql
+    path: models.py
+    positive: 'Model.objects.extra(where=[user_input])'
+    negative: 'Model.objects.filter(id=user_id)'
+
+  - rule_id: cg-python-paramiko-exec-command
+    path: deploy.py
+    positive: 'stdin, stdout, stderr = client.exec_command(user_input)'
+    negative: 'subprocess.run(["git", "status"])'
+
+  - rule_id: cg-python-jinja-from-string
+    path: app.py
+    positive: 'template = env.from_string(user_input)'
+    negative: 'template = env.get_template("index.html")'
+
+  - rule_id: cg-javascript-child-process-shell-true
+    path: sample.js
+    positive: 'spawn(command, { shell: true })'
+    negative: 'spawn(command, { shell: false })'
+
+  - rule_id: cg-javascript-exec-template
+    path: sample.js
+    positive: 'exec(`ls ${dir}`)'
+    negative: 'execFile("ls", [dir])'
+
+  - rule_id: cg-javascript-vm-run-untrusted
+    path: sample.js
+    positive: 'vm.runInNewContext(userCode, sandbox)'
+    negative: 'vm.runInNewContext("1 + 1", sandbox)'
+
+  - rule_id: cg-javascript-jwt-decode
+    path: auth.js
+    positive: 'const payload = jwt.decode(token)'
+    negative: 'const payload = jwt.verify(token, secret)'
+
+  - rule_id: cg-javascript-node-tls-reject-off
+    path: sample.js
+    positive: 'NODE_TLS_REJECT_UNAUTHORIZED = "0"'
+    negative: 'NODE_TLS_REJECT_UNAUTHORIZED = "1"'
+
+  - rule_id: cg-javascript-create-cipher-deprecated
+    path: sample.js
+    positive: 'const cipher = crypto.createCipher("aes192", key)'
+    negative: 'const cipher = crypto.createCipheriv("aes-192-gcm", key, iv)'
+
+  - rule_id: cg-javascript-sequelize-query-template
+    path: db.js
+    positive: 'sequelize.query(`SELECT * FROM users WHERE id = ${id}`)'
+    negative: 'sequelize.query("SELECT * FROM users WHERE id = ?", { replacements: [id] })'
+
+  - rule_id: cg-javascript-knex-raw-template
+    path: db.js
+    positive: 'knex.raw(`SELECT * FROM users WHERE id = ${id}`)'
+    negative: 'knex.raw("SELECT * FROM users WHERE id = ?", [id])'
+
+  - rule_id: cg-javascript-node-serialize
+    path: sample.js
+    positive: 'const obj = unserialize(req.body.data)'
+    negative: 'const obj = JSON.parse(req.body.data)'
+
+  - rule_id: cg-javascript-cors-default
+    path: server.js
+    positive: 'app.use(cors())'
+    negative: 'app.use(cors({ origin: "https://app.example.com" }))'
+
+  - rule_id: cg-javascript-mongoose-where
+    path: db.js
+    positive: 'Model.find({ $where: userInput })'
+    negative: 'Model.find({ active: true })'
+
+  - rule_id: cg-javascript-open-redirect
+    path: server.js
+    positive: 'res.redirect(req.query.next)'
+    negative: 'res.redirect("/home")'
+
+  - rule_id: cg-java-jndi-lookup
+    path: Main.java
+    positive: 'ctx.lookup(userInput);'
+    negative: 'ctx.lookup("java:comp/env/jdbc/app");'
+
+  - rule_id: cg-java-new-random
+    path: Main.java
+    positive: 'Random random = new Random();'
+    negative: 'SecureRandom random = new SecureRandom();'
+
+  - rule_id: cg-java-cross-origin-wildcard
+    path: Api.java
+    positive: '@CrossOrigin(origins = "*")'
+    negative: '@CrossOrigin(origins = "https://app.example.com")'
+
+  - rule_id: cg-java-createquery-concat
+    path: UserRepository.java
+    positive: 'em.createQuery("SELECT u FROM User u WHERE u.id = " + id)'
+    negative: 'em.createQuery("SELECT u FROM User u WHERE u.id = :id")'
+
+  - rule_id: cg-go-math-rand-secret
+    path: main.go
+    positive: 'token := rand.Intn(1000000)'
+    negative: 'token := cryptoRand.Int(rand.Reader, max)'
+
+  - rule_id: cg-go-http-dir-root
+    path: main.go
+    positive: 'http.FileServer(http.Dir("/"))'
+    negative: 'http.FileServer(http.Dir("./public"))'
+
+  - rule_id: cg-go-world-writable
+    path: main.go
+    positive: 'os.Chmod(path, 0777)'
+    negative: 'os.Chmod(path, 0750)'
+
+  - rule_id: cg-go-weak-cipher-import
+    path: main.go
+    positive: 'import "crypto/des"'
+    negative: 'import "crypto/aes"'
+
+  - rule_id: cg-php-shell-exec-family
+    path: sample.php
+    positive: 'shell_exec($command);'
+    negative: 'escapeshellarg($command);'
+
+  - rule_id: cg-php-extract-request
+    path: sample.php
+    positive: 'extract($_POST);'
+    negative: 'extract($safeDefaults);'
+
+  - rule_id: cg-php-create-function
+    path: sample.php
+    positive: "$fn = create_function('$x', 'return $x;');"
+    negative: '$fn = function ($x) { return $x; };'
+
+  - rule_id: cg-php-curl-verify-off
+    path: sample.php
+    positive: 'curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);'
+    negative: 'curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);'
+
+  - rule_id: cg-php-preg-replace-e
+    path: sample.php
+    positive: '$result = preg_replace("/foo/e", $replacement, $subject);'
+    negative: '$result = preg_replace("/foo/", $replacement, $subject);'
+
+  - rule_id: cg-php-header-open-redirect
+    path: sample.php
+    positive: 'header("Location: " . $_GET[''next'']);'
+    negative: 'header("Location: /home");'
+
+  - rule_id: cg-ruby-send-params
+    path: sample.rb
+    positive: 'obj.send(params[:method])'
+    negative: 'obj.send(:name)'
+
+  - rule_id: cg-ruby-constantize-params
+    path: sample.rb
+    positive: 'klass = params[:type].constantize'
+    negative: 'klass = "User".constantize'
+
+  - rule_id: cg-ruby-erb-new
+    path: sample.rb
+    positive: 'ERB.new(user_input).result'
+    negative: 'ERB.new(File.read("template.erb")).result'
+
+  - rule_id: cg-ruby-render-inline
+    path: controller.rb
+    positive: 'render inline: params[:template]'
+    negative: 'render :show'
+
+  - rule_id: cg-c-printf-format
+    path: sample.c
+    positive: 'printf(user_input);'
+    negative: 'printf("%s", user_input);'
+
+  - rule_id: cg-c-popen
+    path: sample.c
+    positive: 'FILE *f = popen(cmd, "r");'
+    negative: 'FILE *f = fopen(path, "r");'
+
+  - rule_id: cg-shell-wget-no-check
+    path: install.sh
+    positive: 'wget --no-check-certificate https://example.com/tool.tar.gz'
+    negative: 'wget https://example.com/tool.tar.gz'
+
+  - rule_id: cg-shell-npm-unsafe-perm
+    path: install.sh
+    positive: 'npm install --unsafe-perm'
+    negative: 'npm install'
+
+  - rule_id: cg-docker-cap-add-all
+    path: Dockerfile
+    positive: 'RUN docker run --cap-add=ALL image'  # commit-guard-ignore: cg-docker-cap-add-all
+    negative: 'RUN docker run --cap-add=NET_BIND_SERVICE image'
+
+  - rule_id: cg-docker-sock-mount
+    path: docker-compose.yml
+    positive: '- /var/run/docker.sock:/var/run/docker.sock'
+    negative: '- /var/run/app.sock:/tmp/app.sock'
+
+  - rule_id: cg-k8s-host-ipc
+    path: pod.yaml
+    positive: 'hostIPC: true'  # commit-guard-ignore: cg-k8s-host-ipc
+    negative: 'hostIPC: false'
+
+  - rule_id: cg-terraform-public-read-write
+    path: main.tf
+    positive: 'acl = "public-read-write"'
+    negative: 'acl = "private"'
+
+  - rule_id: cg-terraform-https-only-off
+    path: main.tf
+    positive: 'enable_https_traffic_only = false'
+    negative: 'enable_https_traffic_only = true'
